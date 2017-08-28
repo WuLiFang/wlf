@@ -18,7 +18,7 @@ try:
 except ImportError:
     HAS_NUKE = False
 
-__version__ = '0.4.11'
+__version__ = '0.4.12'
 
 
 def copy(src, dst):
@@ -291,7 +291,7 @@ def traytip(title, text, seconds=3, options=1):
     """Show a traytip(windows only).  """
 
     executable = os.path.abspath(
-        os.path.join(__file__, '../../traytip.exe'))
+        os.path.join(__file__, '../traytip.exe'))
     if not os.path.exists(get_encoded(executable)):
         raise IOError('traytip.exe missing')
     cmd = '"{}" "{}" "{}" "{}" "{}"'.format(
