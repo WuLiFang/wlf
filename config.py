@@ -10,7 +10,7 @@ __version__ = '0.1.5'
 class Config(dict):
     """Comp config.  """
     default = {
-        'fps' = 25,
+        'fps': 25,
         'footage_pat': r'^.+\.exr[0-9\- ]*$',
         'dir_pat': r'^.{4,}$',
         'tag_pat':
