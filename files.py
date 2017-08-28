@@ -3,6 +3,7 @@
 
 import os
 import re
+import sys
 import shutil
 import locale
 import string
@@ -12,13 +13,9 @@ from subprocess import call, Popen
 
 from wlf.config import Config
 
-try:
-    import nuke
-    HAS_NUKE = True
-except ImportError:
-    HAS_NUKE = False
+HAS_NUKE = bool(sys.modules.get('Nuke'))
 
-__version__ = '0.4.12'
+__version__ = '0.4.13'
 
 
 def copy(src, dst):
