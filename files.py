@@ -15,7 +15,7 @@ from wlf.config import Config
 
 HAS_NUKE = bool(sys.modules.get('Nuke'))
 
-__version__ = '0.4.13'
+__version__ = '0.5.0'
 
 
 def copy(src, dst):
@@ -294,3 +294,14 @@ def traytip(title, text, seconds=3, options=1):
     cmd = '"{}" "{}" "{}" "{}" "{}"'.format(
         executable, escape_batch(title), escape_batch(text), seconds, options)
     Popen(get_encoded(cmd))
+
+
+def is_same(src, dst):
+    """Check if src is same with dst.  """
+
+    if not os.path.isfile(dst):
+        return False
+    if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
+        return True
+
+    return False
