@@ -13,7 +13,7 @@ from subprocess import call, Popen
 from wlf.progress import Progress
 
 
-__version__ = '0.5.3'
+__version__ = '0.5.4'
 
 with open(os.path.join(__file__, '../files.tags.json')) as _f:
     _TAGS = json.load(_f)
@@ -299,10 +299,10 @@ def traytip(title, text, seconds=3, options=1):
 
 def is_same(src, dst):
     """Check if src is same with dst.  """
-
-    if not os.path.isfile(dst):
-        return False
-    if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
-        return True
+    try:
+        if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
+            return True
+    except WindowsError:
+        pass
 
     return False
