@@ -13,9 +13,9 @@ from subprocess import call, Popen
 
 from wlf.config import Config
 
-HAS_NUKE = bool(sys.modules.get('Nuke'))
+HAS_NUKE = bool(sys.modules.get('nuke'))
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 
 
 def copy(src, dst):
