@@ -11,15 +11,24 @@ import re
 from subprocess import Popen
 
 from wlf.files import version_filter, split_version, get_unicode, get_encoded, url_open
-from wlf.progress import Progress
+from wlf.progress import Progress, HAS_NUKE
+import wlf.config
 
-try:
+if HAS_NUKE:
     import nuke
-    HAS_NUKE = True
-except ImportError:
-    HAS_NUKE = False
 
-__version__ = '1.4.1'
+__version__ = '1.4.2'
+
+
+class Config(wlf.config.Config):
+    """Comp config.  """
+    default = {
+        'csheet_database': 'proj_big',
+        'csheet_prefix': 'SNJYW_EP14_',
+        'csheet_outdir': 'E:/',
+        'csheet_checked': False,
+    }
+    path = os.path.expanduser(u'~/.nuke/wlf.csheet.json')
 
 
 class ContactSheet(object):

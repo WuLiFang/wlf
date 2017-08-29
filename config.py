@@ -4,36 +4,14 @@
 import os
 import json
 
-__version__ = '0.1.6'
+__version__ = '0.2.0'
 
 
 class Config(dict):
     """Comp config.  """
-    default = {
-        'fps': 25,
-        'footage_pat': r'^.+\.exr[0-9\- ]*$',
-        'dir_pat': r'^.{4,}$',
-        'tag_pat':
-        r'(?i)(?:[^_]+_)?(?:ep\d+_)?(?:\d+[a-zA-Z]*_)?'
-        r'(?:sc\d+[a-zA-Z]*_)?((?:[a-zA-Z][^\._]*_?){,2})',
-        'output_dir': 'E:/precomp',
-        'input_dir': 'Z:/SNJYW/Render/EP',
-        'mp': r"Z:\QQFC2017\Comp\mp\Panorama202_v2.jpg",
-        'autograde': False,
-        'exclude_existed': True,
-        'csheet_database': 'proj_big',
-        'csheet_prefix': 'SNJYW_EP14_',
-        'csheet_outdir': 'E:/',
-        'csheet_checked': False,
-    }
-    path = os.path.expanduser(u'~/.nuke/wlf.config.json')
+    default = {}
+    path = os.path.expanduser(u'~/wlf.config.json')
     instance = None
-    with open(os.path.join(__file__, '../comp.tags.json')) as f:
-        tags = json.load(f)
-        regular_tags = tags['regular_tags']
-        tag_convert_dict = tags['tag_convert_dict']
-    del tags, f
-    default_tag = u'_OTHER'
 
     def __new__(cls):
         if not cls.instance:

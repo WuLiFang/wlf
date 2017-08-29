@@ -10,11 +10,18 @@ import warnings
 import json
 from subprocess import call, Popen
 
-from .config import Config
-from .progress import Progress
+from wlf.progress import Progress
 
 
-__version__ = '0.5.2'
+__version__ = '0.5.3'
+
+with open(os.path.join(__file__, '../files.tags.json')) as _f:
+    _TAGS = json.load(_f)
+    REGULAR_TAGS = _TAGS['regular_tags']
+    TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
+    DEFAULT_TAG = _TAGS['default']
+    TAG_PATTERN = _TAGS['pattern']
+del _TAGS, _f
 
 
 def copy(src, dst):
@@ -222,7 +229,7 @@ def checked_exists(checking_list):
     return (i for index, i in enumerate(checking_list) if _check(index, i))
 
 
-def get_tag(filename, pat=None, default=Config.default_tag):
+def get_tag(filename, pat=None, default=DEFAULT_TAG):
     """Return tag of @filename from @pat.
 
     >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr', r'MT_(.+)_')
@@ -231,22 +238,20 @@ def get_tag(filename, pat=None, default=Config.default_tag):
     u'BG'
     >>> get_tag('Z.001.exr', r'MT_(.+)_')
     u'Z'
-    >>> # cases below will use default pattern.
-    >>> default_pat = Config.default['tag_pat']
-    >>> get_tag(r'Z:\\QQFC2017\\Render\\SC_065\\QQFC_sc065_CH2', default_pat)
+    >>> get_tag(r'Z:\\QQFC2017\\Render\\SC_065\\QQFC_sc065_CH2')
     u'CH2'
-    >>> get_tag(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr', default_pat)
+    >>> get_tag(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr')
     u'CH_B'
     >>> # result of below case has been auto converted by a dictionary(BG_CO -> BG).
-    >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr', default_pat)
+    >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr')
     u'BG'
-    >>> get_tag('Z:/QQFC2017/Render/SC_031a/sc_031a_CH_B_ID/sc_031a_CH_B_ID.####.exr', default_pat)
+    >>> get_tag('Z:/QQFC2017/Render/SC_031a/sc_031a_CH_B_ID/sc_031a_CH_B_ID.####.exr')
     u'CH_B'
     """
 
-    pat = pat or Config().get('tag_pat')
+    pat = pat or TAG_PATTERN
     ret = None
-    for testing_pat in set((pat, Config.default['tag_pat'])):
+    for testing_pat in set((pat, TAG_PATTERN)):
         tag_pat = re.compile(testing_pat, flags=re.I)
         for test_string in\
                 (os.path.basename(os.path.dirname(filename)), os.path.basename(filename)):
@@ -261,7 +266,7 @@ def get_tag(filename, pat=None, default=Config.default_tag):
     else:
         ret = default
 
-    ret = Config.tag_convert_dict.get(ret, ret)
+    ret = TAG_CONVERT_DICT.get(ret, ret)
 
     if ret.startswith(tuple(string.digits)):
         ret = '_{}'.format(ret)
