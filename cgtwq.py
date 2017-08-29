@@ -11,7 +11,7 @@ from subprocess import Popen, PIPE
 
 from .progress import Progress
 
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -23,7 +23,7 @@ try:
     else:
         raise ImportError(u'not a dir: {}'.format(CGTW_PATH))
 except ImportError:
-    print(u'**错误**导入cgtw模块失败, CGTeamWork相关功能失效。')
+    print('**WARNING**CGTeamWork not found, related module disabled.')
     MODULE_ENABLE = False
 
 SERVER_PATH = u'Z:\\CGteamwork_Test'
