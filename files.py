@@ -13,7 +13,7 @@ from subprocess import call, Popen
 from wlf.progress import Progress
 
 
-__version__ = '0.5.4'
+__version__ = '0.5.5'
 
 with open(os.path.join(__file__, '../files.tags.json')) as _f:
     _TAGS = json.load(_f)
@@ -306,3 +306,21 @@ def is_same(src, dst):
         pass
 
     return False
+
+
+def get_server(path):
+    """Return only path head for unc path.
+
+    >>> print get_server(r'\\\\192.168.1.7\\z\\b')
+    \\\\192.168.1.7
+    >>> print get_server(r'C:/steam')
+    C:/steam
+    """
+
+    _path = os.path.normpath(path)
+    if _path.startswith('\\\\'):
+        match = re.match(r'(\\\\[^\\]*)\\?', _path)
+        if match:
+            return match.group(1)
+
+    return path
