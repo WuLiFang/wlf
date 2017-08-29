@@ -3,7 +3,6 @@
 
 import os
 import re
-import sys
 import shutil
 import locale
 import string
@@ -11,11 +10,11 @@ import warnings
 import json
 from subprocess import call, Popen
 
-from wlf.config import Config
+from .config import Config
+from .progress import Progress
 
-HAS_NUKE = bool(sys.modules.get('nuke'))
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 
 def copy(src, dst):
@@ -213,15 +212,12 @@ def get_layer(filename, layers=None):
 
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
-    if HAS_NUKE:
-        task = nuke.ProgressTask('验证文件')
-        checking_list = list(checking_list)
-        all_num = len(checking_list)
+    task = Progress('验证文件')
+    checking_list = list(checking_list)
+    all_num = len(checking_list)
 
     def _check(index, i):
-        if HAS_NUKE:
-            task.setProgress(index * 100 // all_num)
-            task.setMessage(i)
+        task.set(index * 100 // all_num, i)
         return os.path.exists(get_encoded(i))
     return (i for index, i in enumerate(checking_list) if _check(index, i))
 
