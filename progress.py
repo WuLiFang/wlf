@@ -4,12 +4,13 @@ import os
 import sys
 
 from .Qt import QtCompat, QtWidgets
-from .files import HAS_NUKE
+
+HAS_NUKE = bool(sys.modules.get('nuke'))
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 
 class ProgressBar(QtWidgets.QDialog):
