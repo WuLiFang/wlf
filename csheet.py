@@ -17,7 +17,7 @@ import wlf.config
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.2'
+__version__ = '1.4.3'
 
 
 class Config(wlf.config.Config):
@@ -231,7 +231,8 @@ def create_html_from_dir(image_folder):
                             for i in os.listdir(get_encoded(image_folder))
                             if os.path.isfile(get_encoded(os.path.join(image_folder, i)))
                             and i.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')))
-    save_path = os.path.abspath(os.path.join(image_folder, u'../色板.html'))
+    save_path = os.path.abspath(os.path.join(
+        image_folder, u'../{}_色板.html'.format(os.path.basename(image_folder))))
 
     return create_html(images, save_path, title=image_folder)
 
