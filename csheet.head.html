@@ -57,11 +57,13 @@
 
         .lightbox {
             display: inline-block;
+            *max-width: 400px;
             margin: 0;
         }
 
         .lightbox .preview {
-            display:block;
+            display: block;
+            text-align: center;
             margin: 0;
         }
 
@@ -79,7 +81,6 @@
             color: grey;
             word-break: keep-all;
             text-overflow: ellipsis;
-            width: 100%;
             overflow: hidden;
             margin: auto;
             transition: opacity 0.4s ease-in-out;
@@ -247,7 +248,7 @@
                 while (next.style.display == 'none') {
                     next = next.nextElementSibling;
                 }
-                    
+
                 var prev_a = prev.children[1].children[4];
                 var next_a = next.children[1].children[3];
                 prev_a.href = next.children[0].children[0].href;
