@@ -17,7 +17,7 @@ import wlf.config
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.3'
+__version__ = '1.4.4'
 
 
 class Config(wlf.config.Config):
@@ -254,18 +254,21 @@ def create_html(images, save_path, title=None):
             image = './{}'.format(image)
 
         body += u'''<figure class='lightbox'>
-    <a id="image{index}" href="#image{index}" class="image">
-        <img src="{image}" alt="no image" onerror="hide(this.parentNode.parentNode)" class="thumb" />
+    <figure class="preview" id="image{index}">
+        <a href="#image{index}" class="image">
+            <img src="{image}" alt="no image" onerror="hide(this.parentNode.parentNode.parentNode)" class="thumb" />
+        </a>
+        <figcaption><a href="#image{index}">{name}</a></figcaption>
+    </figure>
+    <figure class="full">
         <figcaption>{name}</figcaption>
-    </a>
-    <span class="full">
         <a href="{image}" target="_blank" class="viewer">
-            <img src="{image}"><figcaption>{name}</figcaption></img>
+            <img src="{image}" alt="no image"/>
         </a>
         <a class="close" href="#void"></a>
         <a class="prev" href="#image{prev_index}">&lt;</a>
         <a class="next" href="#image{next_index}">&gt;</a>
-    </span>
+    </figure>
 </figure>
 '''.format(image=image,
            name=name,
