@@ -44,10 +44,14 @@
     },
     "copy": [
         "DiffuseFilter",
+        "DiffuseLightingRaw",
+        "GIRaw",
         "MotionVectors",
         "BumpNormals",
         "P",
         "TransTint",
+        "TransLightingRaw",
+        "TransGIRaw",
         "VolumeFogTint",
         "PuzzleMatte"
     ],
@@ -56,15 +60,15 @@
     },
     "plus": [
         "DiffuseLighting",
-        "SpecularLighting",
-        "TransLighting",
-        "VolumeLighting",
+        "SSS",
         "GI",
-        "TransGI",
+        "SpecularLighting",
         "Reflections",
         "Refractions",
+        "TransLighting",
+        "TransGI",
+        "VolumeLighting",
         "Emission",
-        "Caustics",
-        "SSS"
+        "Caustics"
     ]
 }
