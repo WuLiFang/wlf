@@ -13,7 +13,7 @@ from subprocess import call, Popen
 from wlf.progress import Progress
 
 
-__version__ = '0.5.5'
+__version__ = '0.5.6'
 
 with open(os.path.join(__file__, '../files.tags.json')) as _f:
     _TAGS = json.load(_f)
@@ -130,6 +130,26 @@ def remove_version(path):
     shot = split_version(path)[0]
     ext = os.path.splitext(path)[1]
     return '{}{}'.format(shot, ext)
+
+
+def get_footage_name(path):
+    """Return filename without frame number.
+
+    >>> get_footage_name('sc_001_BG.0034.exr')
+    'sc_001_BG'
+    >>> get_footage_name('sc_001_BG.%04d.exr')
+    'sc_001_BG'
+    >>> get_footage_name('sc_001_BG.###.exr')
+    'sc_001_BG'
+    >>> get_footage_name('sc_001._BG.exr')
+    'sc_001._BG'
+    """
+    ret = path
+    ret = re.sub(r'\.\d+\b', '', ret)
+    ret = re.sub(r'\.#+(?=\.)', '', ret)
+    ret = re.sub(r'\.%0?\d*d\b', '', ret)
+    ret = os.path.splitext(ret)[0]
+    return ret
 
 
 def map_drivers():
