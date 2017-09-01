@@ -6,12 +6,13 @@ should compatible by any cgteamwork bounded python executable.
 
 import os
 import sys
+import json
 
 from subprocess import Popen, PIPE
 
 from .progress import Progress
 
-__version__ = '0.4.5'
+__version__ = '0.4.7'
 
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -26,64 +27,25 @@ except ImportError:
     print('**WARNING**CGTeamWork not found, related module disabled.')
     MODULE_ENABLE = False
 
-SERVER_PATH = u'Z:\\CGteamwork_Test'
-
 
 def proj_info(shot_name=None, database=None):
     """Return current project info by @shot_name or by @database.  """
 
-    default = {'database': u'proj_qqfc_2017',
-               'name': u'QQ飞车2017(默认)',
-               'module': u'shot_task',
-               'pipeline': u'合成',
-               'pipeline_name': u'comp',
-               'shot_task_folder_name': u'shot_work',
-               'image_folder_name': u'Image',
-               'work_folder': u'work',
-               'image_dest_pat': '\\'.join([
-                   SERVER_PATH,
-                   '{0[eps.project_code]}',
-                   '{0[shot_task_folder_name]}',
-                   '{0[pipeline_name]}',
-                   '{0[eps.eps_name]}',
-                   '{0[shot.shot]}',
-                   '{0[image_folder_name]}',
-                   '{0[shot.shot]}.jpg'
-               ]),
-               'video_dest_pat': '\\'.join([
-                   SERVER_PATH,
-                   '{0[eps.project_code]}',
-                   'shot/avi',
-                   '{0[pipeline_name]}',
-                   '{0[eps.eps_name]}',
-                   'check',
-                   '{0[shot.shot]}.mov'
-               ]),
-               'workfile_dest_pat':   '\\'.join([
-                   SERVER_PATH,
-                   '{0[eps.project_code]}',
-                   '{0[shot_task_folder_name]}',
-                   '{0[pipeline_name]}',
-                   '{0[eps.eps_name]}',
-                   '{0[shot.shot]}',
-                   '{0[work_folder]}\\'
-               ])}
-    snjyw = {'database': u'proj_big',
-             'name': u'少年锦衣卫'}
-    mt = {'database': u'proj_mt',
-          'name': u'梦塔'}
-    prefixs = {'SNJYW': snjyw, 'MT': mt}
-    all_info = (default, snjyw, mt)
+    with open(os.path.join(__file__, '../cgtwq.project_info.json')) as f:
+        all_info = json.load(f)
 
-    ret = dict(default)
+    ret = all_info['default']
+    all_proj = all_info.keys()
+    prefixs = dict({all_info[proj]['prefix']: all_info[proj]
+                    for proj in all_info if all_info[proj].get('prefix')})
     if database:
-        for info in all_info:
-            if info.get('database') == database:
-                ret.update(info)
+        for proj in all_proj:
+            if all_info[proj].get('database') == database:
+                ret.update(all_info[proj])
                 break
     if shot_name:
         for prefix, info in prefixs.items():
-            if shot_name.upper().startswith(prefix):
+            if shot_name.upper().startswith(prefix.upper()):
                 ret.update(info)
                 break
     return ret

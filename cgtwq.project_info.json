@@ -1,0 +1,28 @@
+{
+    "default": {
+        "server_path": "Z:\\CGteamwork_Test",
+        "database": "proj_qqfc_2017",
+        "name": "QQ飞车2017(默认)",
+        "fps": 30,
+        "module": "shot_task",
+        "pipeline": "合成",
+        "pipeline_name": "comp",
+        "shot_task_folder_name": "shot_work",
+        "image_folder_name": "Image",
+        "work_folder": "work",
+        "image_dest_pat": "{0[server_path]}\\{0[eps.project_code]}\\{0[shot_task_folder_name]}\\{0[pipeline_name]}\\{0[eps.eps_name]}\\{0[shot.shot]}\\{0[image_folder_name]}\\{0[shot.shot]}.jpg",
+        "video_dest_pat": "{0[server_path]}\\{0[eps.project_code]}\\shot\\avi\\{0[pipeline_name]}\\{0[eps.eps_name]}\\check\\{0[shot.shot]}.mov",
+        "workfile_dest_pat": "{0[server_path]}\\{0[eps.project_code]}\\{0[shot_task_folder_name]}\\{0[pipeline_name]}\\{0[eps.eps_name]}\\{0[shot.shot]}\\{0[work_folder]}\\"
+    },
+    "snjyw": {
+        "database": "proj_big",
+        "name": "少年锦衣卫",
+        "prefix": "SNJYW",
+        "fps": 25
+    },
+    "mt": {
+        "database": "proj_mt",
+        "name": "梦塔",
+        "prefix": "MT"
+    }
+}
