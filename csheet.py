@@ -17,7 +17,7 @@ import wlf.config
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.4'
+__version__ = '1.4.5'
 
 
 class Config(wlf.config.Config):
@@ -206,8 +206,8 @@ class ContactSheetThread(threading.Thread):
         if not os.path.isfile(config_json):
             return
         self.lock.acquire()
-        task = nuke.ProgressTask('生成色板')
-        task.setProgress(50)
+        task = Progress('生成色板')
+        task.set(50)
         cmd = u'"{NUKE}" -t "{script}" "{json}"'.format(
             NUKE=nuke.EXE_PATH,
             script=__file__.rstrip('cd'),
@@ -216,7 +216,7 @@ class ContactSheetThread(threading.Thread):
         if self._new_process:
             cmd = u'START "生成色板" {}'.format(cmd)
         Popen(get_encoded(cmd), shell=self._new_process)
-        task.setProgress(100)
+        task.set(100)
         del task
         self.lock.release()
 
