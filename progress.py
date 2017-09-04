@@ -10,7 +10,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.3.2'
+__version__ = '0.3.3'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -52,6 +52,7 @@ class Progress(object):
     """A Nuke progressbar compatible without nuke imported."""
 
     def __init__(self, name=''):
+        QtWidgets.QApplication.processEvents()
         if HAS_NUKE:
             self._task = nuke.ProgressTask(name)
         else:
@@ -65,6 +66,7 @@ class Progress(object):
 
     def set(self, progress=None, message=None):
         """Set progress number and message"""
+        QtWidgets.QApplication.processEvents()
 
         if self._task.isCancelled():
             raise CancelledError
@@ -73,7 +75,6 @@ class Progress(object):
             self._task.setProgress(progress)
         if message:
             self._task.setMessage(message)
-        QtWidgets.QApplication.processEvents()
 
 
 class CancelledError(Exception):
