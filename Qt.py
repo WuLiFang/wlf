@@ -932,7 +932,13 @@ def _pyside2():
     Qt.__binding_version__ = module.__version__
 
     try:
-        import shiboken2
+        try:
+            # Before merge of PySide and shiboken
+            import shiboken2
+        except ImportError:
+            # After merge of PySide and shiboken, May 2017
+            from PySide2 import shiboken2
+
         Qt.QtCompat.wrapInstance = (
             lambda ptr, base=None: _wrapinstance(
                 shiboken2.wrapInstance, ptr, base)
@@ -967,7 +973,13 @@ def _pyside():
     Qt.__binding_version__ = module.__version__
 
     try:
-        import shiboken
+        try:
+            # Before merge of PySide and shiboken
+            import shiboken
+        except ImportError:
+            # After merge of PySide and shiboken, May 2017
+            from PySide import shiboken
+
         Qt.QtCompat.wrapInstance = (
             lambda ptr, base=None: _wrapinstance(
                 shiboken.wrapInstance, ptr, base)
@@ -1283,6 +1295,11 @@ def _convert(lines):
         line = line.replace("from PySide2 import", "from Qt import QtCompat,")
         line = line.replace("QtWidgets.QApplication.translate",
                             "QtCompat.translate")
+        if "QtCore.SIGNAL" in line:
+            raise NotImplementedError("QtCore.SIGNAL is missing from PyQt5 "
+                                      "and so Qt.py does not support it: you "
+                                      "should avoid defining signals inside "
+                                      "your ui files.")
         return line
 
     parsed = list()
