@@ -13,7 +13,7 @@ from subprocess import call, Popen
 from wlf.progress import Progress
 
 
-__version__ = '0.5.6'
+__version__ = '0.5.7'
 
 with open(os.path.join(__file__, '../files.tags.json')) as _f:
     _TAGS = json.load(_f)
@@ -312,13 +312,16 @@ def traytip(title, text, seconds=3, options=1):
         os.path.join(__file__, '../traytip.exe'))
     if not os.path.exists(get_encoded(executable)):
         raise IOError('traytip.exe missing')
-    cmd = '"{}" "{}" "{}" "{}" "{}"'.format(
+    cmd = u'"{}" "{}" "{}" "{}" "{}"'.format(
         executable, escape_batch(title), escape_batch(text), seconds, options)
     Popen(get_encoded(cmd))
 
 
 def is_same(src, dst):
     """Check if src is same with dst.  """
+    if not src or not dst:
+        return False
+
     try:
         if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
             return True
