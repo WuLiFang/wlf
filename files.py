@@ -15,7 +15,7 @@ from wlf.progress import Progress
 
 __version__ = '0.5.7'
 
-with open(os.path.join(__file__, '../files.tags.json')) as _f:
+with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
