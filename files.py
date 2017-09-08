@@ -8,6 +8,7 @@ import locale
 import string
 import warnings
 import json
+import filecmp
 from subprocess import call, Popen
 
 from wlf.progress import Progress
@@ -318,7 +319,7 @@ def traytip(title, text, seconds=3, options=1):
 
 
 def is_same(src, dst):
-    """Check if src is same with dst.  """
+    """Check if @src has same modifield time with @dst. """
     if not src or not dst:
         return False
 
