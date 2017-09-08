@@ -7,4 +7,4 @@ from wlf.notify import *
 with warnings.catch_warnings():
     warnings.simplefilter('always')
     warnings.warn(
-        'wlf.process deprecated, use wlf.notify Instead.', DeprecationWarning)
+        'wlf.progress deprecated, use wlf.notify Instead.', DeprecationWarning)

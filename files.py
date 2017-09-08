@@ -10,7 +10,7 @@ import warnings
 import json
 from subprocess import call, Popen
 
-from wlf.progress import Progress
+from wlf.notify import Progress
 
 
 __version__ = '0.5.7'

@@ -11,7 +11,7 @@ import re
 from subprocess import Popen
 
 from wlf.files import version_filter, split_version, get_unicode, get_encoded, url_open
-from wlf.progress import Progress, HAS_NUKE
+from wlf.notify import Progress, HAS_NUKE
 import wlf.config
 
 if HAS_NUKE:
