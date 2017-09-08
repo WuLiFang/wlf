@@ -8,7 +8,6 @@ import locale
 import string
 import warnings
 import json
-import filecmp
 from subprocess import call, Popen
 
 from wlf.progress import Progress
@@ -306,16 +305,14 @@ def escape_batch(text):
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
 
 
-def traytip(title, text, seconds=3, options=1):
+def traytip(*args, **kwargs):
     """Show a traytip(windows only).  """
-
-    executable = os.path.abspath(
-        os.path.join(__file__, '../traytip.exe'))
-    if not os.path.exists(get_encoded(executable)):
-        raise IOError('traytip.exe missing')
-    cmd = u'"{}" "{}" "{}" "{}" "{}"'.format(
-        executable, escape_batch(title), escape_batch(text), seconds, options)
-    Popen(get_encoded(cmd))
+    with warnings.catch_warnings():
+        warnings.simplefilter('always')
+        warnings.warn(
+            'Use wlf.notify.traytip Instead.', DeprecationWarning)
+    from .notify import traytip as _new
+    _new(*args, **kwargs)
 
 
 def is_same(src, dst):
