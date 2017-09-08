@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 
 from .progress import Progress
 
-__version__ = '0.4.7'
+__version__ = '0.4.8'
 
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -58,6 +58,7 @@ class CGTeamWork(object):
     is_logged_in = False
     _tw = None
     _task_module = None
+    _sys_module = None
     database = None
     module = None
 
@@ -73,6 +74,13 @@ class CGTeamWork(object):
             self._task_module = self._tw.task_module(
                 self.database, self.module)
         return self._task_module
+
+    @property
+    def sys_module(self):
+        """CGTeamWork sys module for further use. """
+        if not self._sys_module:
+            self._sys_module = self._tw.sys()
+        return self._sys_module
 
     @staticmethod
     def is_running():
