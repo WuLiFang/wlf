@@ -4,19 +4,23 @@
 SingleInstance modified from: https://pypi.python.org/pypi/tendo
 """
 # TODO: active pid
-# TODO: test on windows
 
 import sys
 import os
 import tempfile
 import unittest
 import logging
-from multiprocessing import Process
+
+try:
+    if sys.platform != 'win32':
+        import fcntl
+except ImportError:
+    raise
 
 LOGGER = logging.getLogger("wlf.singleton")
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 class SingleInstance(object):
@@ -43,7 +47,6 @@ class SingleInstance(object):
                 os.close(self.file_windows)
                 os.unlink(self.lockfile)
         else:
-            import fcntl
             fcntl.lockf(self.file, fcntl.LOCK_UN)
             # os.close(self.fp)
             if os.path.isfile(self.lockfile):
@@ -66,7 +69,6 @@ class SingleInstance(object):
                     self.exit()
                 raise
         else:  # non Windows
-            import fcntl
             self.file = open(self.lockfile, 'w')
             try:
                 fcntl.lockf(self.file, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -82,8 +84,8 @@ class SingleInstance(object):
 
 
 class _SingletonTestCase(unittest.TestCase):
-    @staticmethod
-    def _f(name):
+    @classmethod
+    def _f(cls, name):
         tmp = LOGGER.level
         LOGGER.setLevel(logging.CRITICAL)  # we do not want to see the warning
         dummy = SingleInstance(flavor_id=name)
@@ -121,5 +123,7 @@ class _SingletonTestCase(unittest.TestCase):
 
 
 if __name__ == "__main__":
+
+    from multiprocessing import Process
     LOGGER.setLevel(logging.DEBUG)
     unittest.main()
