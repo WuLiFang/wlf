@@ -70,5 +70,30 @@
         "VolumeLighting",
         "Emission",
         "Caustics"
-    ]
+    ],
+    "translate":{
+        "DiffuseLighting$": "漫反射",
+        "DiffuseFilter$": "漫反射过滤",
+        "DiffuseLightingRaw$":"原始漫反射",
+        "VolumeFogTint$":"体积雾染色",
+        "Z$":"深度",
+        "P$":"位置",
+        "BumpNormals$":"凹凸法线",
+        "MotionVectors$":"速度向量",
+        "TransTint$":"透明染色",
+        "PuzzleMatte":"拼图遮罩",
+        "SSS$":"次表面散射",
+        "Reflections$":"折射",
+        "Refractions$":"反射",
+        "GI$":"全局光照",
+        "GIRaw$":"原始全局光照",
+        "Emission$":"自发光",
+        "Caustics$":"焦散",
+        "SpecularLighting$":"高光",
+        "TransGIRaw$":"原始半透全局光照",
+        "TransGI$":"半透全局光照",
+        "TransLighting$":"半透光",
+        "TransLightingRaw$":"原始半透光",
+        "VolumeLighting$":"体积光"
+    }
 }
