@@ -6,11 +6,12 @@ import sys
 import shutil
 import warnings
 from subprocess import call, Popen
+import multiprocessing.dummy
 
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 
 def _remap_deprecated():
@@ -111,14 +112,18 @@ def unicode_popen(args, **kwargs):
 
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
-    task = Progress('验证文件')
     checking_list = list(checking_list)
-    all_num = len(checking_list)
+    task = Progress('验证文件', total=len(checking_list))
 
-    def _check(index, i):
-        task.set(index * 100 // all_num, i)
-        return os.path.exists(wlf.path.get_encoded(i))
-    return (i for index, i in enumerate(checking_list) if _check(index, i))
+    def _check(i):
+        task.step(i)
+        if os.path.exists(wlf.path.get_encoded(i)):
+            return i
+    pool = multiprocessing.dummy.Pool()
+    ret = pool.map(_check, checking_list)
+    pool.close()
+    pool.join()
+    return [i for i in ret if i]
 
 
 def traytip(*args, **kwargs):
