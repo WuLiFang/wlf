@@ -20,11 +20,11 @@ except ImportError:
 LOGGER = logging.getLogger("wlf.singleton")
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 class SingleInstance(object):
-    """instantiate this class to check singleinstance.  """
+    """instantiate this class and hold it on a dummy constant to keep singleinstance.  """
 
     def __init__(self, flavor_id=""):
         self.initialized = False
@@ -44,8 +44,8 @@ class SingleInstance(object):
 
         if sys.platform == 'win32':
             if hasattr(self, 'fd'):
-                os.close(self.file_windows)
-                os.unlink(self.lockfile)
+                self.file_windows.close()
+                os.remove(self.lockfile)
         else:
             fcntl.lockf(self.file, fcntl.LOCK_UN)
             # os.close(self.fp)
@@ -59,9 +59,8 @@ class SingleInstance(object):
                 # file already exists, we try to remove (in case previous
                 # execution was interrupted)
                 if os.path.exists(self.lockfile):
-                    os.unlink(self.lockfile)
-                self.file_windows = os.open(
-                    self.lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                    os.remove(self.lockfile)
+                self.file_windows = open(self.lockfile, 'w')
             except OSError as ex:
                 if ex.errno == 13:
                     LOGGER.error(
