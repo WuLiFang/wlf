@@ -10,7 +10,7 @@ import json
 
 from subprocess import Popen, PIPE
 
-from .progress import Progress
+from wlf.notify import Progress
 
 __version__ = '0.4.8'
 
