@@ -11,7 +11,7 @@ import multiprocessing.dummy
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 
 def _remap_deprecated():
@@ -28,6 +28,17 @@ def _remap_deprecated():
               'get_footage_name', 'get_layer', 'get_server',
               'get_tag', 'remove_version', 'is_ascii', 'escape_batch']:
         setattr(sys.modules[__name__], i, _get_func(i))
+
+    def traytip(*args, **kwargs):
+        """Show a traytip(windows only).  """
+        with warnings.catch_warnings():
+            warnings.simplefilter('once')
+            warnings.warn(
+                'Use wlf.notify.traytip Instead.', DeprecationWarning)
+        from .notify import traytip as _new
+        _new(*args, **kwargs)
+
+    setattr(sys.modules[__name__], 'traytip', traytip)
 
 
 _remap_deprecated()
@@ -124,16 +135,6 @@ def checked_exists(checking_list):
     pool.close()
     pool.join()
     return [i for i in ret if i]
-
-
-def traytip(*args, **kwargs):
-    """Show a traytip(windows only).  """
-    with warnings.catch_warnings():
-        warnings.simplefilter('always')
-        warnings.warn(
-            'Use wlf.notify.traytip Instead.', DeprecationWarning)
-    from .notify import traytip as _new
-    _new(*args, **kwargs)
 
 
 def is_same(src, dst):
