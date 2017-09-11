@@ -7,14 +7,14 @@ import threading
 from subprocess import Popen
 
 from wlf.Qt import QtCompat, QtWidgets
-
+from wlf.path import get_encoded, escape_batch
 
 HAS_NUKE = bool(sys.modules.get('nuke'))
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -59,7 +59,7 @@ class Progress(object):
 
     def __init__(self, name='', total=None):
         self.total = total or self.total
-        self.count = 0
+        self.count = -1
 
         QtWidgets.QApplication.processEvents()
         if HAS_NUKE:
@@ -131,7 +131,6 @@ def error(message, error_type=''):
 
 def traytip(title, text, seconds=3, options=1):
     """Show a traytip(windows only).  """
-    from wlf.files import get_encoded, escape_batch
     executable = os.path.abspath(
         os.path.join(__file__, '../traytip.exe'))
     if not os.path.exists(get_encoded(executable)):
