@@ -14,7 +14,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -129,29 +129,30 @@ def error(message, error_type=''):
         _error_message(message, error_type)
 
 
-def _message_process(message):
-    app = QtWidgets.QApplication(sys.argv)
-    dummy_var = _message(message)
-    sys.exit(app.exec_())
+def _message_process(message, detail):
+    QtWidgets.QApplication(sys.argv)
+    dummy_var = _message(message, detail)
 
 
-def _message(message):
-    message_box = QtWidgets.QMessageBox()
-    message_box.setText(message)
-    return message_box.exec_()
+def _message(message, detail):
+    msgbox = QtWidgets.QMessageBox()
+    msgbox.setText(message)
+    if detail:
+        msgbox.setDetailedText(detail)
+    return msgbox.exec_()
 
 
-def message(message):
+def message_box(message, detail=None):
     """Show a message.  """
     def _run():
         proc = multiprocessing.Process(
-            target=_message_process, args=(message,))
+            target=_message_process, args=(message, detail))
         proc.start()
         proc.join()
     if not QtWidgets.QApplication.instance():
         threading.Thread(target=_run, name='MessageBox').start()
     else:
-        _message(message)
+        _message(message, detail)
 
 
 def traytip(title, text, seconds=3, options=1):
