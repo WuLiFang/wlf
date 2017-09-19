@@ -12,7 +12,7 @@ from subprocess import Popen, PIPE
 
 from wlf.notify import Progress
 
-__version__ = '0.4.8'
+__version__ = '0.4.9'
 
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -293,6 +293,11 @@ class Shot(CGTeamWork):
         return self._info.get('shot_task.account_id')
 
     @property
+    def artists_list(self):
+        """The aritists as a list.  """
+        return self.artist_id.split(',')
+
+    @property
     def shot_image(self):
         """The shot_task.image field on cgtw.  """
         return self._info.get('shot_task.image')
@@ -322,7 +327,7 @@ class Shot(CGTeamWork):
 
     def check_account(self):
         """Return if shot assined to current account.  """
-        if not bool(self.current_account_id() == self.artist_id):
+        if self.current_account_id() not in self.artists_list:
             raise AccountError(owner=self.artist,
                                current=self.current_account())
 
