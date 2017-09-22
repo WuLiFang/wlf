@@ -7,10 +7,8 @@
 1 天, 2:00:00
 >>> print(strf_timedelta(parse_timedelta('1 天, 2:34:56.789')))
 1 天, 2:34:56.789
->>> print(strf_timedelta(parse_timedelta('1天25小时2分13.2秒4微秒3毫秒')))
+>>> print(strf_timedelta(parse_timedelta('1天25小时2分13.2秒3毫秒4微秒')))
 2 天, 1:02:13.203004
->>> print(strf_timedelta(parse_timedelta('30.5')))
-0:00:30.5
 """
 
 from __future__ import unicode_literals, print_function
@@ -19,7 +17,7 @@ import datetime
 import re
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 def parse_timedelta(text):
@@ -27,15 +25,15 @@ def parse_timedelta(text):
     match = re.match(
         r'(?:(\d+(?:\.\d+)?)\s*天)?(?:(\d+(?:\.\d+)?)\s*小?时)?'
         r'(?:(\d+(?:\.\d+)?)\s*分钟?)?(?:(\d+(?:\.\d+)?)\s*秒)?'
-        r'(?:(\d+(?:\.\d+)?)\s*微秒)?(?:(\d+(?:\.\d+)?)\s*毫秒)?'
+        r'(?:(\d+(?:\.\d+)?)\s*毫秒)?(?:(\d+(?:\.\d+)?)\s*微秒)?'
         r'\s*,?\s*(?:(\d?\d)??:?(?:(\d?\d)??:?(\d?\d(?:\.\d+)??)))?\w*$', text)
     result = [float(i) if i else 0 for i in match.groups()]
     return datetime.timedelta(days=result[0],
                               hours=result[1] or result[6],
                               minutes=result[2]or result[7],
                               seconds=result[3]or result[8],
-                              microseconds=result[4],
-                              milliseconds=result[5])
+                              milliseconds=result[4],
+                              microseconds=result[5])
 
 
 def strf_timedelta(timedelta):
