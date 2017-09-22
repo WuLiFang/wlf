@@ -1,10 +1,9 @@
 #! /usr/bin/env python
+# -*- coding=UTF-8 -*-
 """Let script only run once at a time.
 
 SingleInstance modified from: https://pypi.python.org/pypi/tendo
 """
-# TODO: active pid
-
 import sys
 import os
 import tempfile
@@ -20,14 +19,15 @@ except ImportError:
 LOGGER = logging.getLogger("wlf.singleton")
 LOGGER.addHandler(logging.StreamHandler())
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 
 class SingleInstance(object):
     """instantiate this class and hold it on a dummy constant to keep singleinstance.  """
 
-    def __init__(self, flavor_id=""):
+    def __init__(self, flavor_id="", on_exit=None):
         self.initialized = False
+        self.on_exit = on_exit
         basename = os.path.splitext(os.path.abspath(sys.argv[0]))[0].replace(
             "/", "-").replace(":", "").replace("\\", "-") + '-{}'.format(flavor_id) + '.lock'
         self.lockfile = os.path.normpath(
@@ -76,9 +76,13 @@ class SingleInstance(object):
                     "Another instance is already running, quitting.")
                 self.exit()
 
-    @staticmethod
-    def exit():
+    def exit(self):
         """Exit scrpit."""
+        if self.on_exit:
+            try:
+                self.on_exit()
+            except TypeError:
+                LOGGER.debug('Execute %s faild', self.on_exit)
         sys.exit(-1)
 
 
