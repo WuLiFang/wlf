@@ -17,7 +17,7 @@ import datetime
 import re
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 def parse_timedelta(text):
@@ -26,7 +26,7 @@ def parse_timedelta(text):
         r'(?:(\d+(?:\.\d+)?)\s*天)?(?:(\d+(?:\.\d+)?)\s*小?时)?'
         r'(?:(\d+(?:\.\d+)?)\s*分钟?)?(?:(\d+(?:\.\d+)?)\s*秒)?'
         r'(?:(\d+(?:\.\d+)?)\s*毫秒)?(?:(\d+(?:\.\d+)?)\s*微秒)?'
-        r'\s*,?\s*(?:(\d?\d)??:?(?:(\d?\d)??:?(\d?\d(?:\.\d+)??)))?\w*$', text)
+        r'\s*,?\s*(?:(\d?\d)??:?(?:(\d?\d)??:?(\d?\d(?:\.\d+)??)))?\s*$', text)
     result = [float(i) if i else 0 for i in match.groups()]
     return datetime.timedelta(days=result[0],
                               hours=result[1] or result[6],
