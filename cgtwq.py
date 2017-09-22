@@ -13,7 +13,7 @@ from subprocess import Popen, PIPE
 
 from wlf.notify import Progress
 
-__version__ = '0.4.10'
+__version__ = '0.4.11'
 
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -62,7 +62,7 @@ class CGTeamWork(object):
     _sys_module = None
     database = None
     module = None
-    datetime_format = '%Y-%m-%d %H:%M:%S'
+    DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
     def __init__(self):
         super(CGTeamWork, self).__init__()
@@ -142,7 +142,7 @@ class CGTeamWork(object):
 
     def parse_datetime(self, text):
         """Parse teamwork time."""
-        return datetime.datetime.strptime(text, self.datetime_format)
+        return datetime.datetime.strptime(text, self.DATETIME_FORMAT)
 
 
 class Shots(CGTeamWork):
