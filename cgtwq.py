@@ -3,18 +3,22 @@
 
 should compatible by any cgteamwork bounded python executable.
 """
+from __future__ import unicode_literals, print_function
 
 import os
 import sys
 import json
 import datetime
+import logging
 
 from subprocess import Popen, PIPE
 
+from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.11'
+__version__ = '0.4.12'
 
+LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
 MODULE_ENABLE = True
@@ -23,9 +27,9 @@ try:
         sys.path.append(CGTW_PATH)
         import cgtw
     else:
-        raise ImportError(u'not a dir: {}'.format(CGTW_PATH))
+        raise ImportError('not a dir: {}'.format(CGTW_PATH))
 except ImportError:
-    print('**WARNING**CGTeamWork not found, related module disabled.')
+    LOGGER.warning('CGTeamWork not found, related module disabled.')
     MODULE_ENABLE = False
 
 
@@ -91,15 +95,15 @@ class CGTeamWork(object):
         ret = True
         if sys.platform == 'win32':
             tasklist = Popen('TASKLIST', stdout=PIPE).communicate()[0]
-            if '\nCgTeamWork.exe ' not in tasklist:
+            if '\nCgTeamWork.exe ' not in get_encoded(tasklist, 'UTF8'):
                 ret = False
-                print(u'未运行 CGTeamWork.exe 。')
+                LOGGER.info('未运行 CGTeamWork.exe 。')
         return ret
 
     @staticmethod
     def update_status():
         """Return and set if cls.is_logged_in."""
-
+        LOGGER.debug('更新CGTeamWork状态')
         task = Progress('尝试连接CGTeamWork')
         task.set(50)
         if not CGTeamWork.is_running() and os.path.exists(CGTW_EXECUTABLE):
@@ -108,7 +112,7 @@ class CGTeamWork(object):
         else:
             ret = cgtw.tw().sys().get_socket_status()
         CGTeamWork.is_logged_in = ret
-        print(u'CGTeamWork连接正常' if ret else u'CGTeamWork未连接')
+        LOGGER.info('CGTeamWork连接正常' if ret else 'CGTeamWork未连接')
         return ret
 
     def current_account(self):
@@ -119,11 +123,11 @@ class CGTeamWork(object):
         """Return current account id.  """
         return self._tw.sys().get_account_id()
 
-    def submit(self, file_list, folders=None, note=u'自nuke提交'):
+    def submit(self, file_list, folders=None, note='自nuke提交'):
         """Submit current initiated item to cgtw."""
         if not folders:
             folders = []
-        print(u'提交: {}'.format(file_list + folders))
+        print('提交: {}'.format(file_list + folders))
         ret = self._task_module.submit(file_list, note, folders)
         if not ret:
             print('提交失败')
@@ -137,7 +141,6 @@ class CGTeamWork(object):
     def login(self, account, password):
         """Log in cgtw with nuke.  """
         ret = self._tw.sys().login(account, password)
-        print ret
         return ret
 
     def parse_datetime(self, text):
@@ -231,9 +234,9 @@ class Shot(CGTeamWork):
             raise IDError(self.database, self.module,
                           self.pipeline, self.name)
         elif len(id_list) != 1:
-            if ''.join(i['id'] for i in id_list) == u'please login!!!':
+            if ''.join(i['id'] for i in id_list) == 'please login!!!':
                 raise LoginError
-            raise IDError(u'Multiple match', id_list)
+            raise IDError('Multiple match', id_list)
         self._id = id_list[0]['id']
 
         self.task_module.init_with_id(self.shot_id)
@@ -346,7 +349,7 @@ class IDError(Exception):
         self.message = args
 
     def __str__(self):
-        return u'Can not found item id:{}'.format(self.message)
+        return 'Can not found item id:{}'.format(self.message)
 
 
 class FolderError(Exception):
@@ -357,7 +360,7 @@ class FolderError(Exception):
         self.message = args
 
     def __str__(self):
-        return u'No such folder on server:{}'.format(self.message)
+        return 'No such folder on server:{}'.format(self.message)
 
 
 class LoginError(Exception):
@@ -368,7 +371,7 @@ class LoginError(Exception):
         self.message = args
 
     def __str__(self):
-        return u'Not loged in.  \n{}'.format(self.message)
+        return 'Not loged in.  \n{}'.format(self.message)
 
 
 class AccountError(Exception):
@@ -380,4 +383,4 @@ class AccountError(Exception):
         self.current = current
 
     def __str__(self):
-        return u'Account not match.  \n{} ==> {}'.format(self.current, self.owner)
+        return 'Account not match.  \n{} ==> {}'.format(self.current, self.owner)
