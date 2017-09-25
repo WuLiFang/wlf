@@ -52,16 +52,20 @@ _remap_deprecated()
 def copy(src, dst):
     """Copy src to dst."""
 
-    LOGGER.info('%s -> %s', src, dst)
+    LOGGER.info('复制:\n\t%s\n->\t%s', src, dst)
     if not os.path.exists(src):
         return
     dst_dir = os.path.dirname(dst)
     if not os.path.exists(dst_dir):
+        LOGGER.debug('创建目录: %s', dst_dir)
         os.makedirs(dst_dir)
     try:
         shutil.copy2(src, dst)
-    except WindowsError:
-        call(wlf.path.get_encoded(u'XCOPY /V /Y "{}" "{}"'.format(src, dst)))
+    except OSError:
+        if sys.platform == 'win32':
+            call(wlf.path.get_encoded('XCOPY /V /Y "{}" "{}"'.format(src, dst)))
+        else:
+            raise
     if os.path.isdir(wlf.path.get_encoded(dst)):
         ret = os.path.join(dst, os.path.basename(src))
     else:
@@ -112,9 +116,10 @@ def map_drivers():
 def url_open(url, isfile=False):
     """Open url in explorer. """
     if isfile:
-        url = u'file://{}'.format(url)
-    _cmd = u"rundll32.exe url.dll,FileProtocolHandler {}".format(url)
-    Popen(wlf.path.get_encoded(_cmd))
+        url = 'file://{}'.format(url)
+    cmd = 'rundll32.exe url.dll,FileProtocolHandler {}'.format(url)
+    LOGGER.debug('Open url:\n%s', url)
+    Popen(wlf.path.get_encoded(cmd))
 
 
 def unicode_popen(args, **kwargs):

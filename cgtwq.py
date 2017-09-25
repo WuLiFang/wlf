@@ -112,7 +112,10 @@ class CGTeamWork(object):
         else:
             ret = cgtw.tw().sys().get_socket_status()
         CGTeamWork.is_logged_in = ret
-        LOGGER.info('CGTeamWork连接正常' if ret else 'CGTeamWork未连接')
+        if ret:
+            LOGGER.debug('CGTeamWork连接正常')
+        else:
+            LOGGER.warning('CGTeamWork未连接')
         return ret
 
     def current_account(self):
@@ -127,10 +130,10 @@ class CGTeamWork(object):
         """Submit current initiated item to cgtw."""
         if not folders:
             folders = []
-        print('提交: {}'.format(file_list + folders))
+        LOGGER.info(u'提交: %s', file_list + folders)
         ret = self._task_module.submit(file_list, note, folders)
         if not ret:
-            print('提交失败')
+            LOGGER.error(u'提交失败')
         return ret
 
     def add_note(self, note):
