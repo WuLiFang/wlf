@@ -3,21 +3,25 @@
 
 """
 
-import os
-import sys
 import json
-import threading
+import logging
+import os
 import re
+import sys
+import threading
 from subprocess import Popen
 
-from wlf.files import version_filter, split_version, get_unicode, get_encoded, url_open
-from wlf.notify import Progress, HAS_NUKE
 import wlf.config
+from wlf.files import url_open, version_filter
+from wlf.notify import HAS_NUKE, Progress
+from wlf.path import get_encoded, get_unicode, split_version
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.5'
+__version__ = '1.4.6'
+
+LOGGER = logging.getLogger('com.wlf.csheet')
 
 
 class Config(wlf.config.Config):
@@ -290,7 +294,7 @@ def create_html(images, save_path, title=None):
 
     with open(get_encoded(save_path), 'w') as f:
         f.write(html_page.encode('UTF-8'))
-    print(u'生成: {}'.format(save_path))
+    LOGGER.info(u'生成: %s', save_path)
 
     return save_path
 
