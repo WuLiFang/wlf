@@ -1,17 +1,22 @@
 # -*- coding=UTF-8 -*-
-"""Non-nuke-invoked files operation. """
+"""Files operation. """
+from __future__ import unicode_literals, print_function
 
 import os
 import sys
 import shutil
+import logging
 import warnings
+
 from subprocess import call, Popen
 import multiprocessing.dummy
 
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.2'
+__version__ = '0.6.3'
+
+LOGGER = logging.getLogger('com.wlf.files')
 
 
 def _remap_deprecated():
@@ -47,8 +52,7 @@ _remap_deprecated()
 def copy(src, dst):
     """Copy src to dst."""
 
-    message = u'{} -> {}'.format(src, dst)
-    print(message)
+    LOGGER.info('%s -> %s', src, dst)
     if not os.path.exists(src):
         return
     dst_dir = os.path.dirname(dst)
@@ -96,10 +100,13 @@ def version_filter(iterable):
 
 def map_drivers():
     """Map unc path. """
-    cmd = r'(IF NOT EXIST X: NET USE X: \\192.168.1.4\h) &'\
-        r'(IF NOT EXIST Y: NET USE Y: \\192.168.1.7\y) &'\
-        r'(IF NOT EXIST Z: NET USE Z: \\192.168.1.7\z)'
-    call(cmd, shell=True)
+    if sys.platform == 'win32':
+        cmd = r'(IF NOT EXIST X: NET USE X: \\192.168.1.4\h) &'\
+            r'(IF NOT EXIST Y: NET USE Y: \\192.168.1.7\y) &'\
+            r'(IF NOT EXIST Z: NET USE Z: \\192.168.1.7\z)'
+        call(cmd, shell=True)
+    else:
+        LOGGER.warning('Map drivers not implemented on this platform.')
 
 
 def url_open(url, isfile=False):
