@@ -97,7 +97,7 @@ class CGTeamWork(object):
             tasklist = Popen('TASKLIST', stdout=PIPE).communicate()[0]
             if '\nCgTeamWork.exe ' not in get_encoded(tasklist, 'UTF8'):
                 ret = False
-                LOGGER.info('未运行 CGTeamWork.exe 。')
+                LOGGER.debug('未运行 CGTeamWork.exe 。')
         return ret
 
     @staticmethod
