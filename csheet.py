@@ -10,6 +10,8 @@ import re
 import sys
 import threading
 from subprocess import Popen
+from cgi import escape
+from itertools import count
 
 import wlf.config
 from wlf.files import url_open, version_filter
@@ -19,7 +21,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.6'
+__version__ = '1.4.7'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -189,7 +191,7 @@ class ContactSheet(object):
 def get_shot(filename):
     """Get shot name from filename.  """
 
-    match = re.match(r'.*(sc_?\d+[^\.]*)_?.*\..+', filename, flags=re.I)
+    match = re.match(r'.*(sc_?\d+[^\.]*)\b', filename, flags=re.I)
     if match:
         return match.group(1)
 
@@ -243,49 +245,71 @@ def create_html_from_dir(image_folder):
 
 def create_html(images, save_path, title=None):
     """Crete html contactsheet with @images list, save to @save_path.  """
+    class Image(object):
+        """Image item.  """
+        exsited_id = []
+
+        def __init__(self, path):
+            self.path = os.path.normpath(path)
+            self.name, self.version = split_version(
+                os.path.basename(self.path))
+            self.shot = get_shot(self.name)
+            if not os.path.isabs(self.path):
+                self.path = './{}'.format(self.path)
+
+            _id = escape(self.name)
+            for i in count(start=1):
+                if _id in self.exsited_id:
+                    _id = '{}_{}'.format(self.name, i)
+                else:
+                    self.html_id = _id
+                    self.exsited_id.append(self.html_id)
+                    break
+
+            if self.shot != self.name:
+                self.html_name = escape(self.name).replace(
+                    escape(self.shot), '<span class="highlight">{}</span>'.format(escape(self.shot)))
+            else:
+                self.html_name = self.name
 
     body = ''
-    images = list(images)
-    task = Progress('生成页面')
-    all_num = len(images)
-    for index, image in enumerate(images, 1):
-        task.set(index * 100 // all_num, image)
-        shot = split_version(get_shot(image))[0]
-        name = os.path.splitext(os.path.basename(image))[0].replace(
-            shot, '<span class="highlight">{}</span>'.format(shot))
-        image = image.replace('\\', '/')
-        if not os.path.isabs(image):
-            image = './{}'.format(image)
+    images = [Image(i) for i in images]
+    total = len(images)
+    task = Progress('生成页面', total)
 
+    for index, image in enumerate(images):
+        task.step(image.name)
+        try:
+            next_image = images[index + 1]
+        except IndexError:
+            next_image = images[0]
         body += u'''<figure class='lightbox'>
-    <figure class="preview" id="image{index}">
-        <a href="#image{index}" class="image">
-            <img src="{image}" alt="no image" onerror="hide(this.parentNode.parentNode.parentNode)" class="thumb" />
+    <figure class="preview" id="{this.html_id}">
+        <a href="#{this.html_id}" class="image">
+            <img src="{this.path}" alt="no image" onerror="hide(this.parentNode.parentNode.parentNode)" class="thumb" />
         </a>
-        <figcaption><a href="#image{index}">{name}</a></figcaption>
+        <figcaption><a href="#{this.html_id}">{this.html_name}</a></figcaption>
     </figure>
     <figure class="full">
-        <figcaption>{name}</figcaption>
-        <a href="{image}" target="_blank" class="viewer">
-            <img src="{image}" alt="no image"/>
+        <figcaption>{this.html_name}</figcaption>
+        <a href="{this.path}" target="_blank" class="viewer">
+            <img src="{this.path}" alt="no image"/>
         </a>
         <a class="close" href="#void"></a>
-        <a class="prev" href="#image{prev_index}">&lt;</a>
-        <a class="next" href="#image{next_index}">&gt;</a>
+        <a class="prev" href="#{prev.html_id}">&lt;</a>
+        <a class="next" href="#{next.html_id}">&gt;</a>
     </figure>
 </figure>
-'''.format(image=image,
-           name=name,
-           index=index,
-           prev_index=str(index - 1),
-           next_index=str(index + 1))
+'''.format(this=image,
+           prev=images[index - 1],
+           next=next_image)
 
     body = '''<body>
     <header>{}</header>
     <div class="shots">
     {}
     </div>
-</body>'''.format(len(images), body)
+</body>'''.format(total, body)
 
     title = title or u'色板'
     with open(os.path.join(__file__, '../csheet.head.html')) as f:
