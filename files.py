@@ -14,7 +14,7 @@ import multiprocessing.dummy
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -77,7 +77,7 @@ def version_filter(iterable):
     """Keep only newest version for each shot, try compare mtime when version is same.
 
     >>> version_filter(('sc_001_v1', 'sc_001_v2', 'sc002_v3', 'thumbs.db'))
-    ['sc002_v3', 'sc_001_v2', 'thumbs.db']
+    [u'sc002_v3', u'sc_001_v2', u'thumbs.db']
     """
     shots = {}
     iterable = sorted(
@@ -113,13 +113,17 @@ def map_drivers():
         LOGGER.warning('Map drivers not implemented on this platform.')
 
 
-def url_open(url, isfile=False):
-    """Open url in explorer. """
-    if isfile:
-        url = 'file://{}'.format(url)
-    cmd = 'rundll32.exe url.dll,FileProtocolHandler {}'.format(url)
+def _url_open(url, isfile=False):
+    """(Decrypted)Open url.  """
+    import webbrowser
+
+    dummy = isfile
+    LOGGER.warning('url_open decrypted, use webbrowser.open instead.')
     LOGGER.debug('Open url:\n%s', url)
-    Popen(wlf.path.get_encoded(cmd))
+    webbrowser.open(url)
+
+
+setattr(sys.modules[__name__], 'url_open', _url_open)
 
 
 def unicode_popen(args, **kwargs):
