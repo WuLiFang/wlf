@@ -7,7 +7,7 @@ import json
 import locale
 import string
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
@@ -167,9 +167,10 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
     u'CH2'
     >>> get_tag(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr')
     u'CH_B'
-    >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr')
-    u'BG_CO_Z'
     >>> # result of below cases has been auto converted by a dictionary.
+    >>> # (BG_CO -> BG)
+    >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr')
+    u'BG'
     >>> # (CH_B_ID -> ID_CH_B)
     >>> get_tag('Z:/QQFC2017/Render/SC_031a/sc_031a_CH_B_ID/sc_031a_CH_B_ID.####.exr')
     u'ID_CH_B'
@@ -195,7 +196,11 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
     else:
         ret = default
 
-    ret = TAG_CONVERT_DICT.get(ret, ret)
+    if TAG_CONVERT_DICT.has_key(ret):
+        ret = TAG_CONVERT_DICT[ret]
+    else:
+        ret = '_'.join(ret.split('_')[:2])
+        ret = TAG_CONVERT_DICT.get(ret, ret)
 
     if ret.startswith(tuple(string.digits)):
         ret = '_{}'.format(ret)
