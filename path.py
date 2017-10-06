@@ -7,7 +7,7 @@ import json
 import locale
 import string
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
@@ -167,16 +167,20 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
     u'CH2'
     >>> get_tag(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr')
     u'CH_B'
-    >>> # result of below case has been auto converted by a dictionary(BG_CO -> BG).
     >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr')
-    u'BG'
+    u'BG_CO_Z'
+    >>> # result of below cases has been auto converted by a dictionary.
+    >>> # (CH_B_ID -> ID_CH_B)
     >>> get_tag('Z:/QQFC2017/Render/SC_031a/sc_031a_CH_B_ID/sc_031a_CH_B_ID.####.exr')
-    u'CH_B'
+    u'ID_CH_B'
+    >>> # (CH_B_OC -> OCC_CH_B)
+    >>> get_tag('Z:/EP16_05_sc135b_CH_B_OC/EP16_05_sc135b_CH_B_OC.####.exr')
+    u'OCC_CH_B'
     """
 
     pat = pat or TAG_PATTERN
     ret = None
-    for testing_pat in set((pat, TAG_PATTERN)):
+    for testing_pat in (pat, TAG_PATTERN):
         tag_pat = re.compile(testing_pat, flags=re.I)
         for test_string in\
                 (os.path.basename(os.path.dirname(filename)), os.path.basename(filename)):
