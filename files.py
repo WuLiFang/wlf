@@ -7,14 +7,13 @@ import sys
 import shutil
 import logging
 import warnings
-
 from subprocess import call, Popen
 import multiprocessing.dummy
 
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -49,8 +48,14 @@ def _remap_deprecated():
 _remap_deprecated()
 
 
-def copy(src, dst):
+def copy(src, dst, threading=False):
     """Copy src to dst."""
+
+    if threading:
+        thread = multiprocessing.dummy.Process(
+            target=copy, args=(src, dst), kwargs={'threading': False})
+        thread.start()
+        return thread
 
     LOGGER.info('复制:\n\t%s\n->\t%s', src, dst)
     if not os.path.exists(src):
