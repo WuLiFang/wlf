@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import threading
+import errno
 from subprocess import Popen
 from cgi import escape
 from itertools import count
@@ -21,7 +22,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.7'
+__version__ = '1.4.8'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -245,6 +246,7 @@ def create_html_from_dir(image_folder):
 
 def create_html(images, save_path, title=None):
     """Crete html contactsheet with @images list, save to @save_path.  """
+
     class Image(object):
         """Image item.  """
         exsited_id = []
@@ -276,6 +278,7 @@ def create_html(images, save_path, title=None):
     images = [Image(i) for i in images]
     total = len(images)
     task = Progress('生成页面', total)
+    save_dir = os.path.dirname(save_path)
 
     for index, image in enumerate(images):
         task.step(image.name)
@@ -316,6 +319,14 @@ def create_html(images, save_path, title=None):
         head = f.read().replace('<title></title>', '<title>{}</title>'.format(title))
     html_page = head + body
 
+    try:
+        os.makedirs(save_dir)
+        LOGGER.info('创建目录: %s', save_dir)
+    except OSError as ex:
+        if ex.errno == errno.EEXIST:
+            pass
+        else:
+            raise
     with open(get_encoded(save_path), 'w') as f:
         f.write(html_page.encode('UTF-8'))
     LOGGER.info(u'生成: %s', save_path)
