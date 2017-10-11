@@ -14,7 +14,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.5'
+__version__ = '0.4.6'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -83,16 +83,23 @@ class Progress(object):
             raise CancelledError
 
         if progress:
-            self.count = int(self.total * (progress / 100.0))
+            if self.progress != progress:
+                self.count = self.total * progress // 100
             self._task.setProgress(progress)
         if message:
             self._task.setMessage(message)
+
+    @property
+    def progress(self):
+        """Progress caculated by count and total.  """
+
+        return self.count * 100 // self.total
 
     def step(self, message=None):
         """One step forward.  """
 
         self.count += 1
-        self.set(self.count * 100 // self.total, message)
+        self.set(self.progress, message)
 
     def is_cancelled(self):
         """Return if task is cancelled.  """
