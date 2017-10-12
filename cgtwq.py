@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.13'
+__version__ = '0.4.14'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -140,9 +140,10 @@ class CGTeamWork(object):
         """Add note for current initiated item on cgtw."""
 
         if distinct and self.is_note_existed(note):
-            return
+            return False
 
         self._task_module.create_note(note)
+        return True
 
     def is_note_existed(self, note):
         """Return if note already added.  """
