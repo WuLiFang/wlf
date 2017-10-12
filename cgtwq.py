@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.14'
+__version__ = '0.4.15'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -67,6 +67,9 @@ class CGTeamWork(object):
     database = None
     module = None
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+    SIGNS = {'shot': 'shot.shot',
+             'pipeline': 'shot_task.pipeline'
+             }
 
     def __init__(self):
         super(CGTeamWork, self).__init__()
@@ -234,10 +237,11 @@ class Shots(CGTeamWork):
 class Shot(CGTeamWork):
     """Methods for shot action."""
 
-    def __init__(self, name, database=None):
+    def __init__(self, name, database=None, pipeline=None):
         super(Shot, self).__init__()
 
         self._name = name
+        self._pipeline = pipeline
         if database:
             self._info = proj_info(database=database)
         else:
@@ -284,7 +288,8 @@ class Shot(CGTeamWork):
     @property
     def pipeline(self):
         """The module current using(e.g. 'comp').  """
-        return self._info.get('pipeline')
+
+        return self._pipeline or self._info.get('pipeline')
 
     @property
     def name(self):
