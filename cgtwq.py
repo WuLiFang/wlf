@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.12'
+__version__ = '0.4.13'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -136,13 +136,24 @@ class CGTeamWork(object):
             LOGGER.error(u'提交失败')
         return ret
 
-    def add_note(self, note):
+    def add_note(self, note, distinct=False):
         """Add note for current initiated item on cgtw."""
+
+        if distinct and self.is_note_existed(note):
+            return
 
         self._task_module.create_note(note)
 
+    def is_note_existed(self, note):
+        """Return if note already added.  """
+
+        info = self.task_module.get_note_with_task_id(['text'])
+        notes = [i['text'] for i in info]
+        return note in notes
+
     def login(self, account, password):
         """Log in cgtw with nuke.  """
+
         ret = self._tw.sys().login(account, password)
         return ret
 
