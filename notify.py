@@ -14,7 +14,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.7'
+__version__ = '0.4.8'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -60,7 +60,6 @@ class Progress(object):
 
     def __init__(self, name='', total=None):
         self.total = total or self.total
-        self.count = -1
 
         QtWidgets.QApplication.processEvents()
         if HAS_NUKE:
@@ -99,6 +98,7 @@ class Progress(object):
         """One step forward.  """
 
         self.count += 1
+        message = message or '剩余{}项'.format(int(self.total - self.count))
         self.set(self.progress, message)
 
     def is_cancelled(self):
