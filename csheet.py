@@ -22,7 +22,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.8'
+__version__ = '1.4.9'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -323,9 +323,11 @@ def create_html(images, save_path, title=None):
         os.makedirs(save_dir)
         LOGGER.info('创建目录: %s', save_dir)
     except OSError as ex:
-        if ex.errno == errno.EEXIST:
+        if ex.errno in (errno.EEXIST, errno.EACCES):
             pass
         else:
+            LOGGER.error('Unexcepted exception during makedirs. errno: %s',
+                         ex.errno)
             raise
     with open(get_encoded(save_path), 'w') as f:
         f.write(html_page.encode('UTF-8'))
