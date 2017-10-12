@@ -6,23 +6,23 @@ import logging
 import multiprocessing
 import multiprocessing.dummy
 import sys
+import os
 import traceback
 
-# TODO: Not test yet.
-__verion__ = '0.0.1'
+__verion__ = '0.1.0'
 
 
 class Handler(multiprocessing.dummy.Process):
     """Multiprocessing adapted handler.  """
 
     def __init__(self, handler, args=(), kwargs=None):
-        assert isinstance(handler, logging.Handler)
+        assert issubclass(handler, logging.Handler)
 
         kwargs = kwargs or {}
         self._handler = handler(*args, **kwargs)
         self.queue = multiprocessing.Queue(-1)
 
-        super(Handler, self).__init__(name=handler.get_name())
+        super(Handler, self).__init__(name=handler.get_name(self._handler))
 
         self.daemon = True
         self.start()
@@ -71,3 +71,33 @@ class Handler(multiprocessing.dummy.Process):
         """(override)logging.handler.close  """
 
         self._handler.close()
+
+
+def set_basic_logger():
+    """Basic log setting.  """
+
+    logger = logging.getLogger()
+
+    # Loglevel
+    loglevel = os.getenv('LOGLEVEL', logging.INFO)
+    try:
+        logger.setLevel(int(loglevel))
+    except TypeError:
+        logging.warning(
+            'Can not recognize env:LOGLEVEL %s, expect a int', loglevel)
+
+    # Stream handler
+    handler = Handler(logging.StreamHandler)
+    if logger.getEffectiveLevel() == logging.DEBUG:
+        formatter = logging.Formatter(
+            '%(levelname)-6s[%(asctime)s]:%(filename)s:'
+            '%(lineno)d:%(funcName)s: %(message)s', '%H:%M:%S')
+    else:
+        formatter = logging.Formatter(
+            '%(levelname)-6s[%(asctime)s]:'
+            '%(name)s: %(message)s', '%H:%M:%S')
+
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    logger.debug('Basic logger set finish.')
