@@ -23,6 +23,7 @@
     "mt": {
         "database": "proj_mt",
         "name": "梦塔",
-        "prefix": "MT"
+        "prefix": "MT",
+        "fps": 25
     }
 }
