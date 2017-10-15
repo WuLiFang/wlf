@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.15'
+__version__ = '0.4.16'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -324,7 +324,8 @@ class Shot(CGTeamWork):
     @property
     def artists_list(self):
         """The aritists as a list.  """
-        return self.artist_id.split(',')
+
+        return self.artist_id and self.artist_id.split(',')
 
     @property
     def shot_image(self):
@@ -333,6 +334,7 @@ class Shot(CGTeamWork):
 
     @shot_image.setter
     def shot_image(self, value):
+        LOGGER.debug('set_image:%s', value)
         self.task_module.set_image('shot_task.image', value)
         self.update_info()
 
@@ -356,7 +358,8 @@ class Shot(CGTeamWork):
 
     def check_account(self):
         """Return if shot assined to current account.  """
-        if self.current_account_id() not in self.artists_list:
+
+        if not self.artists_list or self.current_account_id() not in self.artists_list:
             raise AccountError(owner=self.artist,
                                current=self.current_account())
 
