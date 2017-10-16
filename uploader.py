@@ -1,11 +1,13 @@
 # -*- coding=UTF-8 -*-
 """Upload files to server.  """
+from __future__ import print_function, unicode_literals
 
 import os
 import sys
 import threading
 import time
 import webbrowser
+import logging
 
 import wlf.config
 from wlf import cgtwq
@@ -15,8 +17,14 @@ from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_unicode, remove_version, split_version
 from wlf.Qt import QtCompat, QtCore, QtGui, QtWidgets
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
+from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.6.12'
+__version__ = '0.7.0'
+
+LOGGER = logging.getLogger('com.wlf.uploader')
+
+if __name__ == '__main__':
+    set_basic_logger()
 
 
 class Config(wlf.config.Config):
@@ -27,6 +35,7 @@ class Config(wlf.config.Config):
         'SERVER': 'Z:\\',
         'PROJECT': 'SNJYW',
         'FOLDER': 'Comp\\mov',
+        'PIPELINE': '合成',
         'EPISODE': '',
         'SCENE': '',
         'MODE': 1,
@@ -138,6 +147,7 @@ class Dialog(QDialog):
             self.toolBox: 'MODE',
             self.checkBoxSubmit: 'IS_SUBMIT',
             self.checkBoxBurnIn: 'IS_BURN_IN',
+            self.comboBoxPipeline: 'PIPELINE',
         }
         self._file_list_widget = FileListWidget(self.listWidget)
         self._cgtw_dests = {}
@@ -150,7 +160,6 @@ class Dialog(QDialog):
         _recover()
 
     def closeEvent(self, event):
-        """override.  """
         event.accept()
         self.hideEvent(event)
 
@@ -226,6 +235,12 @@ class Dialog(QDialog):
         ret = os.path.normpath(ret)
         return ret
 
+    @property
+    def pipeline(self):
+        """Current working pipeline.  """
+
+        return self.comboBoxPipeline.currentText()
+
     def get_dest(self, filename, refresh=False):
         """Get destination for @filename. """
 
@@ -236,9 +251,16 @@ class Dialog(QDialog):
             ret = self._cgtw_dests.get(filename)
             if not ret or (isinstance(ret, Exception) and refresh):
                 try:
-                    shot = cgtwq.Shot(split_version(filename)[0])
+                    shot = cgtwq.Shot(split_version(filename)[0],
+                                      pipeline=self.pipeline)
                     shot.check_account()
-                    ret = shot.video_dest
+                    ret = shot.submit_dest
+                    if not ret:
+                        raise(ValueError('Cound not get dest.  '))
+                    ret = os.path.join(ret, remove_version(filename))
+                except ValueError as ex:
+                    self.error(u'找不到上传路径, 请联系管理员设置文件夹submit_dest标识')
+                    ret = ex
                 except cgtwq.LoginError as ex:
                     self.error(u'需要登录CGTeamWork')
                     ret = ex
@@ -250,13 +272,15 @@ class Dialog(QDialog):
                         filename, ex.owner or u'<未分配>', ex.current))
                     ret = ex
                 self._cgtw_dests[filename] = ret
+                LOGGER.debug('Found dest: %s', ret)
             return ret
         else:
             raise ValueError('No such mode. {}'.format(mode))
 
     def error(self, message):
         """Show error.  """
-        self.textEdit.append(u'{}\n'.format(message))
+
+        self.textBrowser.append(message)
 
     def mode(self):
         """Upload mode. """
@@ -317,11 +341,16 @@ class Dialog(QDialog):
 
 class FileListWidget(object):
     """Folder viewer.  """
+
     widget = None
     parent = None
     local_files = None
     uploaded_files = None
     burnin_folder = 'burn-in'
+    pipeline_ext = {
+        '合成': ('.mov'),
+        '灯光': ('.jpg', '.png', '.jpeg'),
+    }
 
     def __init__(self, list_widget):
         self.widget = list_widget
@@ -330,7 +359,6 @@ class FileListWidget(object):
         self.local_files = []
         self.uploaded_files = []
         self._brushes = {}
-        self._lock = threading.Lock()
         if HAS_NUKE:
             self._brushes['local'] = QtGui.QBrush(QtGui.QColor(200, 200, 200))
             self._brushes['uploaded'] = QtGui.QBrush(
@@ -347,8 +375,9 @@ class FileListWidget(object):
         self.widget.showEvent = self.showEvent
         self.widget.hideEvent = self.hideEvent
 
-    def __del__(self):
-        self._lock.acquire()
+        self.update_timer = QtCore.QTimer(self.parent)
+        self.update_timer.setInterval(1000)
+        self.update_timer.timeout.connect(self.update)
 
     @property
     def directory(self):
@@ -357,29 +386,17 @@ class FileListWidget(object):
 
     def showEvent(self, event):
 
-        def _run():
-            lock = self._lock
-            while lock.acquire(False):
-                try:
-                    if self.widget.isVisible():
-                        self.update()
-                except RuntimeError:
-                    pass
-                time.sleep(1)
-                lock.release()
-        self.update()
-        thread = threading.Thread(name='ListWidgetUpdate', target=_run)
-        thread.daemon = True
-        thread.start()
         event.accept()
+        self.update_timer.start()
 
     def hideEvent(self, event):
+
         event.accept()
-        self._lock.acquire()
-        self._lock.release()
+        self.update_timer.stop()
 
     def update(self):
         """Update info.  """
+
         self.update_files()
         widget = self.widget
         local_files = self.local_files
@@ -424,8 +441,9 @@ class FileListWidget(object):
 
         if not os.path.isdir(self.directory):
             return
+        ext = self.pipeline_ext[self.parent.pipeline]
         local_files = version_filter(i for i in os.listdir(self.directory)
-                                     if i.endswith('.mov'))
+                                     if i.endswith(ext))
 
         uploaded_files = []
         for i in list(local_files):

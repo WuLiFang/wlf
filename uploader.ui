@@ -332,6 +332,31 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
+             <layout class="QHBoxLayout" name="horizontalLayout_9">
+              <item>
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>流程</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="comboBoxPipeline">
+                <item>
+                 <property name="text">
+                  <string>合成</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>灯光</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
              <widget class="QCheckBox" name="checkBoxSubmit">
               <property name="enabled">
                <bool>true</bool>
@@ -386,7 +411,7 @@
              </layout>
             </item>
             <item>
-             <widget class="QTextEdit" name="textEdit">
+             <widget class="QTextBrowser" name="textBrowser">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -612,8 +637,8 @@
    <slot>trigger()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>445</x>
-     <y>150</y>
+     <x>466</x>
+     <y>187</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
@@ -624,16 +649,16 @@
   <connection>
    <sender>toolButtonClearInfo</sender>
    <signal>clicked()</signal>
-   <receiver>textEdit</receiver>
+   <receiver>textBrowser</receiver>
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>442</x>
-     <y>153</y>
+     <x>443</x>
+     <y>186</y>
     </hint>
     <hint type="destinationlabel">
-     <x>410</x>
-     <y>270</y>
+     <x>417</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
