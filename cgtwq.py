@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.16'
+__version__ = '0.4.17'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -64,12 +64,12 @@ class CGTeamWork(object):
     _tw = None
     _task_module = None
     _sys_module = None
+    _pipeline_module = None
     database = None
     module = None
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
     SIGNS = {'shot': 'shot.shot',
-             'pipeline': 'shot_task.pipeline'
-             }
+             'pipeline': 'shot_task.pipeline'}
 
     def __init__(self):
         super(CGTeamWork, self).__init__()
@@ -90,6 +90,21 @@ class CGTeamWork(object):
         if not self._sys_module:
             self._sys_module = self._tw.sys()
         return self._sys_module
+
+    @property
+    def pipeline_module(self):
+        """CGTeamWork pipeline for further use. """
+
+        if not self._pipeline_module:
+            self._pipeline_module = self._tw.pipeline(self.module)
+        return self._pipeline_module
+
+    @property
+    def all_pipeline(self):
+        """All pipeline name for this module. """
+
+        sign = 'name'
+        return [i[sign] for i in self.pipeline_module.get_with_module(self.module, [sign])]
 
     @staticmethod
     def is_running():
@@ -356,6 +371,17 @@ class Shot(CGTeamWork):
         ret = self._info['workfile_dest_pat'].format(self._info)
         return ret
 
+    @property
+    def submit_dest(self):
+        """Folder path for artist submit.  """
+
+        sign = 'submit'
+        info = self.task_module.get_filebox_with_sign(sign)
+        if info:
+            return info['path']
+        else:
+            raise SignError(sign)
+
     def check_account(self):
         """Return if shot assined to current account.  """
 
@@ -373,6 +399,17 @@ class IDError(Exception):
 
     def __str__(self):
         return 'Can not found item id:{}'.format(self.message)
+
+
+class SignError(Exception):
+    """Indicate can't found matched sign."""
+
+    def __init__(self, *args):
+        Exception.__init__(self)
+        self.message = args
+
+    def __str__(self):
+        return 'Can not found matched sign:{}'.format(self.message)
 
 
 class FolderError(Exception):
