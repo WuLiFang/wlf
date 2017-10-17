@@ -18,7 +18,7 @@ from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.8.0'
+__version__ = '0.8.1'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -49,6 +49,8 @@ CONFIG = Config()
 
 class Dialog(QDialog):
     """Main GUI dialog.  """
+
+    initiated = False
 
     def __init__(self, parent=None):
         def _icon():
@@ -155,15 +157,22 @@ class Dialog(QDialog):
         self.update_timer.timeout.connect(self.update_ui)
 
         _icon()
-        _actions()
-        _edits()
         _recover()
+        _edits()
+        _actions()
 
     def closeEvent(self, event):
         event.accept()
         self.hideEvent(event)
 
     def showEvent(self, event):
+
+        if HAS_NUKE and not Dialog.initiated:
+            Dialog.initiated = True
+            return
+        else:
+            Dialog.initiated = True
+
         event.accept()
         self.update_timer.start()
         self.file_list_widget.showEvent(event)
@@ -381,7 +390,8 @@ class FileListWidget(object):
         return self.parent.directory
 
     def showEvent(self, event):
-
+        if not Dialog.initiated:
+            return
         event.accept()
         self.update_files()
         self.update_timer.start()
