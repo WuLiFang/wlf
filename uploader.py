@@ -4,8 +4,6 @@ from __future__ import print_function, unicode_literals
 
 import os
 import sys
-import threading
-import time
 import webbrowser
 import logging
 
@@ -17,10 +15,10 @@ from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_unicode, remove_version, split_version
 from wlf.Qt import QtCompat, QtCore, QtWidgets
 from wlf.Qt.QtGui import QBrush, QColor
-from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
+from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.7.3'
+__version__ = '0.8.0'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -127,10 +125,9 @@ class Dialog(QDialog):
                 except KeyError as ex:
                     print('wlf.uploader: not found key {} in config'.format(ex))
             if HAS_NUKE:
-                from node import Last
-                if Last.mov_path:
-                    self.directory = get_unicode(
-                        os.path.dirname(Last.mov_path))
+                mov_path = __import__('node').Last.mov_path
+                if mov_path:
+                    self.directory = get_unicode(os.path.dirname(mov_path))
 
         QDialog.__init__(self, parent)
         QtCompat.loadUi(os.path.abspath(
@@ -148,10 +145,14 @@ class Dialog(QDialog):
             self.checkBoxBurnIn: 'IS_BURN_IN',
             self.comboBoxPipeline: 'PIPELINE',
         }
-        self._file_list_widget = FileListWidget(self.listWidget)
-        self._cgtw_dests = {}
-        self._lock = threading.Lock()
+        self.cgtw_dests = {}
+
+        self.file_list_widget = FileListWidget(self.listWidget)
         self.version_label.setText('v{}'.format(__version__))
+
+        self.update_timer = QtCore.QTimer()
+        self.update_timer.setInterval(100)
+        self.update_timer.timeout.connect(self.update_ui)
 
         _icon()
         _actions()
@@ -163,30 +164,20 @@ class Dialog(QDialog):
         self.hideEvent(event)
 
     def showEvent(self, event):
-        def _run():
-            lock = self._lock
-            while lock.acquire(False):
-                self.update_ui()
-                time.sleep(0.1)
-                lock.release()
-        self.update_ui()
-        thread = threading.Thread(name='DialogUpdate', target=_run)
-        thread.daemon = True
-        thread.start()
-        self._file_list_widget.showEvent(event)
         event.accept()
+        self.update_timer.start()
+        self.file_list_widget.showEvent(event)
 
     def hideEvent(self, event):
         event.accept()
-        self._lock.acquire()
-        self._lock.release()
-        self._file_list_widget.hideEvent(event)
+        self.update_timer.stop()
+        self.file_list_widget.hideEvent(event)
 
     def update_ui(self):
         """Update dialog UI content.  """
 
         mode = self.mode()
-        sync_button_enable = any(self._file_list_widget.checked_files)
+        sync_button_enable = any(self.file_list_widget.checked_files)
         sync_button_text = u'上传至CGTeamWork'
         if mode == 0:
             sync_button_enable &= os.path.exists(get_server(self.server))\
@@ -251,7 +242,7 @@ class Dialog(QDialog):
         if mode == 0:
             return os.path.join(self.dest_folder, remove_version(filename))
         elif mode == 1:
-            ret = self._cgtw_dests.get(filename)
+            ret = self.cgtw_dests.get(filename)
             if not ret or (isinstance(ret, Exception) and refresh):
                 try:
                     shot = cgtwq.Shot(split_version(filename)[0],
@@ -271,10 +262,10 @@ class Dialog(QDialog):
                     self.error(u'{}: CGTW上未找到对应镜头'.format(filename))
                     ret = ex
                 except cgtwq.AccountError as ex:
-                    self.error(u'{}\n已被分配给: {}\n当前用户: {}'.format(
+                    self.error(u'#{}\n已被分配给: {}\n当前用户: {}'.format(
                         filename, ex.owner or u'<未分配>', ex.current))
                     ret = ex
-                self._cgtw_dests[filename] = ret
+                self.cgtw_dests[filename] = ret
                 LOGGER.debug('Found dest: %s', ret)
             return ret
         else:
@@ -329,7 +320,7 @@ class Dialog(QDialog):
     @property
     def checked_files(self):
         """Return files checked in listwidget.  """
-        return self._file_list_widget.checked_files
+        return self.file_list_widget.checked_files
 
     def ask_server(self):
         """Show a dialog ask user config['SERVER'].  """
@@ -345,9 +336,6 @@ class Dialog(QDialog):
 class FileListWidget(object):
     """Folder viewer.  """
 
-    widget = None
-    local_files = None
-    uploaded_files = None
     burnin_folder = 'burn-in'
     pipeline_ext = {
         '灯光': ('.jpg', '.png', '.jpeg'),
@@ -356,29 +344,36 @@ class FileListWidget(object):
     }
     if HAS_NUKE:
         brushes = {'local': QBrush(QColor(200, 200, 200)),
-                   'uploaded': QBrush(QColor(100, 100, 100))}
+                   'uploaded': QBrush(QColor(100, 100, 100)),
+                   'error': QBrush(QtCore.Qt.red)}
     else:
         brushes = {'local': QBrush(QtCore.Qt.black),
-                   'uploaded': QBrush(QtCore.Qt.gray)}
+                   'uploaded': QBrush(QtCore.Qt.gray),
+                   'error': QBrush(QtCore.Qt.red)}
+    updating = False
 
     def __init__(self, list_widget):
         self.widget = list_widget
         self.parent = self.widget.parent()
+        self.uploaded_files = set()
+        self.dest_dict = self.parent.cgtw_dests
         assert isinstance(self.parent, Dialog)
-        self.local_files = []
-        self.uploaded_files = []
 
         self.widget.itemDoubleClicked.connect(self.open_file)
         self.parent.actionSelectAll.triggered.connect(self.select_all)
         self.parent.actionReverseSelection.triggered.connect(
             self.reverse_selection)
+        self.parent.actionUpdateFiles.triggered.connect(
+            self.update_files)
+        self.parent.actionClearCache.triggered.connect(
+            self.clear_cache)
 
         self.widget.showEvent = self.showEvent
         self.widget.hideEvent = self.hideEvent
 
         self.update_timer = QtCore.QTimer(self.parent)
         self.update_timer.setInterval(1000)
-        self.update_timer.timeout.connect(self.update)
+        self.update_timer.timeout.connect(self.update_widget)
 
     @property
     def directory(self):
@@ -388,6 +383,7 @@ class FileListWidget(object):
     def showEvent(self, event):
 
         event.accept()
+        self.update_files()
         self.update_timer.start()
 
     def hideEvent(self, event):
@@ -395,28 +391,29 @@ class FileListWidget(object):
         event.accept()
         self.update_timer.stop()
 
-    def update(self):
-        """Update info.  """
+    def update_widget(self):
+        """Update widget.  """
 
-        self.update_files()
+        if self.updating:
+            return
+
         widget = self.widget
         parent = self.parent
         brushes = self.brushes
-        local_files = self.local_files
-        all_files = local_files + self.uploaded_files
+        local_files = self.files
         assert isinstance(parent, Dialog)
 
         # Remove.
         for item in self.items():
             text = item.text()
-            if text not in all_files:
+            if text not in local_files:
                 widget.takeItem(widget.indexFromItem(item).row())
 
             elif item.checkState() \
                     and isinstance(parent.get_dest(text, refresh=True), Exception):
                 item.setCheckState(QtCore.Qt.Unchecked)
 
-        for i in all_files:
+        for i in local_files:
             # Add.
             try:
                 item = widget.findItems(
@@ -425,40 +422,88 @@ class FileListWidget(object):
                 item = QtWidgets.QListWidgetItem(i, widget)
                 item.setCheckState(QtCore.Qt.Unchecked)
             # Set style.
-            if i in local_files:
-                item.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                              QtCore.Qt.ItemIsEnabled)
-                item.setForeground(brushes['local'])
-            else:
+            self.update_file(i)
+            if i in self.uploaded_files:
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 item.setForeground(brushes['uploaded'])
                 item.setCheckState(QtCore.Qt.Unchecked)
+            elif i in self.unexpected_files:
+                item.setFlags(QtCore.Qt.ItemIsUserCheckable |
+                              QtCore.Qt.ItemIsEnabled)
+                item.setForeground(brushes['error'])
+            else:
+                item.setFlags(QtCore.Qt.ItemIsUserCheckable |
+                              QtCore.Qt.ItemIsEnabled)
+                item.setForeground(brushes['local'])
 
         widget.sortItems()
 
         # Count
         parent.labelCount.setText(
-            '{}/{}/{}'.format(len(list(self.checked_files)), len(local_files), len(all_files)))
+            '{}/{}/{}'.format(
+                len(list(self.checked_files)),
+                len(local_files) - len(self.uploaded_files),
+                len(local_files)))
+
+    def clear_cache(self):
+        """Clear destination cache."""
+
+        self.uploaded_files.clear()
+        self.parent.cgtw_dests.clear()
+        self.update_files()
 
     def update_files(self):
-        """Update local_files and uploaded_files.  """
+        """Check if files is uploaded.  """
 
-        if not os.path.isdir(self.directory):
+        if self.updating:
             return
+        self.updating = True
+
+        files = self.files
+        task = Progress('获取文件状态', total=len(files))
+        try:
+            for i in files:
+                task.step(i)
+                self.update_file(i)
+        except CancelledError:
+            if QMessageBox.question(self.parent,
+                                    '正在获取信息',
+                                    '退出?',
+                                    QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Ok:
+                QApplication.exit()
+
+        self.updating = False
+        self.update_widget()
+
+    def update_file(self, filename):
+        """Check file state.  """
+
+        uploaded_files = self.uploaded_files
+        src = os.path.join(self.directory, filename)
+        dst = self.parent.get_dest(filename)
+        if isinstance(dst, (str, unicode)) and is_same(src, dst):
+            uploaded_files.add(filename)
+        else:
+            uploaded_files.difference_update([filename])
+
+    @property
+    def files(self):
+        """Files in directory with matched extension.  """
+
+        directory = self.directory
         ext = self.pipeline_ext[self.parent.pipeline]
-        local_files = version_filter(i for i in os.listdir(self.directory)
-                                     if i.endswith(ext))
+        ret = []
 
-        uploaded_files = []
-        for i in list(local_files):
-            src = os.path.join(self.directory, i)
-            dst = self.parent.get_dest(i)
-            if isinstance(dst, (str, unicode)) and is_same(src, dst):
-                local_files.remove(i)
-                uploaded_files.append(i)
+        if os.path.isdir(directory):
+            ret = version_filter(i for i in os.listdir(directory)
+                                 if i.endswith(ext))
+        return ret
 
-        self.uploaded_files = uploaded_files
-        self.local_files = local_files
+    @property
+    def unexpected_files(self):
+        """Files that can not get destination.  """
+
+        return [k for k, v in self.dest_dict.items() if not v or isinstance(v, Exception)]
 
     @property
     def checked_files(self):
@@ -491,9 +536,22 @@ class FileListWidget(object):
 
     def select_all(self):
         """Select all item in list widget.  """
+
+        files = [i for i in self.files if i not in self.uploaded_files.union(
+            self.unexpected_files)]
+        refresh = False
+        if not files:
+            files = [i for i in self.files if i not in self.uploaded_files]
+            refresh = True
+
+        if not files:
+            return
+
         for item in self.items():
-            if item.text() not in self.uploaded_files:
+            if item.text() in files:
                 item.setCheckState(QtCore.Qt.Checked)
+        if refresh:
+            self.clear_cache()
 
     def reverse_selection(self):
         """Select all item in list widget.  """

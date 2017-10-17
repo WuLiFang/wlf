@@ -510,6 +510,16 @@
     <string>reverseSelection</string>
    </property>
   </action>
+  <action name="actionUpdateFiles">
+   <property name="text">
+    <string>updateFiles</string>
+   </property>
+  </action>
+  <action name="actionClearCache">
+   <property name="text">
+    <string>clearCache</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
@@ -638,6 +648,38 @@
     <hint type="destinationlabel">
      <x>417</x>
      <y>254</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>comboBoxPipeline</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>actionClearCache</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>423</x>
+     <y>119</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>dirEdit</sender>
+   <signal>editingFinished()</signal>
+   <receiver>actionUpdateFiles</receiver>
+   <slot>trigger()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>272</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>-1</y>
     </hint>
    </hints>
   </connection>
