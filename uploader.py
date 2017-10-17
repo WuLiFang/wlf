@@ -19,7 +19,7 @@ from wlf.Qt import QtCompat, QtCore, QtGui, QtWidgets
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.7.2'
+__version__ = '0.7.3'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -208,16 +208,16 @@ class Dialog(QDialog):
                 task.step(i)
                 src = os.path.join(self.directory, i)
                 dst = self.get_dest(i)
+                shot_name = split_version(os.path.basename(dst))[0]
                 if isinstance(dst, Exception):
                     self.error(u'{}\n-> {}'.format(i, dst))
                     continue
                 copy(src, dst)
                 if src.endswith(('.jpg', '.png', '.jpeg')):
-                    shot_name = split_version(os.path.basename(dst))[0]
                     shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
                     shot.shot_image = dst
                 if self.is_submit and self.mode() == 1:
-                    cgtwq.Shot(split_version(i)[0]).submit(
+                    cgtwq.Shot(shot_name, pipeline=self.pipeline).submit(
                         [dst], note='自上传工具提交')
 
         except CancelledError:
