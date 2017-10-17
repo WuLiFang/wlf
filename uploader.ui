@@ -344,12 +344,17 @@
                <widget class="QComboBox" name="comboBoxPipeline">
                 <item>
                  <property name="text">
-                  <string>合成</string>
+                  <string>灯光</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>灯光</string>
+                  <string>渲染</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>合成</string>
                  </property>
                 </item>
                </widget>

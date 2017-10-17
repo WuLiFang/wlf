@@ -19,7 +19,7 @@ from wlf.Qt import QtCompat, QtCore, QtGui, QtWidgets
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -352,8 +352,9 @@ class FileListWidget(object):
     uploaded_files = None
     burnin_folder = 'burn-in'
     pipeline_ext = {
-        '合成': ('.mov'),
         '灯光': ('.jpg', '.png', '.jpeg'),
+        '渲染': ('.mov'),
+        '合成': ('.mov'),
     }
 
     def __init__(self, list_widget):
