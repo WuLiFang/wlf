@@ -31,7 +31,7 @@ class Config(wlf.config.Config):
     """A disk config can be manipulated like a dict."""
 
     default = {
-        'DIR': 'N:/',
+        'DIR': 'E:/',
         'SERVER': 'Z:\\',
         'PROJECT': 'SNJYW',
         'FOLDER': 'Comp\\mov',
