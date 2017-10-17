@@ -33,11 +33,15 @@ class ProgressBar(QtWidgets.QDialog):
 
     def setProgress(self, value):
         """Set progress value.  """
+
         self.progressBar.setValue(value)
+        QtWidgets.QApplication.processEvents()
 
     def setMessage(self, message):
         """Set progress message.  """
+
         self.setWindowTitle(u'{}:{}'.format(self.name, message))
+        QtWidgets.QApplication.processEvents()
 
     def isCancelled(self):
         """Return if cancel button been pressed.  """
@@ -61,7 +65,6 @@ class Progress(object):
     def __init__(self, name='', total=None):
         self.total = total or self.total
 
-        QtWidgets.QApplication.processEvents()
         if HAS_NUKE:
             self._task = nuke.ProgressTask(name)
         else:
@@ -74,9 +77,6 @@ class Progress(object):
 
     def set(self, progress=None, message=None):
         """Set progress number and message"""
-
-        if not HAS_NUKE:
-            QtWidgets.QApplication.processEvents()
 
         if self.is_cancelled():
             raise CancelledError
