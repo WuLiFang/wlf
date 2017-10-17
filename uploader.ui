@@ -490,11 +490,6 @@
     <string>dir</string>
    </property>
   </action>
-  <action name="actionUpdateUI">
-   <property name="text">
-    <string>updateUI</string>
-   </property>
-  </action>
   <action name="actionOpenDir">
    <property name="text">
     <string>openDir</string>
@@ -513,11 +508,6 @@
   <action name="actionReverseSelection">
    <property name="text">
     <string>reverseSelection</string>
-   </property>
-  </action>
-  <action name="actionClearInfo">
-   <property name="text">
-    <string>clearInfo</string>
    </property>
   </action>
  </widget>
@@ -628,22 +618,6 @@
     <hint type="sourcelabel">
      <x>236</x>
      <y>438</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>toolButtonClearInfo</sender>
-   <signal>clicked()</signal>
-   <receiver>actionClearInfo</receiver>
-   <slot>trigger()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>466</x>
-     <y>187</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>

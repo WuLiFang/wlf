@@ -15,7 +15,8 @@ from wlf.decorators import run_async
 from wlf.files import copy, is_same, version_filter
 from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_unicode, remove_version, split_version
-from wlf.Qt import QtCompat, QtCore, QtGui, QtWidgets
+from wlf.Qt import QtCompat, QtCore, QtWidgets
+from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
 from wlf.mp_logging import set_basic_logger
 
@@ -45,14 +46,13 @@ class Config(wlf.config.Config):
     path = os.path.expanduser('~/.wlf.uploader.json')
 
 
+CONFIG = Config()
+
+
 class Dialog(QDialog):
     """Main GUI dialog.  """
-    is_check_account = True
-    _config = Config()
 
     def __init__(self, parent=None):
-        self._uploaded_files = []
-
         def _icon():
             _stdicon = self.style().standardIcon
 
@@ -72,15 +72,14 @@ class Dialog(QDialog):
             self.actionDir.triggered.connect(self.ask_dir)
             self.actionSync.triggered.connect(self.upload)
             self.actionServer.triggered.connect(self.ask_server)
-            self.actionUpdateUI.triggered.connect(self.update_ui)
             self.actionOpenDir.triggered.connect(
-                lambda: webbrowser.open(self._config['DIR']))
+                lambda: webbrowser.open(CONFIG['DIR']))
             self.actionOpenServer.triggered.connect(
-                lambda: webbrowser.open(self._config['SERVER']))
+                lambda: webbrowser.open(CONFIG['SERVER']))
 
         def _edits():
             def _set_config(k, v):
-                self._config[k] = v
+                CONFIG[k] = v
 
             for edit, key in self.edits_key.items():
                 if isinstance(edit, QtWidgets.QLineEdit):
@@ -115,16 +114,16 @@ class Dialog(QDialog):
             for qt_edit, k in self.edits_key.items():
                 try:
                     if isinstance(qt_edit, QtWidgets.QLineEdit):
-                        qt_edit.setText(self._config[k])
+                        qt_edit.setText(CONFIG[k])
                     elif isinstance(qt_edit, QtWidgets.QCheckBox):
                         qt_edit.setCheckState(
-                            QtCore.Qt.CheckState(self._config[k])
+                            QtCore.Qt.CheckState(CONFIG[k])
                         )
                     elif isinstance(qt_edit, QtWidgets.QComboBox):
                         qt_edit.setCurrentIndex(
-                            qt_edit.findText(self._config[k]))
+                            qt_edit.findText(CONFIG[k]))
                     elif isinstance(qt_edit, QtWidgets.QToolBox):
-                        qt_edit.setCurrentIndex(self._config[k])
+                        qt_edit.setCurrentIndex(CONFIG[k])
                 except KeyError as ex:
                     print('wlf.uploader: not found key {} in config'.format(ex))
             if HAS_NUKE:
@@ -312,15 +311,15 @@ class Dialog(QDialog):
         return self.projectEdit.text()
 
     def ask_dir(self):
-        """Show a dialog ask user self._config['DIR'].  """
+        """Show a dialog ask user CONFIG['DIR'].  """
 
         file_dialog = QFileDialog()
         _dir = file_dialog.getExistingDirectory(
-            dir=os.path.dirname(self._config['DIR'])
+            dir=os.path.dirname(CONFIG['DIR'])
         )
         if _dir:
             self.directory = _dir
-            self._config['DIR'] = _dir
+            CONFIG['DIR'] = _dir
 
     @property
     def is_submit(self):
@@ -337,7 +336,7 @@ class Dialog(QDialog):
 
         file_dialog = QFileDialog()
         dir_ = file_dialog.getExistingDirectory(
-            dir_=os.path.dirname(self._config['SERVER'])
+            dir_=os.path.dirname(CONFIG['SERVER'])
         )
         if dir_:
             self.serverEdit.setText(dir_)
@@ -347,7 +346,6 @@ class FileListWidget(object):
     """Folder viewer.  """
 
     widget = None
-    parent = None
     local_files = None
     uploaded_files = None
     burnin_folder = 'burn-in'
@@ -356,6 +354,12 @@ class FileListWidget(object):
         '渲染': ('.mov'),
         '合成': ('.mov'),
     }
+    if HAS_NUKE:
+        brushes = {'local': QBrush(QColor(200, 200, 200)),
+                   'uploaded': QBrush(QColor(100, 100, 100))}
+    else:
+        brushes = {'local': QBrush(QtCore.Qt.black),
+                   'uploaded': QBrush(QtCore.Qt.gray)}
 
     def __init__(self, list_widget):
         self.widget = list_widget
@@ -363,14 +367,6 @@ class FileListWidget(object):
         assert isinstance(self.parent, Dialog)
         self.local_files = []
         self.uploaded_files = []
-        self._brushes = {}
-        if HAS_NUKE:
-            self._brushes['local'] = QtGui.QBrush(QtGui.QColor(200, 200, 200))
-            self._brushes['uploaded'] = QtGui.QBrush(
-                QtGui.QColor(100, 100, 100))
-        else:
-            self._brushes['local'] = QtGui.QBrush(QtCore.Qt.black)
-            self._brushes['uploaded'] = QtGui.QBrush(QtCore.Qt.gray)
 
         self.widget.itemDoubleClicked.connect(self.open_file)
         self.parent.actionSelectAll.triggered.connect(self.select_all)
@@ -404,8 +400,11 @@ class FileListWidget(object):
 
         self.update_files()
         widget = self.widget
+        parent = self.parent
+        brushes = self.brushes
         local_files = self.local_files
         all_files = local_files + self.uploaded_files
+        assert isinstance(parent, Dialog)
 
         # Remove.
         for item in self.items():
@@ -414,13 +413,13 @@ class FileListWidget(object):
                 widget.takeItem(widget.indexFromItem(item).row())
 
             elif item.checkState() \
-                    and isinstance(self.parent.get_dest(text, refresh=True), Exception):
+                    and isinstance(parent.get_dest(text, refresh=True), Exception):
                 item.setCheckState(QtCore.Qt.Unchecked)
 
         for i in all_files:
             # Add.
             try:
-                item = self.widget.findItems(
+                item = widget.findItems(
                     i, QtCore.Qt.MatchExactly)[0]
             except IndexError:
                 item = QtWidgets.QListWidgetItem(i, widget)
@@ -429,16 +428,16 @@ class FileListWidget(object):
             if i in local_files:
                 item.setFlags(QtCore.Qt.ItemIsUserCheckable |
                               QtCore.Qt.ItemIsEnabled)
-                item.setForeground(self._brushes['local'])
+                item.setForeground(brushes['local'])
             else:
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
-                item.setForeground(self._brushes['uploaded'])
+                item.setForeground(brushes['uploaded'])
                 item.setCheckState(QtCore.Qt.Unchecked)
 
         widget.sortItems()
 
         # Count
-        self.parent.labelCount.setText(
+        parent.labelCount.setText(
             '{}/{}/{}'.format(len(list(self.checked_files)), len(local_files), len(all_files)))
 
     def update_files(self):
