@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.17'
+__version__ = '0.4.18'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -263,7 +263,7 @@ class Shot(CGTeamWork):
             self._info = proj_info(name)
 
         id_list = self.task_module.get_with_filter(
-            [], [['shot.shot', '=', self.name], ['shot_task.pipeline', '=', self.pipeline]])
+            [], [['shot.shot', '=', self.name], 'and', ['shot_task.pipeline', '=', self.pipeline]])
         if not id_list:
             raise IDError(self.database, self.module,
                           self.pipeline, self.name)
