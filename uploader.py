@@ -50,7 +50,7 @@ CONFIG = Config()
 class Dialog(QDialog):
     """Main GUI dialog.  """
 
-    initiated = False
+    initiated = not HAS_NUKE
 
     def __init__(self, parent=None):
         def _icon():
@@ -167,12 +167,10 @@ class Dialog(QDialog):
 
     def showEvent(self, event):
 
-        if HAS_NUKE and not Dialog.initiated:
+        if not Dialog.initiated:
             Dialog.initiated = True
             return
-        else:
-            Dialog.initiated = True
-
+        
         event.accept()
         self.update_timer.start()
         self.file_list_widget.showEvent(event)
