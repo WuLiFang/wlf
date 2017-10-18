@@ -164,11 +164,13 @@ class Dialog(QDialog):
         self.hideEvent(event)
 
     def showEvent(self, event):
+        LOGGER.debug('Uploader show event triggered.')
         event.accept()
         self.update_timer.start()
         self.file_list_widget.showEvent(event)
 
     def hideEvent(self, event):
+        LOGGER.debug('Uploader hide event triggered.')
         event.accept()
         self.update_timer.stop()
         self.file_list_widget.hideEvent(event)
