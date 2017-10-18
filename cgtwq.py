@@ -16,7 +16,7 @@ from subprocess import Popen, PIPE
 from wlf.path import get_encoded
 from wlf.notify import Progress
 
-__version__ = '0.4.18'
+__version__ = '0.4.19'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -381,6 +381,26 @@ class Shot(CGTeamWork):
             return info['path']
         else:
             raise SignError(sign)
+
+    def upstream_videos(self):
+        """Upstream videos for reference.  """
+
+        upstream_signs = {
+            'animation': 'animation_videos'
+        }
+        ret = {}
+        for pipeline, sign in upstream_signs.items():
+            info = self.task_module.get_filebox_with_sign(sign)
+            if info:
+                video_dir = info['path']
+                videos = [i for i in os.listdir(
+                    video_dir) if i.startswith(self.name)]
+                if len(videos) == 1:
+                    ret[pipeline] = os.path.join(video_dir, videos[0])
+                else:
+                    LOGGER.warning('Can not specify video: %s@%s',
+                                   self.name, pipeline)
+        return ret
 
     def check_account(self):
         """Return if shot assined to current account.  """
