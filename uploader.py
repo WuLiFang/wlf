@@ -50,8 +50,6 @@ CONFIG = Config()
 class Dialog(QDialog):
     """Main GUI dialog.  """
 
-    initiated = not HAS_NUKE
-
     def __init__(self, parent=None):
         def _icon():
             _stdicon = self.style().standardIcon
@@ -166,11 +164,6 @@ class Dialog(QDialog):
         self.hideEvent(event)
 
     def showEvent(self, event):
-
-        if not Dialog.initiated:
-            Dialog.initiated = True
-            return
-        
         event.accept()
         self.update_timer.start()
         self.file_list_widget.showEvent(event)
@@ -388,8 +381,6 @@ class FileListWidget(object):
         return self.parent.directory
 
     def showEvent(self, event):
-        if not Dialog.initiated:
-            return
         event.accept()
         self.update_files()
         self.update_timer.start()
