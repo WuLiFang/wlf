@@ -3,18 +3,18 @@
 
 should compatible by any cgteamwork bounded python executable.
 """
-from __future__ import unicode_literals, print_function
+from __future__ import print_function, unicode_literals
 
-import os
-import sys
-import json
 import datetime
+import json
 import logging
+import os
+import re
+import sys
+from subprocess import PIPE, Popen
 
-from subprocess import Popen, PIPE
-
-from wlf.path import get_encoded
 from wlf.notify import Progress
+from wlf.path import get_encoded
 
 __version__ = '0.4.19'
 
@@ -389,12 +389,13 @@ class Shot(CGTeamWork):
             'animation': 'animation_videos'
         }
         ret = {}
+        pat = re.compile(r'{}\b'.format(self.name), re.I)
         for pipeline, sign in upstream_signs.items():
             info = self.task_module.get_filebox_with_sign(sign)
             if info:
                 video_dir = info['path']
                 videos = [i for i in os.listdir(
-                    video_dir) if i.startswith(self.name)]
+                    video_dir) if re.match(pat, i)]
                 if len(videos) == 1:
                     ret[pipeline] = os.path.join(video_dir, videos[0])
                 else:
