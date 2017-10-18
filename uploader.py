@@ -18,7 +18,7 @@ from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.8.1'
+__version__ = '0.8.2'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -212,7 +212,7 @@ class Dialog(QDialog):
                     self.error(u'{}\n-> {}'.format(i, dst))
                     continue
                 copy(src, dst)
-                if src.endswith(('.jpg', '.png', '.jpeg')):
+                if src.lower().endswith(('.jpg', '.png', '.jpeg')):
                     shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
                     shot.shot_image = dst
                 if self.is_submit and self.mode() == 1:
@@ -506,7 +506,7 @@ class FileListWidget(object):
 
         if os.path.isdir(directory):
             ret = version_filter(i for i in os.listdir(directory)
-                                 if i.endswith(ext))
+                                 if i.lower().endswith(ext))
         return ret
 
     @property
