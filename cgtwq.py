@@ -12,11 +12,12 @@ import os
 import re
 import sys
 from subprocess import PIPE, Popen
+from functools import wraps
 
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.19'
+__version__ = '0.4.20'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -76,12 +77,38 @@ class CGTeamWork(object):
         if not CGTeamWork._tw:
             CGTeamWork._tw = cgtw.tw()
 
+    def reset(self):
+        """Reset connection.  """
+
+        LOGGER.debug('Reset connection.')
+        CGTeamWork._tw = cgtw.tw()
+        self._task_module = None
+        self._sys_module = None
+        self._pipeline_module = None
+
+    def try_reset(self, func):
+        """(Decorator)Try reset connection once if @func fail. """
+
+        @wraps(func)
+        def _func(*args, **kwargs):
+            ret = func(*args, **kwargs)
+            if ret is False:
+                self.reset()
+                ret = func(*args, **kwargs)
+            return ret
+        return func
+
     @property
     def task_module(self):
         """CGTeamWork task module for further use. """
+
         if not self._task_module:
-            self._task_module = self._tw.task_module(
-                self.database, self.module)
+            module = self._tw.task_module(self.database, self.module)
+            for func in ('init_with_id', 'init_with_filter'):
+                setattr(module,
+                        func,
+                        self.try_reset(getattr(module, func)))
+            self._task_module = module
         return self._task_module
 
     @property
