@@ -1,5 +1,7 @@
 # -*- coding=UTF-8 -*-
 """Show notify to user.  """
+from __future__ import print_function, unicode_literals
+
 import os
 import sys
 import multiprocessing
@@ -14,7 +16,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.8'
+__version__ = '0.4.9'
 
 
 class ProgressBar(QtWidgets.QDialog):
