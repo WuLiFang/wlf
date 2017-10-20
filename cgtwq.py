@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.20'
+__version__ = '0.4.21'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -66,6 +66,7 @@ class CGTeamWork(object):
     _task_module = None
     _sys_module = None
     _pipeline_module = None
+    _history_module = None
     database = None
     module = None
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -125,6 +126,14 @@ class CGTeamWork(object):
         if not self._pipeline_module:
             self._pipeline_module = self._tw.pipeline(self.module)
         return self._pipeline_module
+
+    @property
+    def history_module(self):
+        """CGTeamWork pipeline for further use. """
+
+        if not self._history_module:
+            self._history_module = self._tw.history(self.database, self.module)
+        return self._history_module
 
     @property
     def all_pipeline(self):
