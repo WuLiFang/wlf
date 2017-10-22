@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.21'
+__version__ = '0.4.22'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -170,6 +170,14 @@ class CGTeamWork(object):
             LOGGER.debug('CGTeamWork连接正常')
         else:
             LOGGER.warning('CGTeamWork未连接')
+        return ret
+
+    @property
+    def signs(self):
+        """Field sign dict depends on current module.  """
+
+        ret = CGTeamWork.SIGNS
+        ret['name'] = 'shot.shot' if self.module == 'shot_task' else 'asset.cn_name'
         return ret
 
     def current_account(self):
