@@ -1,8 +1,14 @@
 # -*- coding=UTF-8 -*-
 """Data table"""
-
 from __future__ import print_function, unicode_literals
+
+import logging
+
 from openpyxl import Workbook
+
+LOGGER = logging.getLogger('com.wlf.table')
+
+__version__ = '0.1.0'
 
 
 class RowTable(object):
@@ -38,3 +44,4 @@ class RowTable(object):
             sheet_row = [row.get(i) for i in self.header]
             sheet.append(sheet_row)
         book.save(filename)
+        LOGGER.info('导出表格: %s', filename)
