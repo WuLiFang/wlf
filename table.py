@@ -6,9 +6,10 @@ import logging
 
 from openpyxl import Workbook
 
-LOGGER = logging.getLogger('com.wlf.table')
+from wlf.notify import Progress
 
-__version__ = '0.1.0'
+LOGGER = logging.getLogger('com.wlf.table')
+__version__ = '0.1.1'
 
 
 class RowTable(object):
@@ -39,9 +40,12 @@ class RowTable(object):
 
         book = Workbook(write_only=True)
         sheet = book.create_sheet()
+        task = Progress('导出表格 {}'.format(filename), total=len(self.rows))
+
         sheet.append(self.header)
         for row in self.rows:
             sheet_row = [row.get(i) for i in self.header]
             sheet.append(sheet_row)
+            task.step()
         book.save(filename)
         LOGGER.info('导出表格: %s', filename)
