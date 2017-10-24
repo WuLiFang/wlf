@@ -16,7 +16,7 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.9'
+__version__ = '0.4.10'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -61,7 +61,7 @@ class ProgressBar(QtWidgets.QDialog):
 
 class Progress(object):
     """A progressbar compatible with or without nuke imported."""
-    count = 0
+    count = -1
     total = 100
 
     def __init__(self, name='', total=None):

@@ -197,6 +197,7 @@ class Dialog(QDialog):
             files = list(self.checked_files)
             task = Progress(total=len(files))
             for i in files:
+                task.step(i)
                 src = os.path.join(self.directory, i)
                 dst = self.get_dest(i)
                 shot_name = split_version(os.path.basename(dst))[0]
@@ -210,7 +211,6 @@ class Dialog(QDialog):
                 if self.is_submit and self.mode() == 1:
                     cgtwq.Shot(shot_name, pipeline=self.pipeline).submit(
                         [dst], note='自上传工具提交')
-                task.step(i)
 
         except CancelledError:
             pass
