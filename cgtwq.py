@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.22'
+__version__ = '0.4.23'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -94,10 +94,13 @@ class CGTeamWork(object):
         def _func(*args, **kwargs):
             ret = func(*args, **kwargs)
             if ret is False:
+                LOGGER.warning('%s fail, reset connection', func)
                 self.reset()
                 ret = func(*args, **kwargs)
+            if ret is False:
+                raise IDError(args, kwargs)
             return ret
-        return func
+        return _func
 
     @property
     def task_module(self):
@@ -177,7 +180,17 @@ class CGTeamWork(object):
         """Field sign dict depends on current module.  """
 
         ret = CGTeamWork.SIGNS
-        ret['name'] = 'shot.shot' if self.module == 'shot_task' else 'asset.cn_name'
+        if self.module == 'shot_task':
+            signs = {
+                'name': 'shot.shot',
+                'artist': 'shot_task.artist',
+            }
+        else:
+            signs = {
+                'name': 'asset.cn_name',
+                'artist': 'asset_task.artist',
+            }
+        ret.update(signs)
         return ret
 
     def current_account(self):
