@@ -4,7 +4,7 @@
 import os
 import json
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 class Config(dict):
@@ -27,6 +27,7 @@ class Config(dict):
         return json.dumps(self)
 
     def __setitem__(self, key, value):
+        self.read()
         dict.__setitem__(self, key, value)
         self.write()
 
