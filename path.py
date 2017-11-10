@@ -1,6 +1,8 @@
 # -*- coding=UTF-8 -*-
 """pathname manipulations. """
 
+from __future__ import print_function, unicode_literals
+
 import os
 import re
 import json
@@ -8,7 +10,7 @@ import locale
 import string
 import logging
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
