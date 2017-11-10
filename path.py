@@ -6,8 +6,9 @@ import re
 import json
 import locale
 import string
+import logging
 
-__version__ = '0.1.2'
+__version__ = '0.1.3'
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
@@ -16,6 +17,8 @@ with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     DEFAULT_TAG = _TAGS['default']
     TAG_PATTERN = _TAGS['pattern']
 del _TAGS, _f
+
+LOGGER = logging.getLogger('com.wlf.path')
 
 
 def expand_frame(filename, frame):
@@ -185,12 +188,12 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
         tag_pat = re.compile(testing_pat, flags=re.I)
         for test_string in\
                 (os.path.basename(os.path.dirname(filename)), os.path.basename(filename)):
-            ret = re.match(tag_pat, test_string)
-            if ret and ret.group(1):
-                ret = ret.group(1).strip('_').upper()
+            match = re.match(tag_pat, test_string)
+            if match and match.group(1):
+                ret = match.group(1).strip('_').upper()
+                if ret not in REGULAR_TAGS:
+                    LOGGER.warning('不规范标签: %s: %s', ret, filename)
                 break
-            else:
-                ret = None
         if ret:
             break
     else:
