@@ -3,32 +3,24 @@
 
 from __future__ import print_function, unicode_literals
 
-import os
-import sys
-import webbrowser
 import logging
+import os
+import webbrowser
 
 import wlf.config
 from wlf import cgtwq
 from wlf.decorators import run_async
 from wlf.files import copy, is_same, version_filter
 from wlf.notify import HAS_NUKE, CancelledError, Progress
-from wlf.path import get_server, get_unicode, remove_version, get_shot
-from wlf.Qt import QtCompat, QtCore, QtWidgets
+from wlf.path import get_server, get_shot, get_unicode, remove_version
+from wlf.Qt import QtCore, QtWidgets
 from wlf.Qt.QtGui import QBrush, QColor
-from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
-from wlf.mp_logging import set_basic_logger
+from wlf.Qt.QtWidgets import QFileDialog
+from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.9.0'
+__version__ = '0.9.1'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
-
-if __name__ == '__main__':
-    set_basic_logger()
-
-if sys.getdefaultencoding() != 'UTF-8':
-    reload(sys)
-    sys.setdefaultencoding('UTF-8')
 
 
 class Config(wlf.config.Config):
@@ -52,128 +44,66 @@ class Config(wlf.config.Config):
 CONFIG = Config()
 
 
-class Dialog(QDialog):
+class Dialog(DialogWithDir):
     """Main GUI dialog.  """
 
     default_note = '自上传工具提交'
 
     def __init__(self, parent=None):
-        def _icon():
-            _stdicon = self.style().standardIcon
 
-            _icon = _stdicon(QtWidgets.QStyle.SP_DirOpenIcon)
-            self.toolButtonOpenDir.setIcon(_icon)
-            self.toolButtonOpenServer.setIcon(_icon)
-
-            _icon = _stdicon(QtWidgets.QStyle.SP_DialogOpenButton)
-            self.dirButton.setIcon(_icon)
-            self.serverButton.setIcon(_icon)
-
-            _icon = _stdicon(QtWidgets.QStyle.SP_FileDialogToParent)
-            self.syncButton.setIcon(_icon)
-            self.setWindowIcon(_icon)
-
-        def _actions():
-            self.actionDir.triggered.connect(self.ask_dir)
-            self.actionSync.triggered.connect(self.upload)
-            self.actionServer.triggered.connect(self.ask_server)
-            self.actionOpenDir.triggered.connect(
-                lambda: webbrowser.open(CONFIG['DIR']))
-            self.actionOpenServer.triggered.connect(
-                lambda: webbrowser.open(CONFIG['SERVER']))
-
-        def _edits():
-            def _set_config(k, v):
-                CONFIG[k] = v
-
-            for edit, key in self.edits_key.items():
-                if isinstance(edit, QtWidgets.QLineEdit):
-                    edit.editingFinished.connect(
-                        lambda e=edit, k=key: _set_config(k, e.text())
-                    )
-                    edit.editingFinished.connect(self.update_ui)
-                elif isinstance(edit, QtWidgets.QCheckBox):
-                    edit.stateChanged.connect(
-                        lambda state, k=key: _set_config(k, state)
-                    )
-                    edit.stateChanged.connect(self.update_ui)
-                elif isinstance(edit, QtWidgets.QComboBox):
-                    edit.currentIndexChanged.connect(
-                        lambda index, ex=edit, k=key: _set_config(
-                            k,
-                            ex.itemText(index)
-                        )
-                    )
-                elif isinstance(edit, (QtWidgets.QToolBox, QtWidgets.QTabWidget)):
-                    edit.currentChanged.connect(
-                        lambda index, ex=edit, k=key: _set_config(
-                            k,
-                            index
-                        )
-                    )
-                    edit.currentChanged.connect(self.update_ui)
-                else:
-                    print(u'待处理的控件: {} {}'.format(type(edit), edit))
-
-        def _recover():
-            for qt_edit, k in self.edits_key.items():
-                try:
-                    if isinstance(qt_edit, QtWidgets.QLineEdit):
-                        qt_edit.setText(CONFIG[k])
-                    elif isinstance(qt_edit, QtWidgets.QCheckBox):
-                        qt_edit.setCheckState(
-                            QtCore.Qt.CheckState(CONFIG[k])
-                        )
-                    elif isinstance(qt_edit, QtWidgets.QComboBox):
-                        qt_edit.setCurrentIndex(
-                            qt_edit.findText(CONFIG[k]))
-                    elif isinstance(qt_edit, (QtWidgets.QToolBox, QtWidgets.QTabWidget)):
-                        qt_edit.setCurrentIndex(CONFIG[k])
-                except KeyError as ex:
-                    print('wlf.uploader: not found key {} in config'.format(ex))
-            if HAS_NUKE:
-                mov_path = __import__('node').Last.mov_path
-                if mov_path:
-                    self.directory = get_unicode(os.path.dirname(mov_path))
-
-        QDialog.__init__(self, parent)
-        QtCompat.loadUi(os.path.abspath(
-            os.path.join(__file__, '../uploader.ui')), self)
-
-        self.edits_key = {
-            self.serverEdit: 'SERVER',
-            self.folderEdit: 'FOLDER',
-            self.dirEdit: 'DIR',
-            self.projectEdit: 'PROJECT',
-            self.epEdit: 'EPISODE',
-            self.scEdit: 'SCENE',
-            self.tabWidget: 'MODE',
-            self.checkBoxSubmit: 'IS_SUBMIT',
-            self.checkBoxBurnIn: 'IS_BURN_IN',
-            self.comboBoxPipeline: 'PIPELINE',
+        edits_key = {
+            'serverEdit': 'SERVER',
+            'folderEdit': 'FOLDER',
+            'dirEdit': 'DIR',
+            'projectEdit': 'PROJECT',
+            'epEdit': 'EPISODE',
+            'scEdit': 'SCENE',
+            'tabWidget': 'MODE',
+            'checkBoxSubmit': 'IS_SUBMIT',
+            'checkBoxBurnIn': 'IS_BURN_IN',
+            'comboBoxPipeline': 'PIPELINE',
         }
-
+        icons = {
+            'toolButtonOpenDir': QtWidgets.QStyle.SP_DirOpenIcon,
+            'toolButtonOpenServer': QtWidgets.QStyle.SP_DirOpenIcon,
+            'dirButton': QtWidgets.QStyle.SP_DialogOpenButton,
+            'serverButton': QtWidgets.QStyle.SP_DialogOpenButton,
+            'syncButton': QtWidgets.QStyle.SP_FileDialogToParent,
+            None: QtWidgets.QStyle.SP_FileDialogToParent,
+        }
+        DialogWithDir.__init__(
+            self,
+            '../uploader.ui',
+            config=CONFIG,
+            icons=icons,
+            parent=parent,
+            edits_key=edits_key,
+            dir_edit='dirEdit')
         self.version_label.setText('v{}'.format(__version__))
         self.lineEditNote.setPlaceholderText(self.default_note)
+        self.file_list_widget = FileListWidget(self.listWidget)
 
+        # Update timer
         self.update_timer = QtCore.QTimer()
         self.update_timer.setInterval(100)
         self.update_timer.timeout.connect(self.update_ui)
 
-        _icon()
-        _recover()
-        _edits()
-        _actions()
-
-        self.file_list_widget = FileListWidget(self.listWidget)
-
-    def closeEvent(self, event):
-        event.accept()
-        self.hideEvent(event)
+        # Signals
+        self.actionDir.triggered.connect(self.ask_dir)
+        self.actionSync.triggered.connect(self.upload)
+        self.actionServer.triggered.connect(self.ask_server)
+        self.actionOpenDir.triggered.connect(
+            lambda: webbrowser.open(CONFIG['DIR']))
+        self.actionOpenServer.triggered.connect(
+            lambda: webbrowser.open(CONFIG['SERVER']))
 
     def showEvent(self, event):
         LOGGER.debug('Uploader show event triggered.')
         event.accept()
+        if HAS_NUKE:
+            mov_path = __import__('node').Last.mov_path
+            if mov_path:
+                self.directory = get_unicode(os.path.dirname(mov_path))
         self.update_timer.start()
         self.file_list_widget.showEvent(event)
 
@@ -186,7 +116,7 @@ class Dialog(QDialog):
     def update_ui(self):
         """Update dialog UI content.  """
 
-        mode = self.mode()
+        mode = self.mode
         sync_button_enable = any(self.file_list_widget.checked_files)
         sync_button_text = u'上传至CGTeamWork'
         if mode == 0:
@@ -215,7 +145,7 @@ class Dialog(QDialog):
                     self.error(u'{}\n-> {}'.format(i, dst))
                     continue
                 copy(src, dst)
-                if self.mode() == 1:
+                if self.mode == 1:
                     shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
                     if src.lower().endswith(('.jpg', '.png', '.jpeg')):
                         shot.shot_image = dst
@@ -226,6 +156,16 @@ class Dialog(QDialog):
             pass
 
         self.activateWindow()
+
+    def ask_server(self):
+        """Show a dialog ask user config['SERVER'].  """
+
+        file_dialog = QFileDialog()
+        dir_ = file_dialog.getExistingDirectory(
+            dir_=os.path.dirname(CONFIG['SERVER'])
+        )
+        if dir_:
+            self.serverEdit.setText(dir_)
 
     @property
     def dest_folder(self):
@@ -247,61 +187,35 @@ class Dialog(QDialog):
 
         return self.comboBoxPipeline.currentText()
 
+    @property
     def mode(self):
         """Upload mode. """
+
         return self.tabWidget.currentIndex()
-
-    @property
-    def directory(self):
-        """Current working dir.  """
-        return self.dirEdit.text()
-
-    @directory.setter
-    def directory(self, value):
-        value = os.path.normpath(value)
-        if value != self.directory:
-            self.dirEdit.setText(value)
-            self.dirEdit.editingFinished.emit()
 
     @property
     def server(self):
         """Current server path.  """
+
         return self.serverEdit.text()
 
     @property
     def project(self):
         """Current working dir.  """
+
         return self.projectEdit.text()
-
-    def ask_dir(self):
-        """Show a dialog ask user CONFIG['DIR'].  """
-
-        file_dialog = QFileDialog()
-        _dir = file_dialog.getExistingDirectory(
-            dir=os.path.dirname(CONFIG['DIR'])
-        )
-        if _dir:
-            self.directory = _dir
 
     @property
     def is_submit(self):
         """Submit when upload or not.  """
+
         return self.checkBoxSubmit.checkState()
 
     @property
     def checked_files(self):
         """Return files checked in listwidget.  """
+
         return self.file_list_widget.checked_files
-
-    def ask_server(self):
-        """Show a dialog ask user config['SERVER'].  """
-
-        file_dialog = QFileDialog()
-        dir_ = file_dialog.getExistingDirectory(
-            dir_=os.path.dirname(CONFIG['SERVER'])
-        )
-        if dir_:
-            self.serverEdit.setText(dir_)
 
 
 class FileListWidget(object):
@@ -351,7 +265,7 @@ class FileListWidget(object):
     def update_directory(self):
         """Update current working dir.  """
 
-        mode = self.parent.mode()
+        mode = self.parent.mode
         kwargs = {}
         if mode == 0:
             parent = self.parent
@@ -651,10 +565,7 @@ class ShotsFileDirectory(object):
 def main():
     """Run this script standalone.  """
 
-    app = QApplication(sys.argv)
-    frame = Dialog()
-    frame.show()
-    sys.exit(app.exec_())
+    main_show_dialog(Dialog)
 
 
 if __name__ == '__main__':
