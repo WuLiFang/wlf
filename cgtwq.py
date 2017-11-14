@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.24'
+__version__ = '0.4.25'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -259,6 +259,8 @@ class Shots(CGTeamWork):
             raise IDError(self.database, filters)
         shots_info = self.task_module.get(
             ['shot.shot', 'eps.eps_name', 'eps.project_code', 'shot_task.artist', 'shot_task.account_id'])
+        if shots_info is False:
+            raise IDError(self.database, filters)
         self._infos = dict((i['shot.shot'], i) for i in shots_info
                            if i['shot.shot'])
         self._shots = sorted(
