@@ -1,5 +1,6 @@
 # -*- coding=UTF-8 -*-
 """Upload files to server.  """
+
 from __future__ import print_function, unicode_literals
 
 import os
@@ -12,18 +13,22 @@ from wlf import cgtwq
 from wlf.decorators import run_async
 from wlf.files import copy, is_same, version_filter
 from wlf.notify import HAS_NUKE, CancelledError, Progress
-from wlf.path import get_server, get_unicode, remove_version, split_version
+from wlf.path import get_server, get_unicode, remove_version, get_shot
 from wlf.Qt import QtCompat, QtCore, QtWidgets
 from wlf.Qt.QtGui import QBrush, QColor
-from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
+from wlf.Qt.QtWidgets import QApplication, QDialog, QFileDialog
 from wlf.mp_logging import set_basic_logger
 
-__version__ = '0.8.3'
+__version__ = '0.9.0'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
 if __name__ == '__main__':
     set_basic_logger()
+
+if sys.getdefaultencoding() != 'UTF-8':
+    reload(sys)
+    sys.setdefaultencoding('UTF-8')
 
 
 class Config(wlf.config.Config):
@@ -49,6 +54,8 @@ CONFIG = Config()
 
 class Dialog(QDialog):
     """Main GUI dialog.  """
+
+    default_note = '自上传工具提交'
 
     def __init__(self, parent=None):
         def _icon():
@@ -97,7 +104,7 @@ class Dialog(QDialog):
                             ex.itemText(index)
                         )
                     )
-                elif isinstance(edit, QtWidgets.QToolBox):
+                elif isinstance(edit, (QtWidgets.QToolBox, QtWidgets.QTabWidget)):
                     edit.currentChanged.connect(
                         lambda index, ex=edit, k=key: _set_config(
                             k,
@@ -120,7 +127,7 @@ class Dialog(QDialog):
                     elif isinstance(qt_edit, QtWidgets.QComboBox):
                         qt_edit.setCurrentIndex(
                             qt_edit.findText(CONFIG[k]))
-                    elif isinstance(qt_edit, QtWidgets.QToolBox):
+                    elif isinstance(qt_edit, (QtWidgets.QToolBox, QtWidgets.QTabWidget)):
                         qt_edit.setCurrentIndex(CONFIG[k])
                 except KeyError as ex:
                     print('wlf.uploader: not found key {} in config'.format(ex))
@@ -140,15 +147,14 @@ class Dialog(QDialog):
             self.projectEdit: 'PROJECT',
             self.epEdit: 'EPISODE',
             self.scEdit: 'SCENE',
-            self.toolBox: 'MODE',
+            self.tabWidget: 'MODE',
             self.checkBoxSubmit: 'IS_SUBMIT',
             self.checkBoxBurnIn: 'IS_BURN_IN',
             self.comboBoxPipeline: 'PIPELINE',
         }
-        self.cgtw_dests = {}
 
-        self.file_list_widget = FileListWidget(self.listWidget)
         self.version_label.setText('v{}'.format(__version__))
+        self.lineEditNote.setPlaceholderText(self.default_note)
 
         self.update_timer = QtCore.QTimer()
         self.update_timer.setInterval(100)
@@ -158,6 +164,8 @@ class Dialog(QDialog):
         _recover()
         _edits()
         _actions()
+
+        self.file_list_widget = FileListWidget(self.listWidget)
 
     def closeEvent(self, event):
         event.accept()
@@ -193,25 +201,27 @@ class Dialog(QDialog):
     def upload(self):
         """Upload videos to server.  """
 
+        files = list(self.checked_files)
+        directory = self.file_list_widget.directory
+
         try:
-            files = list(self.checked_files)
             task = Progress(total=len(files))
             for i in files:
                 task.step(i)
                 src = os.path.join(self.directory, i)
-                dst = self.get_dest(i)
-                shot_name = split_version(os.path.basename(dst))[0]
+                dst = directory.get_dest(i)
+                shot_name = get_shot(dst)
                 if isinstance(dst, Exception):
                     self.error(u'{}\n-> {}'.format(i, dst))
                     continue
                 copy(src, dst)
-                if src.lower().endswith(('.jpg', '.png', '.jpeg')):
+                if self.mode() == 1:
                     shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
-                    shot.shot_image = dst
-                if self.is_submit and self.mode() == 1:
-                    cgtwq.Shot(shot_name, pipeline=self.pipeline).submit(
-                        [dst], note='自上传工具提交')
-
+                    if src.lower().endswith(('.jpg', '.png', '.jpeg')):
+                        shot.shot_image = dst
+                    if self.is_submit:
+                        note = self.lineEditNote.text() or self.default_note
+                        shot.submit([dst], note=note)
         except CancelledError:
             pass
 
@@ -237,50 +247,9 @@ class Dialog(QDialog):
 
         return self.comboBoxPipeline.currentText()
 
-    def get_dest(self, filename, refresh=False):
-        """Get destination for @filename. """
-
-        mode = self.mode()
-        if mode == 0:
-            return os.path.join(self.dest_folder, remove_version(filename))
-        elif mode == 1:
-            ret = self.cgtw_dests.get(filename)
-            if not ret or (isinstance(ret, Exception) and refresh):
-                try:
-                    shot = cgtwq.Shot(split_version(filename)[0],
-                                      pipeline=self.pipeline)
-                    shot.check_account()
-                    ret = shot.submit_dest
-                    if not ret:
-                        raise(ValueError('Cound not get dest.  '))
-                    ret = os.path.join(ret, remove_version(filename))
-                except ValueError as ex:
-                    self.error(u'找不到上传路径, 请联系管理员设置文件夹submit_dest标识')
-                    ret = ex
-                except cgtwq.LoginError as ex:
-                    self.error(u'需要登录CGTeamWork')
-                    ret = ex
-                except cgtwq.IDError as ex:
-                    self.error(u'{}: CGTW上未找到对应镜头'.format(filename))
-                    ret = ex
-                except cgtwq.AccountError as ex:
-                    self.error(u'#{}\n已被分配给: {}\n当前用户: {}'.format(
-                        filename, ex.owner or u'<未分配>', ex.current))
-                    ret = ex
-                self.cgtw_dests[filename] = ret
-                LOGGER.debug('Found dest: %s', ret)
-            return ret
-        else:
-            raise ValueError('No such mode. {}'.format(mode))
-
-    def error(self, message):
-        """Show error.  """
-
-        self.textBrowser.append(message)
-
     def mode(self):
         """Upload mode. """
-        return self.toolBox.currentIndex()
+        return self.tabWidget.currentIndex()
 
     @property
     def directory(self):
@@ -292,6 +261,7 @@ class Dialog(QDialog):
         value = os.path.normpath(value)
         if value != self.directory:
             self.dirEdit.setText(value)
+            self.dirEdit.editingFinished.emit()
 
     @property
     def server(self):
@@ -312,7 +282,6 @@ class Dialog(QDialog):
         )
         if _dir:
             self.directory = _dir
-            CONFIG['DIR'] = _dir
 
     @property
     def is_submit(self):
@@ -338,12 +307,6 @@ class Dialog(QDialog):
 class FileListWidget(object):
     """Folder viewer.  """
 
-    burnin_folder = 'burn-in'
-    pipeline_ext = {
-        '灯光': ('.jpg', '.png', '.jpeg'),
-        '渲染': ('.mov'),
-        '合成': ('.mov'),
-    }
     if HAS_NUKE:
         brushes = {'local': QBrush(QColor(200, 200, 200)),
                    'uploaded': QBrush(QColor(100, 100, 100)),
@@ -353,38 +316,55 @@ class FileListWidget(object):
                    'uploaded': QBrush(QtCore.Qt.gray),
                    'error': QBrush(QtCore.Qt.red)}
     updating = False
+    directory = None
+    burnin_folder = 'burn-in'
 
     def __init__(self, list_widget):
-        self.widget = list_widget
-        self.parent = self.widget.parent()
-        self.uploaded_files = set()
-        self.dest_dict = self.parent.cgtw_dests
-        assert isinstance(self.parent, Dialog)
 
+        self.widget = list_widget
+        parent = self.widget.parent()
+        assert isinstance(parent, Dialog)
+        self.parent = parent
+
+        # Connect signal
         self.widget.itemDoubleClicked.connect(self.open_file)
         self.parent.actionSelectAll.triggered.connect(self.select_all)
         self.parent.actionReverseSelection.triggered.connect(
             self.reverse_selection)
-        self.parent.actionUpdateFiles.triggered.connect(
-            self.update_files)
-        self.parent.actionClearCache.triggered.connect(
-            self.clear_cache)
+        self.parent.actionReset.triggered.connect(
+            self.update_directory)
 
+        # Event override
         self.widget.showEvent = self.showEvent
         self.widget.hideEvent = self.hideEvent
 
+        # UI update timer
         self.update_timer = QtCore.QTimer(self.parent)
         self.update_timer.setInterval(1000)
         self.update_timer.timeout.connect(self.update_widget)
 
-    @property
-    def directory(self):
-        """Current working dir.  """
-        return self.parent.directory
+    def update_files(self):
+        """Update files.  """
+
+        self.directory.update()
+
+    def update_directory(self):
+        """Update current working dir.  """
+
+        mode = self.parent.mode()
+        kwargs = {}
+        if mode == 0:
+            parent = self.parent
+            assert isinstance(parent, Dialog)
+            kwargs = {'dest': self.parent.dest_folder}
+
+        self.directory = ShotsFileDirectory(
+            self.parent.directory, self.parent.pipeline, **kwargs)
 
     def showEvent(self, event):
         event.accept()
-        self.update_files()
+        self.update_directory()
+        self.update_widget()
         self.update_timer.start()
 
     def hideEvent(self, event):
@@ -401,17 +381,21 @@ class FileListWidget(object):
         widget = self.widget
         parent = self.parent
         brushes = self.brushes
-        local_files = self.files
         assert isinstance(parent, Dialog)
 
-        # Remove.
+        self.directory.update()
+        local_files = self.directory.files
+        uploaded_files = self.directory.uploaded
+        unexpected_files = self.directory.unexpected
+
         for item in self.items():
             text = item.text()
+            # Remove.
             if text not in local_files:
                 widget.takeItem(widget.indexFromItem(item).row())
-
+            # Uncheck.
             elif item.checkState() \
-                    and isinstance(parent.get_dest(text, refresh=True), Exception):
+                    and isinstance(self.directory.get_dest(text), Exception):
                 item.setCheckState(QtCore.Qt.Unchecked)
 
         for i in local_files:
@@ -423,19 +407,23 @@ class FileListWidget(object):
                 item = QtWidgets.QListWidgetItem(i, widget)
                 item.setCheckState(QtCore.Qt.Unchecked)
             # Set style.
-            self.update_file(i)
-            if i in self.uploaded_files:
+            dest = self.directory.get_dest(i)
+            if i in uploaded_files:
                 item.setFlags(QtCore.Qt.ItemIsEnabled)
                 item.setForeground(brushes['uploaded'])
                 item.setCheckState(QtCore.Qt.Unchecked)
-            elif i in self.unexpected_files:
+                tooltip = '已上传至: {}'.format(dest)
+            elif i in unexpected_files:
                 item.setFlags(QtCore.Qt.ItemIsUserCheckable |
                               QtCore.Qt.ItemIsEnabled)
                 item.setForeground(brushes['error'])
+                tooltip = l10n(dest)
             else:
                 item.setFlags(QtCore.Qt.ItemIsUserCheckable |
                               QtCore.Qt.ItemIsEnabled)
                 item.setForeground(brushes['local'])
+                tooltip = '将上传至: {}'.format(dest)
+            item.setToolTip(tooltip)
 
         widget.sortItems()
 
@@ -443,68 +431,8 @@ class FileListWidget(object):
         parent.labelCount.setText(
             '{}/{}/{}'.format(
                 len(list(self.checked_files)),
-                len(local_files) - len(self.uploaded_files),
+                len(local_files) - len(self.directory.uploaded),
                 len(local_files)))
-
-    def clear_cache(self):
-        """Clear destination cache."""
-
-        self.uploaded_files.clear()
-        self.parent.cgtw_dests.clear()
-        self.update_files()
-
-    def update_files(self):
-        """Check if files is uploaded.  """
-
-        if self.updating:
-            return
-        self.updating = True
-
-        files = self.files
-        task = Progress('获取文件状态', total=len(files))
-        try:
-            for i in files:
-                task.step(i)
-                self.update_file(i)
-        except CancelledError:
-            if QMessageBox.question(self.parent,
-                                    '正在获取信息',
-                                    '退出?',
-                                    QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Ok:
-                QApplication.exit()
-
-        self.updating = False
-        self.update_widget()
-
-    def update_file(self, filename):
-        """Check file state.  """
-
-        uploaded_files = self.uploaded_files
-        src = os.path.join(self.directory, filename)
-        dst = self.parent.get_dest(filename)
-        if isinstance(dst, (str, unicode)) and is_same(src, dst):
-            uploaded_files.add(filename)
-        else:
-            uploaded_files.difference_update([filename])
-
-    @property
-    def files(self):
-        """Files in directory with matched extension.  """
-
-        directory = self.directory
-        ext = self.pipeline_ext[self.parent.pipeline]
-        ret = []
-
-        if os.path.isdir(directory):
-            ret = version_filter(i for i in os.listdir(directory)
-                                 if i.lower().endswith(ext))
-        return ret
-
-    @property
-    def unexpected_files(self):
-        """Files that can not get destination.  """
-
-        return [k for k, v in self.dest_dict.items() if not v or isinstance(v, Exception)]
 
     @property
     def checked_files(self):
@@ -521,9 +449,9 @@ class FileListWidget(object):
         """Open mov file for preview.  """
 
         filename = item.text()
-        path = os.path.join(self.directory, filename)
+        path = os.path.join(self.directory.path, filename)
         burn_in_path = os.path.join(
-            self.directory, self.burnin_folder, filename)
+            self.directory.path, self.burnin_folder, filename)
 
         webbrowser.open(burn_in_path
                         if self.is_use_burnin and os.path.exists(burn_in_path)
@@ -538,11 +466,15 @@ class FileListWidget(object):
     def select_all(self):
         """Select all item in list widget.  """
 
-        files = [i for i in self.files if i not in self.uploaded_files.union(
-            self.unexpected_files)]
+        uploaded = self.directory.uploaded
+        unexpected = self.directory.unexpected
+
+        files = [i for i in self.directory.files if i not in uploaded.union(
+            unexpected)]
         refresh = False
         if not files:
-            files = [i for i in self.files if i not in self.uploaded_files]
+            files = [
+                i for i in self.directory.files if i not in uploaded]
             refresh = True
 
         if not files:
@@ -552,16 +484,168 @@ class FileListWidget(object):
             if item.text() in files:
                 item.setCheckState(QtCore.Qt.Checked)
         if refresh:
-            self.clear_cache()
+            self.update_directory()
 
     def reverse_selection(self):
         """Select all item in list widget.  """
+
         for item in self.items():
-            if item.text() not in self.uploaded_files:
+            if item.text() not in self.directory.uploaded:
                 if item.checkState():
                     item.setCheckState(QtCore.Qt.Unchecked)
                 else:
                     item.setCheckState(QtCore.Qt.Checked)
+
+
+def l10n(obj):
+    """Localization.  """
+
+    ret = obj
+    if isinstance(ret, cgtwq.LoginError):
+        ret = '需要登录CGTeamWork'
+    elif isinstance(ret, cgtwq.AccountError):
+        ret = '已被分配给: {}\n当前用户: {}'.format(
+            ret.owner or u'<未分配>', ret.current)
+    elif isinstance(ret, cgtwq.IDError):
+        ret = 'CGTW上未找到对应镜头'
+
+    return unicode(ret)
+
+
+class ShotsFileDirectory(object):
+    """Directory that store shots output files.  """
+
+    pipeline_ext = {
+        '灯光': ('.jpg', '.png', '.jpeg'),
+        '渲染': ('.mov'),
+        '合成': ('.mov'),
+    }
+    files = None
+    dest_dict = None
+
+    def __init__(self, path, pipeline, dest=None):
+        assert os.path.exists(
+            path), '{} is not existed.'.format(path)
+        assert pipeline in self.pipeline_ext, '{} is not a pipeline'.format(
+            pipeline)
+
+        LOGGER.debug('Init directory.')
+        self.path = path
+        self.pipeline = pipeline
+        self.ext = self.pipeline_ext[pipeline]
+        self.dest = dest
+        self.files = []
+        self.dest_dict = {}
+
+        self.update()
+
+    def update(self):
+        """Update directory content.  """
+
+        path = self.path
+        prev_files = self.files
+        files = version_filter(i for i in os.listdir(path)
+                               if i.endswith(self.ext))
+        if prev_files == files:
+            return
+
+        prev_shots = self.shots()
+        self.files = files
+        if self.shots() == prev_shots:
+            return
+
+        if not prev_files or set(files).difference(prev_files):
+            try:
+                self.dest_dict = self.get_dest_dict()
+            except CancelledError:
+                self.dest_dict = {}
+                LOGGER.info('用户取消获取信息')
+
+    def get_dest_dict(self):
+        """Get upload destinations.  """
+
+        def _get_database(filename):
+            return cgtwq.proj_info(filename).get('database')
+
+        all_shots = self.shots()
+        dest = self.dest
+        dest_dict = {}
+
+        proj_info = cgtwq.proj_info(self.files[0] if self.files else None)
+        database = proj_info.get('database')
+
+        def _get_from_database(database):
+            if self.dest:
+                return
+
+            shots = [i for i in all_shots if _get_database(i) == database]
+            task = Progress('获取镜头信息', total=len(shots) + 1)
+
+            task.step('连接数据库: {}'.format(database))
+            try:
+                cgtw_shots = cgtwq.Shots(database, pipeline=self.pipeline)
+            except cgtwq.CGTeamWorkException:
+                self.dest = cgtwq.LoginError()
+                return
+            for shot in shots:
+                task.step(shot)
+                try:
+                    cgtw_shots.check_account(shot)
+                    dest = cgtw_shots.get_shot_submit(shot)
+                    dest_dict[shot] = dest
+                except cgtwq.CGTeamWorkException as ex:
+                    dest_dict[shot] = ex
+                except KeyError as ex:
+                    dest_dict[shot] = cgtwq.IDError(ex)
+
+        if not dest:
+            all_database = set(_get_database(i) for i in self.files)
+            for database in all_database:
+                _get_from_database(database)
+
+        return dest_dict
+
+    def shots(self):
+        """Files related shots.  """
+
+        return sorted(get_shot(i) for i in self.files)
+
+    @property
+    def unexpected(self):
+        """Files that can not get destination.  """
+
+        files = self.files
+        ret = set()
+
+        for filename in files:
+            dest = self.get_dest(filename)
+            if not dest or isinstance(dest, Exception):
+                ret.add(filename)
+        return ret
+
+    @property
+    def uploaded(self):
+        """Files that does not need to upload agian.  """
+
+        files = self.files
+        ret = set()
+
+        for filename in files:
+            src = os.path.join(self.path, filename)
+            dst = self.get_dest(filename)
+
+            if isinstance(dst, (str, unicode)) and is_same(src, dst):
+                ret.add(filename)
+
+        return ret
+
+    def get_dest(self, filename):
+        """Get cgteamwork upload destination for @filename.  """
+
+        ret = self.dest_dict.get(get_shot(filename), self.dest)
+        if isinstance(ret, (str, unicode)):
+            ret = os.path.join(ret, remove_version(filename))
+        return ret
 
 
 def main():
