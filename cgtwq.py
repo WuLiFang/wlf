@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.4.23'
+__version__ = '0.4.24'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -244,48 +244,30 @@ class Shots(CGTeamWork):
 
     def __init__(self, database, module=None, pipeline=None, prefix=None):
         super(Shots, self).__init__()
+
         self.database = database
         self._info = proj_info(database=database)
         self.module = module or self._info.get('module')
         self.pipeline = pipeline or self._info.get('pipeline')
+
         filters = []
         if self.pipeline:
             filters.append(['shot_task.pipeline', '=', self.pipeline])
+
         initiated = self.task_module.init_with_filter(filters)
         if not initiated:
             raise IDError(self.database, filters)
         shots_info = self.task_module.get(
-            ['shot.shot', 'eps.eps_name', 'eps.project_code'])
-        self._shots_info_dict = dict((i['shot.shot'], i) for i in shots_info
-                                     if i['shot.shot']
-                                     and (not prefix or i['shot.shot'].startswith(prefix)))
-        self._shots = sorted(self._shots_info_dict.keys())
-        self.task_module.init_with_id(
-            list(self._shots_info_dict[i]['id'] for i in self._shots_info_dict.keys()))
-
-    def get_all_image(self):
-        """Get all image dest for shots, can match shot with @prefix.  """
-        info = proj_info(database=self.database)
-        all_num = len(self.shots)
-        images = []
-
-        task = Progress('查询数据库')
-
-        for index, shot in enumerate(self.shots):
-            task.set(index * 100 // all_num, shot)
-            try:
-                info.update(self._shots_info_dict[shot])
-                image = info['image_dest_pat'].format(info)
-            except IDError:
-                continue
-
-            images.append(image)
-
-        return images
+            ['shot.shot', 'eps.eps_name', 'eps.project_code', 'shot_task.artist', 'shot_task.account_id'])
+        self._infos = dict((i['shot.shot'], i) for i in shots_info
+                           if i['shot.shot'])
+        self._shots = sorted(
+            i for i in self._infos if not prefix or i.startswith(prefix))
 
     @property
     def shots(self):
         """Return shots names.   """
+
         return self._shots
 
     @property
@@ -300,10 +282,47 @@ class Shots(CGTeamWork):
     @property
     def episode(self):
         """Single episode if shots only contain it, else return None.  """
+
         if len(self.episodes) == 1:
             return self.episodes.copy().pop()
 
-        return None
+    def get_all_image(self):
+        """Get all image dest for shots.  """
+
+        return [self.get_shot_image(shot) for shot in self._shots]
+
+    def get_shot_image(self, shot):
+        """Get image dest for @shot.  """
+
+        info = dict(self._info)
+        infos = self._infos
+
+        info.update(infos[shot])
+        image = info['image_dest_pat'].format(info)
+
+        return image
+
+    def get_shot_submit(self, shot):
+        """Get image dest for @shot.  """
+
+        infos = self._infos
+        shot_info = infos[shot]
+        id_ = shot_info['id']
+
+        sign = 'submit'
+        self.task_module.init_with_id(id_)
+        return self.task_module.get_filebox_with_sign(sign)['path']
+
+    def check_account(self, shot):
+        """Return if @shot asigned to current account.  """
+
+        info = self._infos[shot]
+        id_list = info['shot_task.account_id']
+        id_list = id_list and id_list.split(',')
+
+        if not id_list or self.current_account_id() not in id_list:
+            raise AccountError(owner=info.get('shot_task.artist'),
+                               current=self.current_account())
 
 
 class Shot(CGTeamWork):
@@ -468,55 +487,60 @@ class Shot(CGTeamWork):
                                current=self.current_account())
 
 
-class IDError(Exception):
+class CGTeamWorkException(Exception):
+    """Base exception class for CGTeamWork.  """
+    pass
+
+
+class IDError(CGTeamWorkException):
     """Indicate can't specify shot id on cgtw."""
 
     def __init__(self, *args):
-        Exception.__init__(self)
+        CGTeamWorkException.__init__(self)
         self.message = args
 
     def __str__(self):
         return 'Can not found item id:{}'.format(self.message)
 
 
-class SignError(Exception):
+class SignError(CGTeamWorkException):
     """Indicate can't found matched sign."""
 
     def __init__(self, *args):
-        Exception.__init__(self)
+        CGTeamWorkException.__init__(self)
         self.message = args
 
     def __str__(self):
         return 'Can not found matched sign:{}'.format(self.message)
 
 
-class FolderError(Exception):
+class FolderError(CGTeamWorkException):
     """Indicate can't found destination folder."""
 
     def __init__(self, *args):
-        Exception.__init__(self)
+        CGTeamWorkException.__init__(self)
         self.message = args
 
     def __str__(self):
         return 'No such folder on server:{}'.format(self.message)
 
 
-class LoginError(Exception):
+class LoginError(CGTeamWorkException):
     """Indicate can't found destination folder."""
 
     def __init__(self, *args):
-        Exception.__init__(self)
+        CGTeamWorkException.__init__(self)
         self.message = args
 
     def __str__(self):
         return 'Not loged in.  \n{}'.format(self.message)
 
 
-class AccountError(Exception):
+class AccountError(CGTeamWorkException):
     """Indicate can't found destination folder."""
 
     def __init__(self, owner='', current=''):
-        Exception.__init__(self)
+        CGTeamWorkException.__init__(self)
         self.owner = owner
         self.current = current
 
