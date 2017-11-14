@@ -10,7 +10,7 @@ import locale
 import string
 import logging
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
     _TAGS = json.load(_f)
@@ -210,6 +210,12 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
     if ret.startswith(tuple(string.digits)):
         ret = '_{}'.format(ret)
     return get_unicode(ret)
+
+
+def get_shot(path):
+    """Return related shot.  """
+
+    return split_version(os.path.basename(path))[0]
 
 
 def get_server(path):
