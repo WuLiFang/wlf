@@ -17,11 +17,14 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
+
+
+# Test if module should be enabled
 MODULE_ENABLE = True
 try:
     if os.path.isdir(CGTW_PATH):
@@ -137,6 +140,11 @@ class CGTeamWork(object):
         if not self._history_module:
             self._history_module = self._tw.history(self.database, self.module)
         return self._history_module
+
+    @property
+    def server_ip(self):
+        """Current server ip.  """
+        return self.sys_module.get_server_ip()
 
     @property
     def all_pipeline(self):
@@ -258,7 +266,7 @@ class Shots(CGTeamWork):
         if not initiated:
             raise IDError(self.database, filters)
         shots_info = self.task_module.get(
-            ['shot.shot', 'eps.eps_name', 'eps.project_code', 'shot_task.artist', 'shot_task.account_id'])
+            ['shot.shot', 'eps.eps_name', 'eps.project_code', 'shot_task.artist', 'shot_task.account_id', 'shot_task.image'])
         if shots_info is False:
             raise IDError(self.database, filters)
         self._infos = dict((i['shot.shot'], i) for i in shots_info
@@ -288,30 +296,26 @@ class Shots(CGTeamWork):
         if len(self.episodes) == 1:
             return self.episodes.copy().pop()
 
-    def get_all_image(self):
-        """Get all image dest for shots.  """
-
-        return [self.get_shot_image(shot) for shot in self._shots]
-
     def get_shot_image(self, shot):
         """Get image dest for @shot.  """
 
-        info = dict(self._info)
-        infos = self._infos
-
-        info.update(infos[shot])
-        image = info['image_dest_pat'].format(info)
-
-        return image
+        image = self._infos[shot]['shot_task.image']
+        if not image:
+            return
+        return 'http://{}/{}'.format(self.server_ip, json.loads(image)['max'])
 
     def get_shot_submit(self, shot):
-        """Get image dest for @shot.  """
+        """Get submit dest for @shot.  """
+
+        return self.get_shot_filebox_path(shot, 'submit')
+
+    def get_shot_filebox_path(self, shot, sign):
+        """Get @shot filebox path with @sign.  """
 
         infos = self._infos
         shot_info = infos[shot]
         id_ = shot_info['id']
 
-        sign = 'submit'
         self.task_module.init_with_id(id_)
         return self.task_module.get_filebox_with_sign(sign)['path']
 
