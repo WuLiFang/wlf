@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.1'
+__version__ = '0.6.2'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -300,8 +300,16 @@ class Shots(CGTeamWork):
         """Get image dest for @shot.  """
 
         image = self._infos[shot]['shot_task.image']
+
+        def _get_path(sign):
+            try:
+                return self.get_shot_filebox_path(shot, sign)
+            except SignError:
+                return
+
         if not image:
-            return '{}/{}.jpg'.format(self.get_shot_filebox_path(shot, 'image'), shot)
+            return '{}/{}.jpg'.format(
+                _get_path('image') or _get_path('submit') or 'UnkownPath', shot)
         return 'http://{}/{}'.format(self.server_ip, json.loads(image)['max'])
 
     def get_shot_submit(self, shot):
@@ -317,7 +325,11 @@ class Shots(CGTeamWork):
         id_ = shot_info['id']
 
         self.task_module.init_with_id(id_)
-        return self.task_module.get_filebox_with_sign(sign)['path']
+        filebox = self.task_module.get_filebox_with_sign(sign)
+        if isinstance(filebox, dict):
+            return filebox['path']
+        else:
+            raise SignError
 
     def check_account(self, shot):
         """Return if @shot asigned to current account.  """
