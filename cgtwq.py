@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.5'
+__version__ = '0.6.6'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -312,17 +312,20 @@ class Shots(CGTeamWork):
 
         if image:
             image = json.loads(image)['max']
-            if image.startswith(('/', '\\')) and is_allow_http:
-                image = 'http://{}/{}'.format(self.server_ip, image)
-            return image
+            if image.startswith(('/', '\\')):
+                if is_allow_http:
+                    image = 'http://{}/{}'.format(self.server_ip, image)
+                    return image
+            else:
+                return image
 
-        for filfbox_sign in ('image', 'submit'):
-            dir_ = _get_path(filfbox_sign)
+        for filebox_sign in ('image', 'submit'):
+            dir_ = _get_path(filebox_sign)
             if dir_:
                 image = os.path.join(dir_, '{}.jpg'.format(shot))
                 break
 
-        if image:
+        if image and is_allow_http:
             # Record result for accelerate next run.
             self.task_module.set(
                 {field_sign: json.dumps({'max': image, 'min': image})})
