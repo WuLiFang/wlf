@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 
 class Config(wlf.config.Config):
@@ -80,7 +80,6 @@ class Dialog(DialogWithDir):
     def accept(self):
         """Override QDialog.accept .  """
 
-        super(Dialog, self).accept()
         try:
             project_name = self.comboBoxProject.currentText()
             database = self.projects_databse.get(
@@ -109,7 +108,14 @@ class Dialog(DialogWithDir):
             except cgtwq.IDError as ex:
                 QMessageBox.critical(self, '找不到对应条目', str(ex))
                 return
-            except RuntimeError:
+            except cgtwq.PrefixError as ex:
+                QMessageBox.critical(
+                    self, '无匹配镜头', '''
+项目: {} <br>
+流程: {} <br>
+前缀: <span style="color:red;font-weight: bold">{}</span>
+'''.format(project_name, pipeline, ex.prefix)
+                )
                 return
 
             if is_pack:
@@ -138,6 +144,8 @@ class Dialog(DialogWithDir):
         except:
             LOGGER.error('Unexcepted error', exc_info=True)
             raise
+
+        super(Dialog, self).accept()
 
 
 def main():
