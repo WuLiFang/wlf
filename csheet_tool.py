@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.2.0'
+__version__ = '0.3.0'
 
 
 class Config(wlf.config.Config):
@@ -25,6 +25,7 @@ class Config(wlf.config.Config):
 
     default = {
         'PROJECT': '少年锦衣卫',
+        'PIPELINE': '合成',
         'DATABASE': 'proj_big',
         'PREFIX': 'SNJYW_EP14_',
         'OUTDIR': 'E:/',
@@ -45,6 +46,7 @@ class Dialog(DialogWithDir):
 
         edits_key = {
             'comboBoxProject': 'PROJECT',
+            'comboBoxPipeline': 'PIPELINE',
             'lineEditPrefix': 'PREFIX',
             'lineEditOutDir': 'OUTDIR',
             'checkBoxPack': 'PACK',
@@ -83,14 +85,25 @@ class Dialog(DialogWithDir):
             project_name = self.comboBoxProject.currentText()
             database = self.projects_databse.get(
                 project_name, CONFIG.default['DATABASE'])
+            pipeline = self.comboBoxPipeline.currentText()
             prefix = self.lineEditPrefix.text()
             outdir = self.directory
             is_pack = self.checkBoxPack.checkState()
-            chseet_name = '{}_{}_色板'.format(project_name, prefix.strip('_'))
+            chseet_name = '{}_{}_{}色板'.format(
+                project_name, prefix.strip('_'), pipeline)
 
             task.set(message='访问数据库文件')
             try:
-                images = cgtwq.Shots(database, prefix=prefix).get_all_image()
+                shots = cgtwq.Shots(
+                    database, pipeline=pipeline, prefix=prefix)
+                rename_dict = {shots.get_shot_image(i): i for i in shots.shots}
+                for k, v in rename_dict.items():
+                    if not k:
+                        del rename_dict[k]
+                        continue
+                    ext = os.path.splitext(k)[1]
+                    rename_dict[k] = ''.join([v, ext])
+                images = sorted(rename_dict.keys(), key=rename_dict.get)
             except cgtwq.IDError as ex:
                 QMessageBox.critical(self, '找不到对应条目', str(ex))
                 return
@@ -101,15 +114,20 @@ class Dialog(DialogWithDir):
             if is_pack:
                 outdir = os.path.join(outdir, chseet_name)
                 task = Progress('下载图像到本地', total=len(images))
+                image_dir = os.path.join(outdir, 'images')
                 for f in images:
                     task.step(f)
-                    image_dir = os.path.join(outdir, 'images/')
-                    copy(f, image_dir)
-                created_file = csheet.create_html_from_dir(image_dir)
+                    dst = os.path.join(image_dir, rename_dict.get(f, ''))
+                    copy(f, dst)
+                created_file = csheet.create_html_from_dir(
+                    image_dir, rename_dict=rename_dict)
             else:
                 save_path = os.path.join(outdir, '{}.html'.format(chseet_name))
-                created_file = csheet.create_html(images, save_path,
-                                                  title=u'色板 {}@{}'.format(prefix, database))
+                created_file = csheet.create_html(
+                    images,
+                    save_path,
+                    title=u'色板 {}@{}'.format(prefix, database),
+                    rename_dict=rename_dict)
             if created_file:
                 webbrowser.open(outdir)
                 webbrowser.open(created_file)
