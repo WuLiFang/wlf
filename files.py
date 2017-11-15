@@ -7,13 +7,14 @@ import sys
 import shutil
 import logging
 import warnings
+import urllib
 from subprocess import call, Popen
 import multiprocessing.dummy
 
 from wlf.notify import Progress
 import wlf.path
 
-__version__ = '0.6.5'
+__version__ = '0.7.0'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -51,26 +52,44 @@ _remap_deprecated()
 def copy(src, dst, threading=False):
     """Copy src to dst."""
 
+    def _mkdirs():
+        dst_dir = os.path.dirname(dst)
+        if not os.path.exists(dst_dir):
+            LOGGER.debug('创建目录: %s', dst_dir)
+            os.makedirs(dst_dir)
+
+    assert isinstance(src, (str, unicode))
+    assert isinstance(dst, (str, unicode))
+
     if threading:
         thread = multiprocessing.dummy.Process(
             target=copy, args=(src, dst), kwargs={'threading': False})
         thread.start()
         return thread
 
-    LOGGER.info('复制:\n\t%s\n->\t%s', src, dst)
-    if not os.path.exists(src):
+    if src.startswith('http:'):
+        LOGGER.info('下载:\n\t%s\n->\t%s', src, dst)
+        _mkdirs()
+        try:
+            src_fd = urllib.urlopen(src)
+            with open(dst, 'wb') as dst_fd:
+                dst_fd.write(src_fd.read())
+        finally:
+            src_fd.close()
+    elif not os.path.exists(src):
+        LOGGER.warning('尝试复制不存在的文件: %s', src)
         return
-    dst_dir = os.path.dirname(dst)
-    if not os.path.exists(dst_dir):
-        LOGGER.debug('创建目录: %s', dst_dir)
-        os.makedirs(dst_dir)
-    try:
-        shutil.copy2(src, dst)
-    except OSError:
-        if sys.platform == 'win32':
-            call(wlf.path.get_encoded('XCOPY /V /Y "{}" "{}"'.format(src, dst)))
-        else:
-            raise
+    else:
+        LOGGER.info('复制:\n\t%s\n->\t%s', src, dst)
+        _mkdirs()
+        try:
+            shutil.copy2(src, dst)
+        except OSError:
+            if sys.platform == 'win32':
+                call(wlf.path.get_encoded('XCOPY /V /Y "{}" "{}"'.format(src, dst)))
+            else:
+                raise
+
     if os.path.isdir(wlf.path.get_encoded(dst)):
         ret = os.path.join(dst, os.path.basename(src))
     else:
