@@ -22,7 +22,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.4.9'
+__version__ = '1.5.0'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -228,7 +228,7 @@ class ContactSheetThread(threading.Thread):
         self.lock.release()
 
 
-def create_html_from_dir(image_folder):
+def create_html_from_dir(image_folder, **kwargs):
     """Create a html page for a @image_folder.  """
     image_folder = os.path.normpath(image_folder)
     if not os.path.isdir(get_encoded(image_folder)):
@@ -241,10 +241,12 @@ def create_html_from_dir(image_folder):
     save_path = os.path.abspath(os.path.join(
         image_folder, u'../{}_色板.html'.format(os.path.basename(image_folder))))
 
-    return create_html(images, save_path, title=image_folder)
+    kwargs.setdefault('title', image_folder)
+    kwargs.setdefault('save_path', save_path)
+    return create_html(images, **kwargs)
 
 
-def create_html(images, save_path, title=None):
+def create_html(images, save_path, title=None, rename_dict=None):
     """Crete html contactsheet with @images list, save to @save_path.  """
 
     class Image(object):
@@ -252,27 +254,33 @@ def create_html(images, save_path, title=None):
         exsited_id = []
 
         def __init__(self, path):
-            self.path = os.path.normpath(path)
-            self.name, self.version = split_version(
-                os.path.basename(self.path))
-            self.shot = get_shot(self.name)
-            if not os.path.isabs(self.path):
-                self.path = './{}'.format(self.path)
+            if rename_dict:
+                name = rename_dict.get(path, path)
+            path = os.path.normpath(path)
+            name = os.path.basename(name)
+            name = split_version(name)[0]
+            shot = get_shot(name)
+            if not os.path.isabs(path) and not path.startswith('http:'):
+                path = './{}'.format(path)
 
-            _id = escape(self.name)
+            _id = escape(name)
             for i in count(start=1):
                 if _id in self.exsited_id:
-                    _id = '{}_{}'.format(self.name, i)
+                    _id = '{}_{}'.format(name, i)
                 else:
                     self.html_id = _id
                     self.exsited_id.append(self.html_id)
                     break
 
-            if self.shot != self.name:
-                self.html_name = escape(self.name).replace(
-                    escape(self.shot), '<span class="highlight">{}</span>'.format(escape(self.shot)))
+            if shot != name:
+                self.html_name = escape(name).replace(
+                    escape(shot), '<span class="highlight">{}</span>'.format(escape(shot)))
             else:
-                self.html_name = self.name
+                self.html_name = name
+
+            self.name = name
+            self.path = path
+            self.shot = shot
 
     body = ''
     images = [Image(i) for i in images]
