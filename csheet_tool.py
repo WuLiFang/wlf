@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.0'
+__version__ = '0.4.1'
 
 
 class Config(wlf.config.Config):
@@ -103,8 +103,8 @@ class Dialog(DialogWithDir):
             prefix = self.lineEditPrefix.text()
             outdir = self.directory
             is_pack = self.checkBoxPack.checkState()
-            chseet_name = '{}_{}_{}色板'.format(
-                project_name, prefix.strip('_'), pipeline)
+            chseet_name = '{}色板'.format('_'.join(
+                i for i in [project_name, prefix.strip('_'), pipeline] if i))
 
             try:
                 task = Progress('访问数据库')
