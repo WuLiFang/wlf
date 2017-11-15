@@ -17,12 +17,9 @@
    <item row="0" column="0">
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>数据库</string>
+      <string>项目</string>
      </property>
     </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QLineEdit" name="lineEditDatabase"/>
    </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_2">
@@ -81,6 +78,9 @@
       <string>version</string>
      </property>
     </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="comboBoxProject"/>
    </item>
   </layout>
   <action name="actionDir">

@@ -1,37 +1,36 @@
 # -*- coding=UTF-8 -*-
 """GUI for csheet creation.  """
+from __future__ import print_function, unicode_literals
 
 import os
 import webbrowser
 import logging
 
+from wlf import cgtwq, csheet
 import wlf.config
-from wlf.notify import HAS_NUKE, Progress, CancelledError
+from wlf.notify import Progress, CancelledError
 from wlf.files import copy
 from wlf.Qt import QtWidgets
+from wlf.Qt.QtWidgets import QMessageBox
 from wlf.uitools import DialogWithDir, main_show_dialog
-import wlf.cgtwq as cgtwq
-import wlf.csheet as csheet
-
-if HAS_NUKE:
-    import nuke
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 
 class Config(wlf.config.Config):
     """Comp config.  """
 
     default = {
+        'PROJECT': '少年锦衣卫',
         'DATABASE': 'proj_big',
         'PREFIX': 'SNJYW_EP14_',
         'OUTDIR': 'E:/',
         'PACK': False,
     }
-    path = os.path.expanduser(u'~/.nuke/wlf.csheet.json')
+    path = os.path.expanduser(u'~/.wlf.csheet.json')
 
 
 CONFIG = Config()
@@ -45,7 +44,7 @@ class Dialog(DialogWithDir):
     def __init__(self, parent=None):
 
         edits_key = {
-            'lineEditDatabase': 'DATABASE',
+            'comboBoxProject': 'PROJECT',
             'lineEditPrefix': 'PREFIX',
             'lineEditOutDir': 'OUTDIR',
             'checkBoxPack': 'PACK',
@@ -63,12 +62,15 @@ class Dialog(DialogWithDir):
 
         self.labelVersion.setText('v{}'.format(__version__))
 
-        # Default database
-        database = cgtwq.CGTeamWork().sys_module.get_sys_database()
-        if database:
-            self.lineEditDatabase.setPlaceholderText(database)
-            if not HAS_NUKE:
-                self.lineEditDatabase.setText(database)
+        # Project combo box
+        project = cgtwq.Project()
+        names = project.names()
+        edit = self.comboBoxProject
+        self.projects_databse = {
+            i: project.get_info(i, 'database')for i in names}
+        proj_config = CONFIG['PROJECT']
+        edit.insertItems(0, names)
+        edit.setCurrentIndex(edit.findText(proj_config))
 
         # Signals
         self.actionDir.triggered.connect(self.ask_dir)
@@ -78,42 +80,47 @@ class Dialog(DialogWithDir):
 
         try:
             task = Progress('创建色板')
-            database = self.lineEditDatabase.text(
-            ) or CONFIG.default['DATABASE']
+            project_name = self.comboBoxProject.currentText()
+            database = self.projects_databse.get(
+                project_name, CONFIG.default['DATABASE'])
             prefix = self.lineEditPrefix.text()
             outdir = self.directory
             is_pack = self.checkBoxPack.checkState()
-            save_path = os.path.join(outdir,
-                                     u'{}_{}_色板.html'.format(database, prefix.strip('_')))
+            chseet_name = '{}_{}_色板'.format(project_name, prefix.strip('_'))
 
             task.set(message='访问数据库文件')
             try:
                 images = cgtwq.Shots(database, prefix=prefix).get_all_image()
             except cgtwq.IDError as ex:
-                nuke.message('找不到对应条目\n{}'.format(ex))
+                QMessageBox.critical(self, '找不到对应条目', str(ex))
                 return
             except RuntimeError:
                 return
 
             task.set(50, '生成文件')
             if is_pack:
+                outdir = os.path.join(outdir, chseet_name)
                 task = Progress('下载图像到本地', total=len(images))
                 for f in images:
                     task.step(f)
-                    image_dir = os.path.join(
-                        outdir, '{}_images/'.format(database))
+                    image_dir = os.path.join(outdir, 'images/')
                     copy(f, image_dir)
                 created_file = csheet.create_html_from_dir(image_dir)
             else:
+                save_path = os.path.join(outdir, '{}.html'.format(chseet_name))
                 created_file = csheet.create_html(images, save_path,
                                                   title=u'色板 {}@{}'.format(prefix, database))
             if created_file:
+                webbrowser.open(outdir)
                 webbrowser.open(created_file)
+
         except CancelledError:
             LOGGER.debug(u'用户取消创建色板')
         except:
             LOGGER.error('Unexcepted error', exc_info=True)
             raise
+
+        super(Dialog, self).accept()
 
 
 def main():
