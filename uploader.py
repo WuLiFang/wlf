@@ -18,7 +18,7 @@ from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QFileDialog
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.9.1'
+__version__ = '0.9.2'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -459,7 +459,7 @@ class ShotsFileDirectory(object):
         path = self.path
         prev_files = self.files
         files = version_filter(i for i in os.listdir(path)
-                               if i.endswith(self.ext))
+                               if i.lower().endswith(self.ext))
         if prev_files == files:
             return
 
