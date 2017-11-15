@@ -10,14 +10,14 @@ from wlf import cgtwq, csheet
 import wlf.config
 from wlf.notify import Progress, CancelledError
 from wlf.files import copy
-from wlf.Qt import QtWidgets
+from wlf.Qt import QtWidgets, QtCore
 from wlf.Qt.QtWidgets import QMessageBox
 from wlf.uitools import DialogWithDir, main_show_dialog
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.3.2'
+__version__ = '0.4.0'
 
 
 class Config(wlf.config.Config):
@@ -27,7 +27,7 @@ class Config(wlf.config.Config):
         'PROJECT': '少年锦衣卫',
         'PIPELINE': '合成',
         'DATABASE': 'proj_big',
-        'PREFIX': 'SNJYW_EP14_',
+        'PREFIX': 'SNJYW_EP19_',
         'OUTDIR': 'E:/',
         'PACK': False,
     }
@@ -70,12 +70,27 @@ class Dialog(DialogWithDir):
         edit = self.comboBoxProject
         self.projects_databse = {
             i: project.get_info(i, 'database')for i in names}
+        self.projects_code = {
+            i: project.get_info(i, 'code')for i in names}
         proj_config = CONFIG['PROJECT']
         edit.insertItems(0, names)
         edit.setCurrentIndex(edit.findText(proj_config))
 
         # Signals
         self.actionDir.triggered.connect(self.ask_dir)
+        self.comboBoxProject.currentIndexChanged.connect(self.auto_set_prefix)
+
+    def auto_set_prefix(self):
+        """Set prefix according current project. """
+
+        edit = self.lineEditPrefix
+        project_name = self.comboBoxProject.currentText()
+        text = self.projects_code[project_name]
+        text = '{}_EP01_'.format(text)
+
+        edit.setText(text)
+        edit.setFocus(QtCore.Qt.ShortcutFocusReason)
+        edit.setSelection(len(text) - 3, 2)
 
     def accept(self):
         """Override QDialog.accept .  """
