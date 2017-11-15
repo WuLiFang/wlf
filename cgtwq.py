@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -301,7 +301,7 @@ class Shots(CGTeamWork):
 
         image = self._infos[shot]['shot_task.image']
         if not image:
-            return
+            return '{}/{}.jpg'.format(self.get_shot_filebox_path(shot, 'image'), shot)
         return 'http://{}/{}'.format(self.server_ip, json.loads(image)['max'])
 
     def get_shot_submit(self, shot):
