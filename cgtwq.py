@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.4'
+__version__ = '0.6.5'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -298,11 +298,8 @@ class Shots(CGTeamWork):
         if len(self.episodes) == 1:
             return self.episodes.copy().pop()
 
-    def get_shot_image(self, shot):
+    def get_shot_image(self, shot, is_allow_http=True):
         """Get image dest for @shot.  """
-
-        sign = 'shot_task.image'
-        image = self._infos[shot][sign]
 
         def _get_path(sign):
             try:
@@ -310,17 +307,25 @@ class Shots(CGTeamWork):
             except SignError:
                 return
 
+        field_sign = 'shot_task.image'
+        image = self._infos[shot][field_sign]
+
         if image:
             image = json.loads(image)['max']
-            if image.startswith(('/', '\\')):
+            if image.startswith(('/', '\\')) and is_allow_http:
                 image = 'http://{}/{}'.format(self.server_ip, image)
-        else:
-            image = '{}/{}.jpg'.format(
-                _get_path('image') or _get_path('submit') or 'UnkownPath', shot)
+            return image
 
+        for filfbox_sign in ('image', 'submit'):
+            dir_ = _get_path(filfbox_sign)
+            if dir_:
+                image = os.path.join(dir_, '{}.jpg'.format(shot))
+                break
+
+        if image:
             # Record result for accelerate next run.
             self.task_module.set(
-                {sign: json.dumps({'max': image, 'min': image})})
+                {field_sign: json.dumps({'max': image, 'min': image})})
         return image
 
     def get_shot_submit(self, shot):
