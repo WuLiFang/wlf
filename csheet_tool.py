@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 
 class Config(wlf.config.Config):
@@ -80,8 +80,8 @@ class Dialog(DialogWithDir):
     def accept(self):
         """Override QDialog.accept .  """
 
+        super(Dialog, self).accept()
         try:
-            task = Progress('创建色板')
             project_name = self.comboBoxProject.currentText()
             database = self.projects_databse.get(
                 project_name, CONFIG.default['DATABASE'])
@@ -92,17 +92,19 @@ class Dialog(DialogWithDir):
             chseet_name = '{}_{}_{}色板'.format(
                 project_name, prefix.strip('_'), pipeline)
 
-            task.set(message='访问数据库文件')
             try:
+                task = Progress('访问数据库')
+                task.step(database)
                 shots = cgtwq.Shots(
                     database, pipeline=pipeline, prefix=prefix)
-                rename_dict = {shots.get_shot_image(i): i for i in shots.shots}
-                for k, v in rename_dict.items():
-                    if not k:
-                        del rename_dict[k]
-                        continue
-                    ext = os.path.splitext(k)[1]
-                    rename_dict[k] = ''.join([v, ext])
+                task.total = len(shots.shots) + 1
+                rename_dict = {}
+                for shot in shots.shots:
+                    task.step(shot)
+                    image = shots.get_shot_image(shot)
+                    if image:
+                        ext = os.path.splitext(image)[1]
+                        rename_dict[image] = ''.join([shot, ext])
                 images = sorted(rename_dict.keys(), key=rename_dict.get)
             except cgtwq.IDError as ex:
                 QMessageBox.critical(self, '找不到对应条目', str(ex))
@@ -110,7 +112,6 @@ class Dialog(DialogWithDir):
             except RuntimeError:
                 return
 
-            task.set(50, '生成文件')
             if is_pack:
                 outdir = os.path.join(outdir, chseet_name)
                 task = Progress('下载图像到本地', total=len(images))
@@ -137,8 +138,6 @@ class Dialog(DialogWithDir):
         except:
             LOGGER.error('Unexcepted error', exc_info=True)
             raise
-
-        super(Dialog, self).accept()
 
 
 def main():
