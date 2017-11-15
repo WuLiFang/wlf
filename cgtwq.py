@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.2'
+__version__ = '0.6.3'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -299,7 +299,8 @@ class Shots(CGTeamWork):
     def get_shot_image(self, shot):
         """Get image dest for @shot.  """
 
-        image = self._infos[shot]['shot_task.image']
+        sign = 'shot_task.image'
+        image = self._infos[shot][sign]
 
         def _get_path(sign):
             try:
@@ -307,10 +308,18 @@ class Shots(CGTeamWork):
             except SignError:
                 return
 
-        if not image:
-            return '{}/{}.jpg'.format(
+        if image:
+            image = json.loads(image)['max']
+            if image.startswith(('/', '\\')):
+                image = 'http://{}/{}'.format(self.server_ip, image)
+        else:
+            image = '{}/{}.jpg'.format(
                 _get_path('image') or _get_path('submit') or 'UnkownPath', shot)
-        return 'http://{}/{}'.format(self.server_ip, json.loads(image)['max'])
+
+            # Record result for accelerate next run.
+            self.task_module.set(
+                {sign: json.dumps({'max': image, 'min': image})})
+        return image
 
     def get_shot_submit(self, shot):
         """Get submit dest for @shot.  """
