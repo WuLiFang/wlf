@@ -10,7 +10,7 @@ from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog
 from wlf.mp_logging import set_basic_logger
 import wlf.config
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 class DialogWithDir(QDialog):
@@ -125,7 +125,6 @@ def main_show_dialog(dialog):
         sys.setdefaultencoding('UTF-8')
 
     set_basic_logger()
-    app = QApplication(sys.argv)
+    QApplication(sys.argv)
     frame = dialog()
-    frame.show()
-    sys.exit(app.exec_())
+    sys.exit(frame.exec_())
