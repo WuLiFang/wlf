@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.3'
+__version__ = '0.6.4'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -273,6 +273,8 @@ class Shots(CGTeamWork):
                            if i['shot.shot'])
         self._shots = sorted(
             i for i in self._infos if not prefix or i.startswith(prefix))
+        if not self._shots:
+            raise PrefixError(prefix)
 
     @property
     def shots(self):
@@ -570,26 +572,21 @@ class Account(Public):
 
 class CGTeamWorkException(Exception):
     """Base exception class for CGTeamWork.  """
-    pass
+
+    def __init__(self, *args):
+        super(CGTeamWorkException, self).__init__()
+        self.message = args
 
 
 class IDError(CGTeamWorkException):
     """Indicate can't specify shot id on cgtw."""
 
-    def __init__(self, *args):
-        CGTeamWorkException.__init__(self)
-        self.message = args
-
     def __str__(self):
-        return 'Can not found item id:{}'.format(self.message)
+        return 'Can not found item with matched id:{}'.format(self.message)
 
 
 class SignError(CGTeamWorkException):
     """Indicate can't found matched sign."""
-
-    def __init__(self, *args):
-        CGTeamWorkException.__init__(self)
-        self.message = args
 
     def __str__(self):
         return 'Can not found matched sign:{}'.format(self.message)
@@ -598,10 +595,6 @@ class SignError(CGTeamWorkException):
 class FolderError(CGTeamWorkException):
     """Indicate can't found destination folder."""
 
-    def __init__(self, *args):
-        CGTeamWorkException.__init__(self)
-        self.message = args
-
     def __str__(self):
         return 'No such folder on server:{}'.format(self.message)
 
@@ -609,12 +602,19 @@ class FolderError(CGTeamWorkException):
 class LoginError(CGTeamWorkException):
     """Indicate can't found destination folder."""
 
-    def __init__(self, *args):
-        CGTeamWorkException.__init__(self)
-        self.message = args
-
     def __str__(self):
         return 'Not loged in.  \n{}'.format(self.message)
+
+
+class PrefixError(CGTeamWorkException):
+    """Indicate ."""
+
+    def __init__(self, prefix):
+        super(PrefixError, self).__init__(prefix)
+        self.prefix = prefix
+
+    def __str__(self):
+        return 'Can not found any prefix matched shots: {}'.format(self.prefix)
 
 
 class AccountError(CGTeamWorkException):
