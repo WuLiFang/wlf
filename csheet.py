@@ -22,7 +22,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -256,8 +256,9 @@ def create_html(images, save_path, title=None, rename_dict=None):
         def __init__(self, path):
             if rename_dict:
                 name = rename_dict.get(path, path)
+            else:
+                name = os.path.basename(path)
             path = os.path.normpath(path)
-            name = os.path.basename(name)
             name = split_version(name)[0]
             shot = get_shot(name)
             if not os.path.isabs(path) and not path.startswith('http:'):
