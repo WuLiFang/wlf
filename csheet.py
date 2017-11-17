@@ -22,7 +22,7 @@ from wlf.path import get_encoded, get_unicode, split_version
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.5.1'
+__version__ = '1.5.2'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -254,10 +254,7 @@ def create_html(images, save_path, title=None, rename_dict=None):
         exsited_id = []
 
         def __init__(self, path):
-            if rename_dict:
-                name = rename_dict.get(path, path)
-            else:
-                name = os.path.basename(path)
+            name = os.path.basename(rename_dict.get(path, path))
             path = os.path.normpath(path)
             name = split_version(name)[0]
             shot = get_shot(name)
@@ -284,6 +281,7 @@ def create_html(images, save_path, title=None, rename_dict=None):
             self.shot = shot
 
     body = ''
+    rename_dict = rename_dict or {}
     images = [Image(i) for i in images]
     total = len(images)
     task = Progress('生成页面', total)
