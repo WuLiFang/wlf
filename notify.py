@@ -9,6 +9,7 @@ import threading
 from subprocess import Popen
 
 from wlf.Qt import QtCompat, QtWidgets
+from wlf.Qt.QtCore import Signal
 from wlf.path import get_encoded, escape_batch
 
 HAS_NUKE = bool(sys.modules.get('nuke'))
@@ -16,11 +17,14 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.11'
+__version__ = '0.4.12'
 
 
 class ProgressBar(QtWidgets.QDialog):
     """Qt progressbar dialog."""
+
+    progress_changed = Signal(int)
+    message_changed = Signal(str)
 
     def __init__(self, name, parent=None):
         self._cancelled = False
@@ -37,16 +41,22 @@ class ProgressBar(QtWidgets.QDialog):
             self.setGeometry(geo)
         self.show()
 
-    def setProgress(self, value):
+        self.progress_changed.connect(self.set_progress)
+        self.message_changed.connect(self.set_message)
+
+        setattr(self, 'setProgress', self.progress_changed.emit)
+        setattr(self, 'setMessage', self.message_changed.emit)
+
+    def set_progress(self, value):
         """Set progress value.  """
 
         self.progressBar.setValue(value)
         QtWidgets.QApplication.processEvents()
 
-    def setMessage(self, message):
+    def set_message(self, message):
         """Set progress message.  """
 
-        self.setWindowTitle(u'{}:{}'.format(self.name, message))
+        self.setWindowTitle(u':'.join(i for i in [self.name, message] if i))
         QtWidgets.QApplication.processEvents()
 
     def isCancelled(self):
