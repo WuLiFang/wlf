@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 
 
 class Config(wlf.config.Config):
@@ -111,7 +111,7 @@ class Dialog(DialogWithDir):
                 i for i in [project_name, prefix.strip(code).strip('_'), pipeline] if i))
 
             try:
-                task = Progress('访问数据库')
+                task = Progress('访问数据库', parent=self)
                 task.step(database)
                 shots = cgtwq.Shots(
                     database, pipeline=pipeline, prefix=prefix)
@@ -140,7 +140,7 @@ class Dialog(DialogWithDir):
 
             if is_pack:
                 outdir = os.path.join(outdir, chseet_name)
-                task = Progress('下载图像到本地', total=len(images))
+                task = Progress('下载图像到本地', total=len(images), parent=self)
                 image_dir = os.path.join(outdir, 'images')
                 for f in images:
                     task.step(f)
