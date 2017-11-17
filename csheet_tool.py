@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.4'
+__version__ = '0.4.5'
 
 
 class Config(wlf.config.Config):
@@ -159,13 +159,12 @@ class Dialog(DialogWithDir):
                 webbrowser.open(outdir)
                 webbrowser.open(created_file)
 
+            super(Dialog, self).accept()
         except CancelledError:
             LOGGER.debug(u'用户取消创建色板')
         except:
             LOGGER.error('Unexcepted error', exc_info=True)
             raise
-
-        super(Dialog, self).accept()
 
 
 def main():
