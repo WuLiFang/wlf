@@ -16,21 +16,25 @@ HAS_NUKE = bool(sys.modules.get('nuke'))
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.10'
+__version__ = '0.4.11'
 
 
 class ProgressBar(QtWidgets.QDialog):
     """Qt progressbar dialog."""
 
-    def __init__(self, name):
+    def __init__(self, name, parent=None):
         self._cancelled = False
         self.name = name
 
         app = QtWidgets.QApplication.instance()
         if not app:
             app = QtWidgets.QApplication(sys.argv)
-        super(ProgressBar, self).__init__()
+        super(ProgressBar, self).__init__(parent)
         QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
+        if parent:
+            geo = self.geometry()
+            geo.moveCenter(parent.geometry().center())
+            self.setGeometry(geo)
         self.show()
 
     def setProgress(self, value):
@@ -64,13 +68,13 @@ class Progress(object):
     count = -1
     total = 100
 
-    def __init__(self, name='', total=None):
+    def __init__(self, name='', total=None, parent=None):
         self.total = total or self.total
 
         if HAS_NUKE:
             self._task = nuke.ProgressTask(name)
         else:
-            self._task = ProgressBar(name)
+            self._task = ProgressBar(name, parent)
 
     def __del__(self):
         if not HAS_NUKE:
