@@ -18,7 +18,7 @@ from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QFileDialog
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.9.2'
+__version__ = '0.9.3'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -48,6 +48,8 @@ class Dialog(DialogWithDir):
     """Main GUI dialog.  """
 
     default_note = '自上传工具提交'
+    instance = None
+    upload_finished = QtCore.Signal()
 
     def __init__(self, parent=None):
 
@@ -96,6 +98,7 @@ class Dialog(DialogWithDir):
             lambda: webbrowser.open(CONFIG['DIR']))
         self.actionOpenServer.triggered.connect(
             lambda: webbrowser.open(CONFIG['SERVER']))
+        self.upload_finished.connect(self.activateWindow)
 
     def showEvent(self, event):
         LOGGER.debug('Uploader show event triggered.')
@@ -127,35 +130,38 @@ class Dialog(DialogWithDir):
         self.syncButton.setText(sync_button_text)
         self.syncButton.setEnabled(sync_button_enable)
 
-    @run_async
     def upload(self):
         """Upload videos to server.  """
 
         files = list(self.checked_files)
         directory = self.file_list_widget.directory
 
-        try:
-            task = Progress(total=len(files))
-            for i in files:
-                task.step(i)
-                src = os.path.join(self.directory, i)
-                dst = directory.get_dest(i)
-                shot_name = get_shot(dst)
-                if isinstance(dst, Exception):
-                    self.error(u'{}\n-> {}'.format(i, dst))
-                    continue
-                copy(src, dst)
-                if self.mode == 1:
-                    shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
-                    if src.lower().endswith(('.jpg', '.png', '.jpeg')):
-                        shot.shot_image = dst
-                    if self.is_submit:
-                        note = self.lineEditNote.text() or self.default_note
-                        shot.submit([dst], note=note)
-        except CancelledError:
-            pass
+        task = Progress(total=len(files), parent=self)
 
-        self.activateWindow()
+        @run_async
+        def _run():
+            try:
+                for i in files:
+                    task.step(i)
+                    src = os.path.join(self.directory, i)
+                    dst = directory.get_dest(i)
+                    shot_name = get_shot(dst)
+                    if isinstance(dst, Exception):
+                        self.error(u'{}\n-> {}'.format(i, dst))
+                        continue
+                    copy(src, dst)
+                    if self.mode == 1:
+                        shot = cgtwq.Shot(shot_name, pipeline=self.pipeline)
+                        if src.lower().endswith(('.jpg', '.png', '.jpeg')):
+                            shot.shot_image = dst
+                        if self.is_submit:
+                            note = self.lineEditNote.text() or self.default_note
+                            shot.submit([dst], note=note)
+            except CancelledError:
+                LOGGER.info('用户取消上传')
+            self.upload_finished.emit()
+
+        _run()
 
     def ask_server(self):
         """Show a dialog ask user config['SERVER'].  """
@@ -273,7 +279,7 @@ class FileListWidget(object):
             kwargs = {'dest': self.parent.dest_folder}
 
         self.directory = ShotsFileDirectory(
-            self.parent.directory, self.parent.pipeline, **kwargs)
+            self.parent.directory, self.parent.pipeline, parent=self.parent, **kwargs)
 
     def showEvent(self, event):
         event.accept()
@@ -437,7 +443,7 @@ class ShotsFileDirectory(object):
     files = None
     dest_dict = None
 
-    def __init__(self, path, pipeline, dest=None):
+    def __init__(self, path, pipeline, dest=None, parent=None):
         assert os.path.exists(
             path), '{} is not existed.'.format(path)
         assert pipeline in self.pipeline_ext, '{} is not a pipeline'.format(
@@ -450,6 +456,7 @@ class ShotsFileDirectory(object):
         self.dest = dest
         self.files = []
         self.dest_dict = {}
+        self.parent = parent
 
         self.update()
 
@@ -493,7 +500,9 @@ class ShotsFileDirectory(object):
                 return
 
             shots = [i for i in all_shots if _get_database(i) == database]
-            task = Progress('获取镜头信息', total=len(shots) + 1)
+            task = Progress('获取镜头信息',
+                            total=len(shots) + 1,
+                            parent=self.parent)
 
             task.step('连接数据库: {}'.format(database))
             try:
