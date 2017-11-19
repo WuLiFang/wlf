@@ -17,7 +17,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.5'
+__version__ = '0.4.6'
 
 
 class Config(wlf.config.Config):
@@ -30,7 +30,6 @@ class Config(wlf.config.Config):
         'PREFIX': 'SNJYW_EP19_',
         'OUTDIR': 'E:/',
         'PACK': 0,
-        'ALLOW_HTTP': 2,
     }
     path = os.path.expanduser(u'~/.wlf.csheet.json')
 
@@ -51,7 +50,6 @@ class Dialog(DialogWithDir):
             'lineEditPrefix': 'PREFIX',
             'lineEditOutDir': 'OUTDIR',
             'checkBoxPack': 'PACK',
-            'checkBoxAllowHTTP': 'ALLOW_HTTP',
         }
         icons = {
             'toolButtonAskDir': QtWidgets.QStyle.SP_DialogOpenButton,
@@ -106,7 +104,6 @@ class Dialog(DialogWithDir):
             prefix = self.lineEditPrefix.text()
             outdir = self.directory
             is_pack = self.checkBoxPack.checkState()
-            is_allow_http = self.checkBoxAllowHTTP.checkState()
             chseet_name = '{}色板'.format('_'.join(
                 i for i in [project_name, prefix.strip(code).strip('_'), pipeline] if i))
 
@@ -119,8 +116,7 @@ class Dialog(DialogWithDir):
                 rename_dict = {}
                 for shot in shots.shots:
                     task.step(shot)
-                    image = shots.get_shot_image(
-                        shot, is_allow_http=is_allow_http)
+                    image = shots.get_shot_image(shot)
                     if image:
                         ext = os.path.splitext(image)[1]
                         rename_dict[image] = ''.join([shot, ext])
