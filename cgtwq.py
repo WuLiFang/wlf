@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.6'
+__version__ = '0.6.7'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -298,7 +298,7 @@ class Shots(CGTeamWork):
         if len(self.episodes) == 1:
             return self.episodes.copy().pop()
 
-    def get_shot_image(self, shot, is_allow_http=True):
+    def get_shot_image(self, shot):
         """Get image dest for @shot.  """
 
         def _get_path(sign):
@@ -308,27 +308,27 @@ class Shots(CGTeamWork):
                 return
 
         field_sign = 'shot_task.image'
-        image = self._infos[shot][field_sign]
+        filed_info = self._infos[shot][field_sign]
+        key = 'image_path'
 
-        if image:
-            image = json.loads(image)['max']
-            if image.startswith(('/', '\\')):
-                if is_allow_http:
-                    image = 'http://{}/{}'.format(self.server_ip, image)
-                    return image
-            else:
-                return image
+        # Try use filed info first
+        if filed_info:
+            filed_info = json.loads(filed_info)
+            if key in filed_info:
+                return filed_info[key]
 
+        # Get from filebox
         for filebox_sign in ('image', 'submit'):
             dir_ = _get_path(filebox_sign)
             if dir_:
                 image = os.path.join(dir_, '{}.jpg'.format(shot))
                 break
 
-        if image and is_allow_http:
-            # Record result for accelerate next run.
-            self.task_module.set(
-                {field_sign: json.dumps({'max': image, 'min': image})})
+        # Record result for accelerate next run.
+        filed_info = filed_info or {}
+        filed_info[key] = image
+        self.task_module.set({field_sign: json.dumps(filed_info)})
+
         return image
 
     def get_shot_submit(self, shot):
