@@ -4,6 +4,7 @@
         "CH_B",
         "CH_C",
         "CH_D",
+        "CH_E",
         "BG_A",
         "BG_B",
         "BG_C",
@@ -41,11 +42,13 @@
         "CH_C_ID": "ID_CH_C",
         "CH_D_ID": "ID_CH_D",
         "CH_KEY_LIGHT": "LIGHT_KEY_CH",
+        "CH_EDGE": "EDGE_CH",
         "CH_OC": "OCC_CH",
         "CH_OCC": "OCC_CH",
         "CH_SD": "SH_CH",
         "CH_SH": "SH_CH",
-        "CH_SHD": "SH_CH"
+        "CH_SHD": "SH_CH",
+        "CH_SHADOW": "SH_CH"
     },
     "default": "_OTHER",
     "pattern": "(?i)(?:[^_]+_)?(?:ep\\d+_)?(?:\\d+[a-zA-Z]*_)?(?:sc\\d+[a-zA-Z]*_)?((?:[a-zA-Z][^\\._]*_?){,3})"
