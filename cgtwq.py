@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.7'
+__version__ = '0.6.8'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -246,7 +246,19 @@ class CGTeamWork(object):
         return datetime.datetime.strptime(text, self.DATETIME_FORMAT)
 
 
-class Shots(CGTeamWork):
+class ShotTask(CGTeamWork):
+    """Shot task base class.  """
+
+    image_path_key = 'image_path'
+    signs = {'shot': 'shot.shot',
+             'eps': 'eps.eps_name',
+             'project_code': 'eps.project_code',
+             'artist': 'shot_task.artist',
+             'account_id': 'shot_task.account_id',
+             'image': 'shot_task.image'}
+
+
+class Shots(ShotTask):
     """Deal multple shot at once.  """
     _epsodes = []
 
@@ -265,8 +277,7 @@ class Shots(CGTeamWork):
         initiated = self.task_module.init_with_filter(filters)
         if not initiated:
             raise IDError(self.database, filters)
-        shots_info = self.task_module.get(
-            ['shot.shot', 'eps.eps_name', 'eps.project_code', 'shot_task.artist', 'shot_task.account_id', 'shot_task.image'])
+        shots_info = self.task_module.get(self.signs.values())
         if shots_info is False:
             raise IDError(self.database, filters)
         self._infos = dict((i['shot.shot'], i) for i in shots_info
@@ -285,10 +296,12 @@ class Shots(CGTeamWork):
     @property
     def episodes(self):
         """Episode shots contained.  """
+
+        sign = self.signs['eps']
         if not self._epsodes:
-            infos = self.task_module.get(['eps.eps_name'])
+            infos = self.task_module.get(sign)
             if infos:
-                self._epsodes = set(i['eps.eps_name'] for i in infos)
+                self._epsodes = set(i[sign] for i in infos)
         return self._epsodes
 
     @property
@@ -307,9 +320,9 @@ class Shots(CGTeamWork):
             except SignError:
                 return
 
-        field_sign = 'shot_task.image'
+        field_sign = self.signs['image']
         filed_info = self._infos[shot][field_sign]
-        key = 'image_path'
+        key = self.image_path_key
 
         # Try use filed info first
         if filed_info:
@@ -362,8 +375,8 @@ class Shots(CGTeamWork):
                                current=self.current_account())
 
 
-class Shot(CGTeamWork):
-    """Methods for shot action."""
+class Shot(ShotTask):
+    """Methods for single shot action."""
 
     def __init__(self, name, database=None, pipeline=None):
         super(Shot, self).__init__()
@@ -393,9 +406,7 @@ class Shot(CGTeamWork):
     def update_info(self):
         """Update info from database"""
 
-        infos = self.task_module.get(
-            ['shot.shot', 'eps.project_code',
-             'eps.eps_name', 'shot_task.artist', 'shot_task.account_id', 'shot_task.image'])[0]
+        infos = self.task_module.get(self.signs.values())[0]
         self._info.update(infos)
 
     @property
@@ -465,6 +476,15 @@ class Shot(CGTeamWork):
         LOGGER.debug('set_image:%s', value)
         self.task_module.set_image('shot_task.image', value)
         self.update_info()
+
+        # Record for request path
+        key = self.image_path_key
+        sign = self.signs['image']
+
+        image_info = self._info[sign]
+        image_info = json.loads(image_info) if image_info else {}
+        image_info[key] = value
+        self.task_module.set({sign: image_info})
 
     @property
     def image_dest(self):
