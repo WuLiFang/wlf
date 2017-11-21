@@ -4,12 +4,12 @@ from __future__ import print_function, unicode_literals
 
 import os
 from wlf.Qt.QtWidgets import QSystemTrayIcon
-from wlf.Qt.QtGui import QIcon
+from wlf.Qt.QtGui import QIcon, QCursor
 from wlf.uitools import has_gui, Menu
 
 RESOURCE_DIR = os.path.dirname(__file__)
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 class Tray(QSystemTrayIcon):
@@ -31,6 +31,8 @@ class Tray(QSystemTrayIcon):
         self.menu = Menu()
         self.setContextMenu(self.menu)
 
+        self.activated.connect(self.on_activated)
+
         self.setup_menu()
 
     def setup_menu(self):
@@ -46,6 +48,10 @@ class Tray(QSystemTrayIcon):
 
         self.menu.add_command('创建色板', _csheet_tool)
         self.menu.add_command('上传工具', _uploader)
+
+    def on_activated(self, reason):
+        if reason == self.Trigger:
+            self.contextMenu().popup(QCursor.pos())
 
 
 if has_gui():
