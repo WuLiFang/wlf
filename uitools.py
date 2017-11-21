@@ -6,11 +6,11 @@ import sys
 import os
 
 from wlf.Qt import QtWidgets, QtCore, QtCompat
-from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog
+from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
 from wlf.mp_logging import set_basic_logger
 import wlf.config
 
-__version__ = '0.1.1'
+__version__ = '0.2.0'
 
 
 class DialogWithDir(QDialog):
@@ -117,6 +117,24 @@ class DialogWithDir(QDialog):
             self.directory = dir_
 
 
+class Menu(QMenu):
+    """Wrapped QMenu.  """
+
+    def add_command(self, name, cmd):
+        """Add command to tray menu.  """
+
+        action = QAction(name, self, triggered=cmd)
+        self.addAction(action)
+        return action
+
+    def add_menu(self, name):
+        """Add submenu to tray menu.  """
+
+        menu = Menu(name)
+        self.addMenu(menu)
+        return menu
+
+
 def main_show_dialog(dialog):
     """Show dialog, standalone.  """
 
@@ -128,3 +146,9 @@ def main_show_dialog(dialog):
     QApplication(sys.argv)
     frame = dialog()
     sys.exit(frame.exec_())
+
+
+def has_gui():
+    """Return if running in gui envrionment.  """
+
+    return isinstance(QtWidgets.QApplication.instance(), QtWidgets.QApplication)
