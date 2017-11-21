@@ -6,18 +6,20 @@ import os
 import sys
 import multiprocessing
 import threading
-from subprocess import Popen
+import logging
 
 from wlf.Qt import QtCompat, QtWidgets
+
 from wlf.Qt.QtCore import Signal
-from wlf.path import get_encoded, escape_batch
+from wlf.tray import Tray
 
 HAS_NUKE = bool(sys.modules.get('nuke'))
+LOGGER = logging.getLogger('com.wlf.notify')
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.4.12'
+__version__ = '0.5.0'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -183,12 +185,21 @@ def message_box(message, detail=None):
         _message(message, detail)
 
 
-def traytip(title, text, seconds=3, options=1):
-    """Show a traytip(windows only).  """
-    executable = os.path.abspath(
-        os.path.join(__file__, '../traytip.exe'))
-    if not os.path.exists(get_encoded(executable)):
-        raise IOError('traytip.exe missing')
-    cmd = u'"{}" "{}" "{}" "{}" "{}"'.format(
-        executable, escape_batch(title), escape_batch(text), seconds, options)
-    Popen(get_encoded(cmd))
+def traytip(title, text, seconds=3, icon='Information', **kwargs):
+    """Show a traytip.
+
+    @icon enum:
+        NoIcon,
+        Information,
+        Warning,
+        Critical
+    """
+
+    if kwargs:
+        LOGGER.warning('Unused kwargs: %s', kwargs)
+    icon = getattr(QtWidgets.QSystemTrayIcon, icon)
+
+    tray = Tray()
+    tray.show()
+
+    tray.showMessage(title, text, icon=icon, msecs=seconds * 1000)
