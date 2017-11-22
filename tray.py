@@ -9,7 +9,7 @@ from wlf.uitools import has_gui, Menu
 
 RESOURCE_DIR = os.path.dirname(__file__)
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 class Tray(QSystemTrayIcon):
@@ -27,13 +27,16 @@ class Tray(QSystemTrayIcon):
         if not self.initiated:
             super(Tray, self).__init__(
                 QIcon(os.path.join(RESOURCE_DIR, 'tray_icon.png')))
-            self.initiated = True
-        self.menu = Menu()
-        self.setContextMenu(self.menu)
 
-        self.activated.connect(self.on_activated)
+            # Menu.
+            self.menu = Menu()
+            self.setup_menu()
+            self.setContextMenu(self.menu)
 
-        self.setup_menu()
+            # Signals.
+            self.activated.connect(self.on_activated)
+
+        self.initiated = True
 
     def setup_menu(self):
         """Set menu context.  """
