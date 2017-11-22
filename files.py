@@ -68,7 +68,7 @@ def copy(src, dst, threading=False):
         return thread
 
     if src.startswith('http:'):
-        LOGGER.info('下载:\n\t%s\n->\t%s', src, dst)
+        LOGGER.info('下载:\n\t\t%s\n\t->\t%s', src, dst)
         _mkdirs()
         try:
             src_fd = urllib.urlopen(src)
@@ -80,7 +80,7 @@ def copy(src, dst, threading=False):
         LOGGER.warning('尝试复制不存在的文件: %s', src)
         return
     else:
-        LOGGER.info('复制:\n\t%s\n->\t%s', src, dst)
+        LOGGER.info('复制:\n\t\t%s\n\t->\t%s', src, dst)
         _mkdirs()
         try:
             shutil.copy2(src, dst)
