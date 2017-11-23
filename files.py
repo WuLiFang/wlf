@@ -185,7 +185,7 @@ def is_same(src, dst):
     try:
         if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
             return True
-    except WindowsError:
-        pass
+    except OSError:
+        LOGGER.warning('Can not check if same.', exc_info=True)
 
     return False
