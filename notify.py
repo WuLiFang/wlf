@@ -9,9 +9,9 @@ import threading
 import logging
 
 from wlf.Qt import QtCompat, QtWidgets
-
 from wlf.Qt.QtCore import Signal
 from wlf.tray import Tray
+from wlf.decorators import run_in_main_thread
 
 HAS_NUKE = bool(sys.modules.get('nuke'))
 LOGGER = logging.getLogger('com.wlf.notify')
@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('com.wlf.notify')
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.5.0'
+__version__ = '0.5.1'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -28,6 +28,7 @@ class ProgressBar(QtWidgets.QDialog):
     progress_changed = Signal(int)
     message_changed = Signal(str)
 
+    @run_in_main_thread
     def __init__(self, name, parent=None):
         self._cancelled = False
         self.name = name
