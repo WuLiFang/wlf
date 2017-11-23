@@ -19,7 +19,7 @@ from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_shot, get_unicode, remove_version
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.10.0'
+__version__ = '0.10.1'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -440,6 +440,7 @@ class ShotsFileDirectory(QObject):
     dest_dict = None
     changed = Signal()
     updating = False
+    _uploaded = None
 
     def __init__(self, path, pipeline, dest=None, parent=None):
         assert os.path.exists(
@@ -465,24 +466,24 @@ class ShotsFileDirectory(QObject):
     @run_async
     def update(self):
         """Update directory content.  """
+
         if self.updating:
             return
 
         self.updating = True
+
+        if self.update_uploaded():
+            self.changed.emit()
         try:
             path = self.path
             prev_files = self.files
-            files = version_filter(i for i in os.listdir(path)
-                                   if i.lower().endswith(self.ext))
-            if prev_files == files:
+            prev_shots = self.shots()
+            self.files = version_filter(i for i in os.listdir(path)
+                                        if i.lower().endswith(self.ext))
+            if prev_files == self.files or self.shots() == prev_shots:
                 return
-            else:
-                prev_shots = self.shots()
-                self.files = files
-                if self.shots() == prev_shots:
-                    return
 
-            if not prev_files or set(files).difference(prev_files):
+            if not prev_files or set(self.files).difference(prev_files):
                 try:
                     self.dest_dict = self.get_dest_dict()
                 except CancelledError:
@@ -559,6 +560,15 @@ class ShotsFileDirectory(QObject):
     @property
     def uploaded(self):
         """Files that does not need to upload agian.  """
+
+        if self._uploaded is None:
+            self.update_uploaded()
+        return self._uploaded
+
+    def update_uploaded(self):
+        """Update uploaded files.  """
+
+        old_value = self._uploaded
         files = self.files
         ret = set()
 
@@ -569,7 +579,9 @@ class ShotsFileDirectory(QObject):
             if isinstance(dst, (str, unicode)) and is_same(src, dst):
                 ret.add(filename)
 
-        return ret
+        self._uploaded = ret
+
+        return old_value != ret
 
     def get_dest(self, filename):
         """Get cgteamwork upload destination for @filename.  """
