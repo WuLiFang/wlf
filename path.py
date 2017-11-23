@@ -193,7 +193,10 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
             match = re.match(tag_pat, test_string)
             if match and match.group(1):
                 ret = match.group(1).strip('_').upper()
-                if ret not in REGULAR_TAGS:
+                for tag in REGULAR_TAGS:
+                    if ret.startswith(tag):
+                        break
+                else:
                     LOGGER.warning('不规范标签: %s: %s', ret, filename)
                 break
         if ret:
