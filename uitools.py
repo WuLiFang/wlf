@@ -148,7 +148,6 @@ def main_show_dialog(dialog):
     sys.exit(frame.exec_())
 
 
-def has_gui():
-    """Return if running in gui envrionment.  """
-
-    return isinstance(QtWidgets.QApplication.instance(), QtWidgets.QApplication)
+# Remap moved function.
+setattr(sys.modules[__name__], 'has_gui', __import__(
+    'wlf.env', globals(), locals(), [str('has_gui')]).has_gui)
