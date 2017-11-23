@@ -7,18 +7,19 @@ import logging
 import os
 import webbrowser
 
+from wlf.Qt.QtCore import QObject, Signal, Slot, QTimer, Qt
+from wlf.Qt.QtGui import QBrush, QColor
+from wlf.Qt.QtWidgets import QFileDialog, QStyle, QListWidgetItem
+
 import wlf.config
 from wlf import cgtwq
 from wlf.decorators import run_async
 from wlf.files import copy, is_same, version_filter
 from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_shot, get_unicode, remove_version
-from wlf.Qt import QtCore, QtWidgets
-from wlf.Qt.QtGui import QBrush, QColor
-from wlf.Qt.QtWidgets import QFileDialog
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.9.3'
+__version__ = '0.10.0'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -49,7 +50,7 @@ class Dialog(DialogWithDir):
 
     default_note = '自上传工具提交'
     instance = None
-    upload_finished = QtCore.Signal()
+    upload_finished = Signal()
 
     def __init__(self, parent=None):
 
@@ -66,12 +67,12 @@ class Dialog(DialogWithDir):
             'comboBoxPipeline': 'PIPELINE',
         }
         icons = {
-            'toolButtonOpenDir': QtWidgets.QStyle.SP_DirOpenIcon,
-            'toolButtonOpenServer': QtWidgets.QStyle.SP_DirOpenIcon,
-            'dirButton': QtWidgets.QStyle.SP_DialogOpenButton,
-            'serverButton': QtWidgets.QStyle.SP_DialogOpenButton,
-            'syncButton': QtWidgets.QStyle.SP_FileDialogToParent,
-            None: QtWidgets.QStyle.SP_FileDialogToParent,
+            'toolButtonOpenDir': QStyle.SP_DirOpenIcon,
+            'toolButtonOpenServer': QStyle.SP_DirOpenIcon,
+            'dirButton': QStyle.SP_DialogOpenButton,
+            'serverButton': QStyle.SP_DialogOpenButton,
+            'syncButton': QStyle.SP_FileDialogToParent,
+            None: QStyle.SP_FileDialogToParent,
         }
         DialogWithDir.__init__(
             self,
@@ -86,7 +87,7 @@ class Dialog(DialogWithDir):
         self.file_list_widget = FileListWidget(self.listWidget)
 
         # Update timer
-        self.update_timer = QtCore.QTimer()
+        self.update_timer = QTimer()
         self.update_timer.setInterval(100)
         self.update_timer.timeout.connect(self.update_ui)
 
@@ -230,11 +231,11 @@ class FileListWidget(object):
     if HAS_NUKE:
         brushes = {'local': QBrush(QColor(200, 200, 200)),
                    'uploaded': QBrush(QColor(100, 100, 100)),
-                   'error': QBrush(QtCore.Qt.red)}
+                   'error': QBrush(Qt.red)}
     else:
-        brushes = {'local': QBrush(QtCore.Qt.black),
-                   'uploaded': QBrush(QtCore.Qt.gray),
-                   'error': QBrush(QtCore.Qt.red)}
+        brushes = {'local': QBrush(Qt.black),
+                   'uploaded': QBrush(Qt.gray),
+                   'error': QBrush(Qt.red)}
     updating = False
     directory = None
     burnin_folder = 'burn-in'
@@ -258,16 +259,6 @@ class FileListWidget(object):
         self.widget.showEvent = self.showEvent
         self.widget.hideEvent = self.hideEvent
 
-        # UI update timer
-        self.update_timer = QtCore.QTimer(self.parent)
-        self.update_timer.setInterval(1000)
-        self.update_timer.timeout.connect(self.update_widget)
-
-    def update_files(self):
-        """Update files.  """
-
-        self.directory.update()
-
     def update_directory(self):
         """Update current working dir.  """
 
@@ -278,19 +269,25 @@ class FileListWidget(object):
             assert isinstance(parent, Dialog)
             kwargs = {'dest': self.parent.dest_folder}
 
-        self.directory = ShotsFileDirectory(
+        directory = ShotsFileDirectory(
             self.parent.directory, self.parent.pipeline, parent=self.parent, **kwargs)
+        directory.changed.connect(self.update_widget)
+        directory.update_timer.start()
+
+        if self.directory:
+            self.directory.update_timer.stop()
+            self.directory.deleteLater()
+        self.directory = directory
+        self.directory.changed.emit()
 
     def showEvent(self, event):
         event.accept()
         self.update_directory()
-        self.update_widget()
-        self.update_timer.start()
 
     def hideEvent(self, event):
 
         event.accept()
-        self.update_timer.stop()
+        self.directory.update_timer.stop()
 
     def update_widget(self):
         """Update widget.  """
@@ -301,12 +298,12 @@ class FileListWidget(object):
         widget = self.widget
         parent = self.parent
         brushes = self.brushes
+        directory = self.directory
         assert isinstance(parent, Dialog)
 
-        self.directory.update()
-        local_files = self.directory.files
-        uploaded_files = self.directory.uploaded
-        unexpected_files = self.directory.unexpected
+        local_files = directory.files
+        uploaded_files = directory.uploaded
+        unexpected_files = directory.unexpected
 
         for item in self.items():
             text = item.text()
@@ -316,31 +313,31 @@ class FileListWidget(object):
             # Uncheck.
             elif item.checkState() \
                     and isinstance(self.directory.get_dest(text), Exception):
-                item.setCheckState(QtCore.Qt.Unchecked)
+                item.setCheckState(Qt.Unchecked)
 
         for i in local_files:
             # Add.
             try:
                 item = widget.findItems(
-                    i, QtCore.Qt.MatchExactly)[0]
+                    i, Qt.MatchExactly)[0]
             except IndexError:
-                item = QtWidgets.QListWidgetItem(i, widget)
-                item.setCheckState(QtCore.Qt.Unchecked)
+                item = QListWidgetItem(i, widget)
+                item.setCheckState(Qt.Unchecked)
             # Set style.
             dest = self.directory.get_dest(i)
             if i in uploaded_files:
-                item.setFlags(QtCore.Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemIsEnabled)
                 item.setForeground(brushes['uploaded'])
-                item.setCheckState(QtCore.Qt.Unchecked)
+                item.setCheckState(Qt.Unchecked)
                 tooltip = '已上传至: {}'.format(dest)
             elif i in unexpected_files:
-                item.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                              QtCore.Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemIsUserCheckable |
+                              Qt.ItemIsEnabled)
                 item.setForeground(brushes['error'])
                 tooltip = l10n(dest)
             else:
-                item.setFlags(QtCore.Qt.ItemIsUserCheckable |
-                              QtCore.Qt.ItemIsEnabled)
+                item.setFlags(Qt.ItemIsUserCheckable |
+                              Qt.ItemIsEnabled)
                 item.setForeground(brushes['local'])
                 tooltip = '将上传至: {}'.format(dest)
             item.setToolTip(tooltip)
@@ -364,7 +361,7 @@ class FileListWidget(object):
         """Use burn-in version when preview.  """
         return self.parent.checkBoxBurnIn.checkState()
 
-    @QtCore.Slot(QtWidgets.QListWidgetItem)
+    @Slot(QListWidgetItem)
     def open_file(self, item):
         """Open mov file for preview.  """
 
@@ -402,7 +399,7 @@ class FileListWidget(object):
 
         for item in self.items():
             if item.text() in files:
-                item.setCheckState(QtCore.Qt.Checked)
+                item.setCheckState(Qt.Checked)
         if refresh:
             self.update_directory()
 
@@ -412,9 +409,9 @@ class FileListWidget(object):
         for item in self.items():
             if item.text() not in self.directory.uploaded:
                 if item.checkState():
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(Qt.Unchecked)
                 else:
-                    item.setCheckState(QtCore.Qt.Checked)
+                    item.setCheckState(Qt.Checked)
 
 
 def l10n(obj):
@@ -432,7 +429,7 @@ def l10n(obj):
     return unicode(ret)
 
 
-class ShotsFileDirectory(object):
+class ShotsFileDirectory(QObject):
     """Directory that store shots output files.  """
 
     pipeline_ext = {
@@ -440,8 +437,9 @@ class ShotsFileDirectory(object):
         '渲染': ('.mov'),
         '合成': ('.mov'),
     }
-    files = None
     dest_dict = None
+    changed = Signal()
+    updating = False
 
     def __init__(self, path, pipeline, dest=None, parent=None):
         assert os.path.exists(
@@ -450,6 +448,7 @@ class ShotsFileDirectory(object):
             pipeline)
 
         LOGGER.debug('Init directory.')
+        super(ShotsFileDirectory, self).__init__()
         self.path = path
         self.pipeline = pipeline
         self.ext = self.pipeline_ext[pipeline]
@@ -458,29 +457,40 @@ class ShotsFileDirectory(object):
         self.dest_dict = {}
         self.parent = parent
 
-        self.update()
+        # Direcotry update timer
+        self.update_timer = QTimer(self)
+        self.update_timer.setInterval(1000)
+        self.update_timer.timeout.connect(self.update)
 
+    @run_async
     def update(self):
         """Update directory content.  """
-
-        path = self.path
-        prev_files = self.files
-        files = version_filter(i for i in os.listdir(path)
-                               if i.lower().endswith(self.ext))
-        if prev_files == files:
+        if self.updating:
             return
 
-        prev_shots = self.shots()
-        self.files = files
-        if self.shots() == prev_shots:
-            return
+        self.updating = True
+        try:
+            path = self.path
+            prev_files = self.files
+            files = version_filter(i for i in os.listdir(path)
+                                   if i.lower().endswith(self.ext))
+            if prev_files == files:
+                return
+            else:
+                prev_shots = self.shots()
+                self.files = files
+                if self.shots() == prev_shots:
+                    return
 
-        if not prev_files or set(files).difference(prev_files):
-            try:
-                self.dest_dict = self.get_dest_dict()
-            except CancelledError:
-                self.dest_dict = {}
-                LOGGER.info('用户取消获取信息')
+            if not prev_files or set(files).difference(prev_files):
+                try:
+                    self.dest_dict = self.get_dest_dict()
+                except CancelledError:
+                    self.dest_dict = {}
+                    LOGGER.info('用户取消获取信息')
+            self.changed.emit()
+        finally:
+            self.updating = False
 
     def get_dest_dict(self):
         """Get upload destinations.  """
@@ -549,7 +559,6 @@ class ShotsFileDirectory(object):
     @property
     def uploaded(self):
         """Files that does not need to upload agian.  """
-
         files = self.files
         ret = set()
 
