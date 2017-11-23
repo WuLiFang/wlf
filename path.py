@@ -27,13 +27,13 @@ def expand_frame(filename, frame):
     '''Return a frame mark expaned version of filename, with given frame.
 
     >>> expand_frame('test_sequence_###.exr', 1)
-    'test_sequence_001.exr'
+    u'test_sequence_001.exr'
     >>> expand_frame('test_sequence_369.exr', 1)
-    'test_sequence_369.exr'
+    u'test_sequence_369.exr'
     >>> expand_frame('test_sequence_%03d.exr', 1234)
-    'test_sequence_1234.exr'
+    u'test_sequence_1234.exr'
     >>> expand_frame('test_sequence_%03d.###.exr', 1234)
-    'test_sequence_1234.1234.exr'
+    u'test_sequence_1234.1234.exr'
     '''
     def _format_repl(matchobj):
         return matchobj.group(0) % frame
@@ -50,17 +50,17 @@ def split_version(f):
     """Return nuke style _v# (shot, version number) pair.
 
     >>> split_version('sc_001_v20.nk')
-    ('sc_001', 20)
+    (u'sc_001', 20)
     >>> split_version('hello world')
-    ('hello world', None)
+    (u'hello world', None)
     >>> split_version('sc_001_v-1.nk')
-    ('sc_001_v-1', None)
+    (u'sc_001_v-1', None)
     >>> split_version('sc001V1.jpg')
-    ('sc001', 1)
+    (u'sc001', 1)
     >>> split_version('sc001V1_no_bg.jpg')
-    ('sc001', 1)
+    (u'sc001', 1)
     >>> split_version('suv2005_v2_m.jpg')
-    ('suv2005', 2)
+    (u'suv2005', 2)
     """
 
     match = re.match(r'(.+)v(\d+)', f, flags=re.I)
@@ -74,7 +74,7 @@ def remove_version(path):
     """Return filename without version number.
 
     >>> remove_version('sc_001_v233.jpg')
-    'sc_001.jpg'
+    u'sc_001.jpg'
     """
     shot = split_version(path)[0]
     ext = os.path.splitext(path)[1]
@@ -85,13 +85,13 @@ def get_footage_name(path):
     """Return filename without frame number.
 
     >>> get_footage_name('sc_001_BG.0034.exr')
-    'sc_001_BG'
+    u'sc_001_BG'
     >>> get_footage_name('sc_001_BG.%04d.exr')
-    'sc_001_BG'
+    u'sc_001_BG'
     >>> get_footage_name('sc_001_BG.###.exr')
-    'sc_001_BG'
+    u'sc_001_BG'
     >>> get_footage_name('sc_001._BG.exr')
-    'sc_001._BG'
+    u'sc_001._BG'
     """
     ret = path
     ret = re.sub(r'\.\d+\b', '', ret)
@@ -142,7 +142,7 @@ def get_layer(filename, layers=None):
     """Return layer name from @filename.
 
     >>> get_layer('Z:/MT/Render/image/MT_BG_co/MT_BG_co_PuzzleMatte1/PuzzleMatte1.001.exr')
-    'PuzzleMatte1'
+    u'PuzzleMatte1'
     """
 
     if not filename:
@@ -172,14 +172,18 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
     u'CH2'
     >>> get_tag(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr')
     u'CH_B'
-    >>> # result of below cases has been auto converted by a dictionary.
-    >>> # (BG_CO -> BG)
+
+    result of below cases has been auto converted by a dictionary.
+
+    BG_CO -> BG:
     >>> get_tag('Z:/MT/Render/image/MT_BG_co/MT_BG_co_Z/Z.001.exr')
     u'BG'
-    >>> # (CH_B_ID -> ID_CH_B)
+
+    CH_B_ID -> ID_CH_B:
     >>> get_tag('Z:/QQFC2017/Render/SC_031a/sc_031a_CH_B_ID/sc_031a_CH_B_ID.####.exr')
     u'ID_CH_B'
-    >>> # (CH_B_OC -> OCC_CH_B)
+
+    CH_B_OC -> OCC_CH_B:
     >>> get_tag('Z:/EP16_05_sc135b_CH_B_OC/EP16_05_sc135b_CH_B_OC.####.exr')
     u'OCC_CH_B'
     """
@@ -222,12 +226,12 @@ def get_shot(path):
 
 
 def get_server(path):
-    """Return only path head for unc path.
+    r"""Return only path head for unc path.
 
-    >>> print get_server(r'\\\\192.168.1.7\\z\\b')
-    \\\\192.168.1.7
-    >>> print get_server(r'C:/steam')
-    C:/steam
+    >>> get_server(r'\\192.168.1.7\z\b')
+    u'\\\\192.168.1.7'
+    >>> get_server(r'C:/steam')
+    u'C:/steam'
     """
     _path = os.path.normpath(path)
     if _path.startswith('\\\\'):
@@ -239,12 +243,12 @@ def get_server(path):
 
 
 def escape_batch(text):
-    """Return escaped text for windows shell.
+    r"""Return escaped text for windows shell.
 
     >>> escape_batch('test_text "^%~1"')
-    u'test_text \\\\"^^%~1\\\\"'
-    >>> escape_batch(u'中文 \"^%1\"')
-    u'\\xe4\\xb8\\xad\\xe6\\x96\\x87 \\\\"^^%1\\\\"'
+    u'test_text \\"^^%~1\\"'
+    >>> print(escape_batch(u'中文 "^%1"'))
+    中文 \"^^%1\"
     """
 
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
