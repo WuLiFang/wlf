@@ -6,14 +6,22 @@ from __future__ import print_function, unicode_literals
 import logging
 import time
 import inspect
-
+import types
 from functools import wraps
 import threading
+from multiprocessing.dummy import Queue
+
+from wlf.Qt.QtCore import QObject, Signal, Slot
+from wlf.Qt.QtWidgets import QApplication
+from wlf.env import has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
 
-__version__ = '0.1.1'
+if has_nuke():
+    import nuke
+
+__version__ = '0.2.0'
 
 
 def run_async(func):
@@ -52,3 +60,42 @@ def run_with_clock(name=None):
                     LOGGER.info('%s 耗时 %.2f 秒', name, cost_time)
         return _func
     return _wrap
+
+
+class Runner(QObject):
+    """Runner for run in main thread.  """
+
+    execute = Signal(types.FunctionType, tuple, dict)
+    result = Queue(1)
+
+    def __init__(self):
+
+        super(Runner, self).__init__()
+        self.execute.connect(self.run)
+
+    @Slot(types.FunctionType, tuple, dict)
+    def run(self, func, args, kwargs):
+        """Run a function.  """
+
+        self.result.put(func(*args, **kwargs))
+
+
+def run_in_main_thread(func):
+    """(Decorator)Run @func in nuke main_thread.   """
+
+    if has_nuke():
+        @wraps(func)
+        def _func(*args, **kwargs):
+            if nuke.GUI and threading.current_thread().name != 'MainThread':
+                return nuke.executeInMainThreadWithResult(func, args, kwargs)
+            else:
+                return func(*args, **kwargs)
+    else:
+        @wraps(func)
+        def _func(*args, **kwargs):
+            runner = Runner()
+            runner.moveToThread(QApplication.instance().thread())
+            runner.execute.emit(func, args, kwargs)
+            return runner.result.get()
+
+    return _func
