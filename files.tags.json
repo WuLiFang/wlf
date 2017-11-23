@@ -10,7 +10,8 @@
         "BG_C",
         "BG_D",
         "OCC",
-        "SH"
+        "SH",
+        "AO"
     ],
     "tag_convert_dict": {
         "BG_CO": "BG",
