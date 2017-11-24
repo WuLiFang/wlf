@@ -129,6 +129,8 @@ def version_filter(iterable):
 
 def map_drivers():
     """Map unc path. """
+
+    LOGGER.info(u'映射网络驱动器')
     if sys.platform == 'win32':
         cmd = r'(IF NOT EXIST X: NET USE X: \\192.168.1.4\h) &'\
             r'(IF NOT EXIST Y: NET USE Y: \\192.168.1.7\y) &'\
