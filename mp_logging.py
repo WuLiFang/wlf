@@ -9,7 +9,7 @@ import sys
 import os
 import traceback
 
-__verion__ = '0.1.0'
+__verion__ = '0.1.1'
 
 
 class Handler(multiprocessing.dummy.Process):
@@ -73,10 +73,11 @@ class Handler(multiprocessing.dummy.Process):
         self._handler.close()
 
 
-def set_basic_logger():
+def set_basic_logger(logger=None):
     """Basic log setting.  """
 
-    logger = logging.getLogger()
+    logger = logger or logging.getLogger()
+    logger.propagate = False
 
     # Loglevel
     loglevel = os.getenv('LOGLEVEL', logging.INFO)
