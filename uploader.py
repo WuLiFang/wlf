@@ -19,7 +19,7 @@ from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_server, get_shot, get_unicode, remove_version
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.10.1'
+__version__ = '0.10.2'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -287,7 +287,8 @@ class FileListWidget(object):
     def hideEvent(self, event):
 
         event.accept()
-        self.directory.update_timer.stop()
+        if self.directory:
+            self.directory.update_timer.stop()
 
     def update_widget(self):
         """Update widget.  """
