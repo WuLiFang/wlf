@@ -27,6 +27,9 @@
         "CH_B_OCC": "OCC_CH_B",
         "CH_B_SH": "SH_CH_B",
         "CH_CO": "CH",
+        "CH_FILL": "FILL_CH",
+        "CH_KEY": "KEY_CH",
+        "CH_RIM": "RIM_CH",
         "CH_C_OC": "OCC_CH_C",
         "CH_C_OCC": "OCC_CH_C",
         "CH_C_SH": "SH_CH_C",
@@ -49,7 +52,10 @@
         "CH_SD": "SH_CH",
         "CH_SH": "SH_CH",
         "CH_SHD": "SH_CH",
-        "CH_SHADOW": "SH_CH"
+        "CH_SHADOW": "SH_CH",
+        "EN_CO": "BG",
+        "NV": "CH_NV",
+        "NAN": "CH_NAN"
     },
     "default": "_OTHER",
     "pattern": "(?i)(?:[^_]+_)?(?:ep\\d+_)?(?:\\d+[a-zA-Z]*_)?(?:sc\\d+[a-zA-Z]*_)?((?:[a-zA-Z][^\\._]*_?){,3})"
