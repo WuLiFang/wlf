@@ -55,7 +55,9 @@
         "CH_SHADOW": "SH_CH",
         "EN_CO": "BG",
         "NV": "CH_NV",
-        "NAN": "CH_NAN"
+        "NV_CO": "CH_NV",
+        "NAN": "CH_NAN",
+        "NAN_CO": "CH_NAN"
     },
     "default": "_OTHER",
     "pattern": "(?i)(?:[^_]+_)?(?:ep\\d+_)?(?:\\d+[a-zA-Z]*_)?(?:sc\\d+[a-zA-Z]*_)?((?:[a-zA-Z][^\\._]*_?){,3})"
