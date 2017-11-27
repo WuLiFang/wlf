@@ -134,7 +134,8 @@ def map_drivers():
     if sys.platform == 'win32':
         cmd = r'(IF NOT EXIST X: NET USE X: \\192.168.1.4\h) &'\
             r'(IF NOT EXIST Y: NET USE Y: \\192.168.1.7\y) &'\
-            r'(IF NOT EXIST Z: NET USE Z: \\192.168.1.7\z)'
+            r'(IF NOT EXIST Z: NET USE Z: \\192.168.1.7\z) &'\
+            r'(IF NOT EXIST G: NET USE G: \\192.168.1.4\snjyw)'
         call(cmd, shell=True)
     else:
         LOGGER.warning('Map drivers not implemented on this platform.')
