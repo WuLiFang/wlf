@@ -3,14 +3,14 @@
 from __future__ import print_function, unicode_literals
 
 import sys
-import os
 
+import wlf.config
 from wlf.Qt import QtWidgets, QtCore, QtCompat
 from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
 from wlf.mp_logging import set_basic_logger
-import wlf.config
+from wlf.path import Path
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 
 class DialogWithDir(QDialog):
@@ -85,12 +85,12 @@ class DialogWithDir(QDialog):
                     print('wlf.uploader: not found key {} in config'.format(ex))
 
         super(DialogWithDir, self).__init__(parent)
-        QtCompat.loadUi(os.path.abspath(
-            os.path.join(__file__, uifile)), self)
+        QtCompat.loadUi(unicode(Path(__file__, uifile)), self)
         _icon()
         _recover()
         _edits()
         self.__dir_edit = getattr(self, dir_edit)
+        self.__dir_edit.textChanged.connect(self._check_dir)
 
     @property
     def directory(self):
@@ -101,7 +101,9 @@ class DialogWithDir(QDialog):
     @directory.setter
     def directory(self, value):
         edit = self.__dir_edit
-        value = os.path.normpath(value)
+        path = Path(value)
+        path.resolve()
+        value = unicode(path)
         if value != self.directory:
             edit.setText(value)
             edit.editingFinished.emit()
@@ -111,10 +113,23 @@ class DialogWithDir(QDialog):
 
         file_dialog = QFileDialog()
         dir_ = file_dialog.getExistingDirectory(
-            dir=os.path.dirname(self.directory)
+            dir=unicode(Path(self.directory).parent)
         )
         if dir_:
             self.directory = dir_
+
+    def _check_dir(self):
+        """Check if dir exists.  """
+
+        edit = self.__dir_edit
+        path = Path(edit.text())
+        existed = path.exists()
+        if existed:
+            edit.setStyleSheet('')
+        else:
+            edit.setStyleSheet('background:rgb(100%,50%,50%)')
+
+        return existed
 
 
 class Menu(QMenu):
