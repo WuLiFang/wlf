@@ -3,16 +3,16 @@
 
 from __future__ import print_function, unicode_literals
 
-import os
 import re
 import json
 import locale
 import string
 import logging
+from wlf.pathlib2 import PurePath, Path
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 
-with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
+with Path(Path(__file__) / '../files.tags.json').open() as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
@@ -65,7 +65,7 @@ def split_version(f):
 
     match = re.match(r'(.+)v(\d+)', f, flags=re.I)
     if not match:
-        return (os.path.splitext(f)[0], None)
+        return (unicode(PurePath(f).stem), None)
     shot, version = match.groups()
     return (shot.strip('_'), int(version))
 
@@ -77,7 +77,7 @@ def remove_version(path):
     u'sc_001.jpg'
     """
     shot = split_version(path)[0]
-    ext = os.path.splitext(path)[1]
+    ext = PurePath(path).suffix
     return '{}{}'.format(shot, ext)
 
 
@@ -97,7 +97,7 @@ def get_footage_name(path):
     ret = re.sub(r'\.\d+\b', '', ret)
     ret = re.sub(r'\.#+(?=\.)', '', ret)
     ret = re.sub(r'\.%0?\d*d\b', '', ret)
-    ret = os.path.splitext(ret)[0]
+    ret = unicode(PurePath(ret).stem)
     return ret
 
 
@@ -148,15 +148,14 @@ def get_layer(filename, layers=None):
     if not filename:
         return
     if layers is None:
-        redshift_json = os.path.join(__file__, '../precomp.redshift.json')
-        with open(redshift_json) as f:
+        with Path(Path(__file__) / '../precomp.redshift.json').open(encoding='UTF-8') as f:
             layers = json.load(f).get('layers')
 
-    basename = os.path.basename(filename)
     for layer in layers:
-        match = re.search(r'\b({}\d*)\b'.format(layer), basename)
+        match = re.search(r'\b({}\d*)\b'.format(layer),
+                          PurePath(filename).name)
         if match:
-            return match.group(1)
+            return unicode(match.group(1))
 
 
 def get_tag(filename, pat=None, default=DEFAULT_TAG):
@@ -190,10 +189,11 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
 
     pat = pat or TAG_PATTERN
     ret = None
+    path = PurePath(filename)
     for testing_pat in (pat, TAG_PATTERN):
         tag_pat = re.compile(testing_pat, flags=re.I)
         for test_string in\
-                (os.path.basename(os.path.dirname(filename)), os.path.basename(filename)):
+                (path.parent.name, path.name):
             match = re.match(tag_pat, test_string)
             if match and match.group(1):
                 ret = match.group(1).strip('_').upper()
@@ -222,7 +222,7 @@ def get_tag(filename, pat=None, default=DEFAULT_TAG):
 def get_shot(path):
     """Return related shot.  """
 
-    return split_version(os.path.basename(path))[0]
+    return split_version(PurePath(path).name)[0]
 
 
 def get_server(path):
@@ -233,11 +233,11 @@ def get_server(path):
     >>> get_server(r'C:/steam')
     u'C:/steam'
     """
-    _path = os.path.normpath(path)
-    if _path.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]*)\\?', _path)
+    _path = PurePath(path)
+    if _path.anchor.startswith('\\\\'):
+        match = re.match(r'(\\\\[^\\]*)\\?', str(_path))
         if match:
-            return match.group(1)
+            return unicode(match.group(1))
 
     return path
 
