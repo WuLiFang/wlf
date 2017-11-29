@@ -130,7 +130,10 @@ class CancelledError(Exception):
     """Indicate user pressed CancelButton.  """
 
     def __str__(self):
-        return 'Cancelled. '
+        return 'Cancelled.'
+
+    def __unicode__(self):
+        return '用户取消.'
 
 
 def _error_process(message, error_type=''):
