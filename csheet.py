@@ -2,7 +2,7 @@
 """Create contact sheet from all shot images.
 
 """
-
+# TODO: support GIF
 import json
 import logging
 import os
