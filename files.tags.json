@@ -53,6 +53,7 @@
         "CH_SH": "SH_CH",
         "CH_SHD": "SH_CH",
         "CH_SHADOW": "SH_CH",
+        "SHD":"SH",
         "EN_CO": "BG",
         "NV": "CH_NV",
         "NV_CO": "CH_NV",
