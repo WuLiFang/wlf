@@ -16,10 +16,10 @@ from wlf import cgtwq
 from wlf.decorators import run_async
 from wlf.files import copy, is_same, version_filter
 from wlf.notify import HAS_NUKE, CancelledError, Progress
-from wlf.path import get_server, get_shot, get_unicode, remove_version
+from wlf.path import get_unicode, PurePath, Path
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.10.2'
+__version__ = '0.10.3'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -124,8 +124,7 @@ class Dialog(DialogWithDir):
         sync_button_enable = any(self.file_list_widget.checked_files)
         sync_button_text = u'上传至CGTeamWork'
         if mode == 0:
-            sync_button_enable &= os.path.exists(get_server(self.server))\
-                and os.path.isdir(os.path.dirname(self.dest_folder))
+            sync_button_enable &= Path(self.dest_folder).parent.is_dir()
             sync_button_text = u'上传至: {}'.format(self.dest_folder)
 
         self.syncButton.setText(sync_button_text)
@@ -146,7 +145,7 @@ class Dialog(DialogWithDir):
                     task.step(i)
                     src = os.path.join(self.directory, i)
                     dst = directory.get_dest(i)
-                    shot_name = get_shot(dst)
+                    shot_name = PurePath(dst).shot
                     if isinstance(dst, Exception):
                         self.error(u'{}\n-> {}'.format(i, dst))
                         continue
@@ -236,9 +235,9 @@ class FileListWidget(object):
         brushes = {'local': QBrush(Qt.black),
                    'uploaded': QBrush(Qt.gray),
                    'error': QBrush(Qt.red)}
-    updating = False
     directory = None
     burnin_folder = 'burn-in'
+    updating = False
 
     def __init__(self, list_widget):
 
@@ -249,6 +248,7 @@ class FileListWidget(object):
 
         # Connect signal
         self.widget.itemDoubleClicked.connect(self.open_file)
+        self.widget.itemChanged.connect(self.update_widget)
         self.parent.actionSelectAll.triggered.connect(self.select_all)
         self.parent.actionReverseSelection.triggered.connect(
             self.reverse_selection)
@@ -295,6 +295,8 @@ class FileListWidget(object):
 
         if self.updating:
             return
+
+        self.updating = True
 
         widget = self.widget
         parent = self.parent
@@ -345,21 +347,24 @@ class FileListWidget(object):
 
         widget.sortItems()
 
-        # Count
         parent.labelCount.setText(
             '{}/{}/{}'.format(
                 len(list(self.checked_files)),
                 len(local_files) - len(self.directory.uploaded),
                 len(local_files)))
 
+        self.updating = False
+
     @property
     def checked_files(self):
         """Return files checked in listwidget.  """
+
         return (i.text() for i in self.items() if i.checkState())
 
     @property
     def is_use_burnin(self):
         """Use burn-in version when preview.  """
+
         return self.parent.checkBoxBurnIn.checkState()
 
     @Slot(QListWidgetItem)
@@ -543,7 +548,7 @@ class ShotsFileDirectory(QObject):
     def shots(self):
         """Files related shots.  """
 
-        return sorted(get_shot(i) for i in self.files)
+        return sorted(PurePath(i).shot for i in self.files)
 
     @property
     def unexpected(self):
@@ -587,9 +592,9 @@ class ShotsFileDirectory(QObject):
     def get_dest(self, filename):
         """Get cgteamwork upload destination for @filename.  """
 
-        ret = self.dest_dict.get(get_shot(filename), self.dest)
+        ret = self.dest_dict.get(PurePath(filename).shot, self.dest)
         if isinstance(ret, (str, unicode)):
-            ret = os.path.join(ret, remove_version(filename))
+            ret = str(PurePath(ret) / PurePath(filename).as_no_version())
         return ret
 
 
