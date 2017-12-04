@@ -10,19 +10,20 @@ import re
 import sys
 import threading
 import errno
+import webbrowser
 from subprocess import Popen
 from cgi import escape
 from itertools import count
 
 import wlf.config
-from wlf.files import url_open, version_filter
+from wlf.files import version_filter
 from wlf.notify import HAS_NUKE, Progress
-from wlf.path import get_encoded, get_unicode, split_version
+from wlf.path import get_encoded, get_unicode, PurePath
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.5.2'
+__version__ = '1.5.3'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -99,7 +100,7 @@ class ContactSheet(object):
             )
             n = nuke.nodes.Text2(
                 inputs=[n],
-                message=split_version(get_shot(i))[0],
+                message=PurePath(i).shot,
                 box='5 0 1000 75',
                 color='0.145 0.15 0.14 1',
                 global_font_scale=0.8,
@@ -256,7 +257,7 @@ def create_html(images, save_path, title=None, rename_dict=None):
         def __init__(self, path):
             name = os.path.basename(rename_dict.get(path, path))
             path = os.path.normpath(path)
-            name = split_version(name)[0]
+            name = PurePath(name).shot
             shot = get_shot(name)
             if not os.path.isabs(path) and not path.startswith('http:'):
                 path = './{}'.format(path)
@@ -345,6 +346,7 @@ def create_html(images, save_path, title=None, rename_dict=None):
 
 def dialog_create_html():
     """A dialog for create_html.  """
+
     folder_input_name = '文件夹'
     panel = nuke.Panel('创建HTML色板')
     panel.addFilenameSearch(folder_input_name, '')
@@ -352,7 +354,7 @@ def dialog_create_html():
     if confirm:
         csheet = create_html_from_dir(panel.value(folder_input_name))
         if csheet:
-            url_open(csheet, isfile=True)
+            webbrowser.open(csheet)
 
 
 class FootageError(Exception):
