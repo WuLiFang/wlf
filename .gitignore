@@ -4,3 +4,6 @@ build/
 
 # vscode
 .vscode/
+
+# Bin folder
+/bin/
