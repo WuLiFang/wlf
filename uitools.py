@@ -10,7 +10,7 @@ from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
 from wlf.mp_logging import set_basic_logger
 from wlf.path import Path
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 
 class DialogWithDir(QDialog):
@@ -102,6 +102,8 @@ class DialogWithDir(QDialog):
     def directory(self, value):
         edit = self.__dir_edit
         path = Path(value)
+        if not path.exists():
+            return
         path.resolve()
         value = unicode(path)
         if value != self.directory:
