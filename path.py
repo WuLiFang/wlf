@@ -11,7 +11,7 @@ import string
 import logging
 import wlf.pathlib2 as pathlib
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -27,14 +27,15 @@ LOGGER = logging.getLogger('com.wlf.path')
 def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
     """Return unicode by try decode @string with @codecs.  """
 
-    if isinstance(input_str, unicode):
-        return input_str
-
-    for i in tuple(codecs) + tuple(locale.getdefaultlocale()[1]):
-        try:
-            return unicode(input_str, i)
-        except UnicodeDecodeError:
-            continue
+    try:
+        return unicode(input_str)
+    except UnicodeDecodeError:
+        input_str = str(input_str)
+        for i in tuple(codecs) + tuple(locale.getdefaultlocale()[1]):
+            try:
+                return unicode(input_str, i)
+            except UnicodeDecodeError:
+                continue
 
 
 def get_encoded(input_str, encoding=None):
@@ -73,7 +74,7 @@ def get_server(path):
     if _path.anchor.startswith('\\\\'):
         match = re.match(r'(\\\\[^\\]*)\\?', str(_path))
         if match:
-            return unicode(match.group(1))
+            return get_unicode(match.group(1))
 
     return path
 
@@ -131,7 +132,7 @@ class PurePath(pathlib.PurePath):
             match = re.search(r'\b({}\d*)\b'.format(layer),
                               self.name)
             if match:
-                return unicode(match.group(1))
+                return get_unicode(match.group(1))
 
     @property
     def tag(self):
@@ -224,7 +225,7 @@ class PurePath(pathlib.PurePath):
 
         match = re.match(self.version_pattern, self.name, flags=re.I)
         if not match:
-            return unicode(self.stem)
+            return get_unicode(self.stem)
         shot = match.group(1)
         return shot.strip('_')
 
@@ -289,7 +290,7 @@ class PurePath(pathlib.PurePath):
         def _hash_repl(matchobj):
             return '%0{}d'.format(len(matchobj.group(0)))
 
-        ret = unicode(self)
+        ret = get_unicode(self)
         ret = re.sub(r'(\#+)', _hash_repl, ret)
         ret = re.sub(r'(%0?\d*d)', _format_repl, ret)
         return PurePath(ret)
@@ -301,7 +302,7 @@ class PurePath(pathlib.PurePath):
         u'sc_001.jpg'
         """
 
-        return self.with_name('{}{}'.format(self.shot, self.suffix))
+        return self.with_name(u'{}{}'.format(self.shot, self.suffix))
 
 
 class PurePosixPath(PurePath):
@@ -353,7 +354,7 @@ class WindowsPath(Path, PureWindowsPath):
 # Remap functions for backward compatibility.
 
 def _expand_frame(filename, frame):
-    return unicode(PurePath(filename).with_frame(frame))
+    return get_unicode(PurePath(filename).with_frame(frame))
 
 
 def _split_version(f):
@@ -362,7 +363,7 @@ def _split_version(f):
 
 
 def _remove_version(path):
-    return unicode(PurePath(path).as_no_version())
+    return get_unicode(PurePath(path).as_no_version())
 
 
 def _get_shot(path):
