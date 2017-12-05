@@ -2,7 +2,6 @@
 """Create contact sheet from all shot images.
 
 """
-# TODO: support GIF
 from __future__ import print_function, unicode_literals
 import json
 import logging
@@ -12,7 +11,7 @@ import sys
 import threading
 import webbrowser
 from tempfile import mktemp
-from subprocess import Popen, PIPE
+from subprocess import Popen
 from cgi import escape
 from itertools import count
 from abc import abstractmethod
@@ -26,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.6.1'
+__version__ = '1.7.0'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -49,6 +48,7 @@ class Image(object):
     path = None
     name = None
     relative_to = None
+    related_video = None
     _html_id = None
     # Static .png image thumbnail.
     thumb = None
@@ -79,17 +79,19 @@ class Image(object):
     def html_path(self):
         """Path for html.  """
 
-        if self.path is None:
-            return self.path
+        return self.get_html_relative(self.path)
 
-        path = PurePath(self.path)
-        try:
-            path = path.relative_to(self.relative_to)
-        except ValueError:
-            pass
-        if not path.is_absolute() and not get_unicode(path).startswith('http:'):
-            path = './{}'.format(path)
-        return get_unicode(path)
+    @property
+    def html_preview(self):
+        """Preview for html.  """
+
+        return self.get_html_relative(self.preview)
+
+    @property
+    def html_thumb(self):
+        """Thumbnail for html.  """
+
+        return self.get_html_relative(self.thumb)
 
     @property
     def html_name(self):
@@ -97,6 +99,7 @@ class Image(object):
 
         name = self.name
         highlight = self.get_highlight(name)
+
         if highlight != self.name:
             return escape(name).replace(
                 escape(highlight),
@@ -130,19 +133,41 @@ class Image(object):
 
         return get_unicode(filename)
 
-    def generate_preivew(self, source=None):
+    def get_html_relative(self, path):
+        """Get relative path for html.  """
+
+        if path is None:
+            return 'null'
+
+        path = PurePath(path)
+        try:
+            path = path.relative_to(self.relative_to)
+        except ValueError:
+            LOGGER.debug('html_relative', exc_info=True)
+        if not path.is_absolute() and not get_unicode(path).startswith('http:'):
+            path = './{}'.format(path)
+        return get_unicode(path)
+
+    def generate_preivew(self):
         """Generate gif preview with @source.  """
 
-        source = Path(source or self.path)
-        output = Path(self.preview)
+        if self.related_video is None:
+            return
+
+        source = Path(self.related_video)
+        if self.preview:
+            output = Path(get_encoded(self.preview))
+        else:
+            output = (Path(self.path).parent / 'preivew' /
+                      self.html_id).with_suffix('.gif')
 
         try:
             output.parent.mkdir(exist_ok=True)
-            if self.path.match('*.mov'):
+            if source.match('*.mov'):
                 self.preview = generate_gif(source, output)
             return self.preview
         except OSError as ex:
-            LOGGER.errno(os.strerror(ex.errno), exc_info=True)
+            LOGGER.error(os.strerror(ex.errno), exc_info=True)
         except:
             LOGGER.error('Error during generate preview.', exc_info=True)
             raise
@@ -160,7 +185,8 @@ class Image(object):
                 suffix = PurePath(old_value).suffix
                 new_value = copy(old_value,
                                  (path / dirpath / self.html_id).with_suffix(suffix))
-                setattr(self, attr, new_value)
+                if new_value:
+                    setattr(self, attr, new_value)
 
 
 class ContactSheet(list):
@@ -207,8 +233,8 @@ class HTMLContactSheet(ContactSheet):
                     onmouseover="use_preview(this)"
                     onmouseout="use_thumb(this)"
                     src="{this.html_path}"
-                    data-thumb="{this.thumb}"
-                    data-preivew="{this.preview}"/>
+                    data-thumb="{this.html_thumb}"
+                    data-preview="{this.html_preview}"/>
             </a>
             <figcaption><a href="#{this.html_id}">{this.html_name}</a></figcaption>
         </figure>
@@ -476,27 +502,38 @@ class FootageError(Exception):
 def generate_gif(filename, output=None):
     """Generate a gif with same name.  """
 
-    path = PurePath(filename)
+    path = Path(filename)
     _palette = mktemp('.png')
     _filters = 'fps=15,scale=640:-1:flags=lanczos'
-    ret = PurePath(output or path.with_name('{0.stem}.gif'.format(path)))
-    if PurePath(ret).suffix != '.gif':
-        ret = PurePath('{}.gif'.format(ret))
+    ret = Path(output or path).with_suffix('.gif')
+
+    # Skip generated.
+    if ret.exists() and path.stat().st_mtime <= ret.stat().st_mtime:
+        LOGGER.info('跳过已有GIF生成: %s', ret)
+        return ret
 
     # Generate palette
     cmd = ('ffmpeg -i "{0[filename]}" '
            '-vf "{0[_filters]}, palettegen" '
            '-y "{0[_palette]}"').format(locals())
-    proc = Popen(get_encoded(cmd), cwd=str(ret.parent),
-                 stdout=PIPE, stderr=PIPE, env=os.environ)
+    LOGGER.debug(cmd)
+    proc = Popen(get_encoded(cmd),
+                 cwd=str(ret.parent),
+                 #  stdout=PIPE, stderr=PIPE,
+                 env=os.environ)
+    proc.communicate()
     if proc.wait():
         raise RuntimeError('Error during generate gif palette:\n\t %s' % cmd)
     # Generate gif
-    cmd = ('ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
+    cmd = (u'ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
            '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
-           '-y {0[ret]}').format(locals())
-    proc = Popen(get_encoded(cmd), cwd=str(ret.parent),
-                 stdout=PIPE, stderr=PIPE, env=os.environ)
+           '-y "{0[ret]}"').format(locals())
+    LOGGER.debug(cmd)
+    proc = Popen(get_encoded(cmd),
+                 cwd=str(ret.parent),
+                 #  stdout=PIPE, stderr=PIPE,
+                 env=os.environ)
+    proc.communicate()
     if proc.wait():
         raise RuntimeError('Error during generate gif:\n\t %s' % cmd)
 

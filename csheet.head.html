@@ -201,6 +201,7 @@
             color: black;
             background: burlywood;
         }
+
         /* full view final style */
 
         .lightbox .preview:target~.full a.prev,
@@ -268,6 +269,30 @@
             var total = lightboxes.length;
             count += 1;
             header.innerText = `${total - count}/${total}`;
+        }
+        function use_thumb(lightbox) {
+            var thumb = lightbox.getAttribute("data-thumb")
+            if (lightbox.src != thumb && image_available(thumb)) {
+                lightbox.src = thumb;
+                console.log("Use thumb: " + thumb);
+            }
+        }
+        function use_preview(lightbox) {
+            var preview = lightbox.getAttribute("data-preview")
+            if (image_available(preview)) {
+                lightbox.src = preview;
+                console.log("Use preview: " + preview);
+            } else{
+                console.log("Preview not available: " + preview)
+            }
+        }
+        function image_available(path){
+            if (path == null | path == 'null'){
+                return false;
+            }
+            var temp = new Image;
+            temp.src = path;
+            return temp.complete;
         }
     </script>
 </head>
