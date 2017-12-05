@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded
 
-__version__ = '0.6.8'
+__version__ = '0.6.9'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -255,7 +255,8 @@ class ShotTask(CGTeamWork):
              'project_code': 'eps.project_code',
              'artist': 'shot_task.artist',
              'account_id': 'shot_task.account_id',
-             'image': 'shot_task.image'}
+             'image': 'shot_task.image',
+             'submit_path': 'shot_task.submit_file_path'}
 
 
 class Shots(ShotTask):
@@ -348,6 +349,16 @@ class Shots(ShotTask):
         """Get submit dest for @shot.  """
 
         return self.get_shot_filebox_path(shot, 'submit')
+
+    def get_shot_submit_path(self, shot):
+        """Get submit file path for @shot. """
+
+        infos = self._infos
+        shot_info = infos[shot]
+        context = shot_info[self.signs['submit_path']]
+        if context is None:
+            return
+        return json.loads(context).get('path')[0]
 
     def get_shot_filebox_path(self, shot, sign):
         """Get @shot filebox path with @sign.  """
