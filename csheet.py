@@ -3,27 +3,30 @@
 
 """
 # TODO: support GIF
+from __future__ import print_function, unicode_literals
 import json
 import logging
 import os
 import re
 import sys
 import threading
-import errno
 import webbrowser
-from subprocess import Popen
+from tempfile import mktemp
+from subprocess import Popen, PIPE
 from cgi import escape
 from itertools import count
+from abc import abstractmethod
+from collections import Iterable
 
 import wlf.config
 from wlf.files import version_filter
 from wlf.notify import HAS_NUKE, Progress
-from wlf.path import get_encoded, get_unicode, PurePath
+from wlf.path import get_encoded, get_unicode, PurePath, Path
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.5.3'
+__version__ = '1.6.0'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -39,11 +42,219 @@ class Config(wlf.config.Config):
     path = os.path.expanduser(u'~/.nuke/wlf.csheet.json')
 
 
-class ContactSheet(object):
+class Image(object):
+    """Image item for contactsheet.  """
+
+    exsited_id = []
+    path = None
+    name = None
+    _html_id = None
+    # Static .png image thumbnail.
+    thumb = None
+    # Dynamic .gif preview.
+    preview = None
+
+    def __new__(cls, path):
+        if isinstance(path, Image):
+            return path
+
+        return super(Image, cls).__new__(cls, path)
+
+    def __init__(self, path):
+        # Ignore initiated.
+        if self.path:
+            return
+
+        # Initiate.
+        path = PurePath(path)
+
+        self.path = path
+        self.name = path.shot
+        self.thumb = path
+
+    @property
+    def html_path(self):
+        """Path for html.  """
+
+        path = PurePath(self.path)
+        if not path.is_absolute() and not get_unicode(path).startswith('http:'):
+            path = './{}'.format(path)
+        return path
+
+    @property
+    def html_name(self):
+        """Figcaption for html.  """
+
+        name = self.name
+        highlight = self.get_highlight(name)
+        if highlight != self.name:
+            return escape(name).replace(
+                escape(highlight),
+                '<span class="highlight">{}</span>'.format(escape(highlight)))
+        return name
+
+    @property
+    def html_id(self):
+        """Element id for html.  """
+
+        if self._html_id is None:
+            name = self.name
+            id_ = escape(name)
+            for i in count(start=1):
+                if id_ in self.exsited_id:
+                    id_ = '{}_{}'.format(name, i)
+                else:
+                    self.exsited_id.append(id_)
+                    self._html_id = id_
+                    break
+
+        return self._html_id
+
+    def generate_preivew(self, source=None):
+        """Generate gif preview with @source.  """
+
+        source = Path(source or self.path)
+        output = Path(self.preview)
+
+        try:
+            output.parent.mkdir(exist_ok=True)
+            if self.path.match('*.mov'):
+                self.preview = generate_gif(source, output)
+            return self.preview
+        except OSError as ex:
+            LOGGER.errno(os.strerror(ex.errno), exc_info=True)
+        except:
+            LOGGER.error('Error during generate preview.', exc_info=True)
+            raise
+
+    @classmethod
+    def get_highlight(cls, filename):
+        """Get highlight part of @filename.  """
+
+        match = re.match(r'.*(sc_?\d+[^\.]*)\b', filename, flags=re.I)
+        if match:
+            return match.group(1)
+
+        return filename
+
+
+class ContactSheet(list):
+    """Contactsheet for images.  """
+
+    title = None
+
+    def __init__(self, images):
+        assert isinstance(images, Iterable)
+
+        list.__init__(self, (Image(i) for i in images))
+
+    def __setitem__(self, index, value):
+        return list.__setitem__(self, index, Image(value))
+
+    @abstractmethod
+    def generate(self, path):
+        """Generate csheet to given @path.  """
+        raise NotImplementedError
+
+
+class HTMLContactSheet(ContactSheet):
+    """Contactsheet in html page form.  """
+
+    def to_html(self):
+        """Convert to html form text.  """
+
+        body = ''
+        total = len(self)
+        task = Progress('生成页面', total)
+
+        for index, image in enumerate(self):
+            task.step(image.name)
+            try:
+                next_image = self[index + 1]
+            except IndexError:
+                next_image = self[0]
+            body += u'''<figure class='lightbox'>
+        <figure class="preview" id="{this.html_id}">
+            <a href="#{this.html_id}" class="image">
+                <img alt="no image" class="thumb"
+                    onerror="hide(this.parentNode.parentNode.parentNode)"
+                    onmouseover="use_preview(this)"
+                    onmouseout="use_thumb(this)"
+                    src="{this.thumb}"
+                    data-thumb="{this.thumb}"
+                    data-preivew="{this.preview}"/>
+            </a>
+            <figcaption><a href="#{this.html_id}">{this.html_name}</a></figcaption>
+        </figure>
+        <figure class="full">
+            <figcaption>{this.html_name}</figcaption>
+            <a href="{this.path}" target="_blank" class="viewer">
+                <img src="{this.path}" alt="no image"/>
+            </a>
+            <a class="close" href="#void"></a>
+            <a class="prev" href="#{prev.html_id}">&lt;</a>
+            <a class="next" href="#{next.html_id}">&gt;</a>
+        </figure>
+    </figure>
+    '''.format(this=image,
+               prev=self[index - 1],
+               next=next_image)
+
+        body = '''<body>
+        <header>{}</header>
+        <div class="shots">
+        {}
+        </div>
+    </body>'''.format(total, body)
+
+        title = self.title or u'色板'
+        with open(os.path.join(__file__, '../csheet.head.html')) as f:
+            head = f.read().replace('<title></title>', '<title>{}</title>'.format(title))
+        html_page = head + body
+        return html_page
+
+    def generate(self, path):
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('w', encoding='UTF-8') as f:
+            f.write(self.to_html())
+        LOGGER.info(u'生成: %s', path)
+        return path
+
+
+class JPGContactSheet(ContactSheet):
     """Create contactsheet in new script."""
 
     shot_width, shot_height = 1920, 1080
     contactsheet_shot_width, contactsheet_shot_height = 1920, 1160
+
+    class Thread(threading.Thread):
+        """Thread that create contact sheet."""
+
+        lock = threading.Lock()
+
+        def __init__(self, new_process=False):
+            threading.Thread.__init__(self)
+            self._new_process = new_process
+
+        def run(self):
+            config_json = JPGContactSheet.json_path()
+            if not os.path.isfile(config_json):
+                return
+            self.lock.acquire()
+            task = Progress('生成色板')
+            task.set(50)
+            cmd = u'"{NUKE}" -t "{script}" "{json}"'.format(
+                NUKE=nuke.EXE_PATH,
+                script=__file__.rstrip('cd'),
+                json=config_json
+            )
+            if self._new_process:
+                cmd = u'START "生成色板" {}'.format(cmd)
+            Popen(get_encoded(cmd), shell=self._new_process)
+            task.set(100)
+            del task
+            self.lock.release()
 
     def __init__(self):
         try:
@@ -189,56 +400,23 @@ class ContactSheet(object):
             print(u'共{}个文件 总计{}个镜头'.format(len(images), len(ret)))
         return ret
 
-
-def get_shot(filename):
-    """Get shot name from filename.  """
-
-    match = re.match(r'.*(sc_?\d+[^\.]*)\b', filename, flags=re.I)
-    if match:
-        return match.group(1)
-
-    return filename
-
-
-class ContactSheetThread(threading.Thread):
-    """Thread that create contact sheet."""
-
-    lock = threading.Lock()
-
-    def __init__(self, new_process=False):
-        threading.Thread.__init__(self)
-        self._new_process = new_process
-
-    def run(self):
-        config_json = ContactSheet.json_path()
-        if not os.path.isfile(config_json):
-            return
-        self.lock.acquire()
-        task = Progress('生成色板')
-        task.set(50)
-        cmd = u'"{NUKE}" -t "{script}" "{json}"'.format(
-            NUKE=nuke.EXE_PATH,
-            script=__file__.rstrip('cd'),
-            json=config_json
-        )
-        if self._new_process:
-            cmd = u'START "生成色板" {}'.format(cmd)
-        Popen(get_encoded(cmd), shell=self._new_process)
-        task.set(100)
-        del task
-        self.lock.release()
+    def generate(self, path):
+        # self.Thread().start()
+        raise NotImplementedError
 
 
 def create_html_from_dir(image_folder, **kwargs):
     """Create a html page for a @image_folder.  """
+
     image_folder = os.path.normpath(image_folder)
     if not os.path.isdir(get_encoded(image_folder)):
+        LOGGER.warning('Not a dir, ignore: %s', image_folder)
         return
     folder_name = os.path.basename(image_folder)
     images = version_filter(os.path.join(get_unicode(folder_name), get_unicode(i))
                             for i in os.listdir(get_encoded(image_folder))
                             if os.path.isfile(get_encoded(os.path.join(image_folder, i)))
-                            and i.lower().endswith(('.jpg', '.jpeg', '.png', '.gif')))
+                            and i.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.mov')))
     save_path = os.path.abspath(os.path.join(
         image_folder, u'../{}_色板.html'.format(os.path.basename(image_folder))))
 
@@ -250,101 +428,57 @@ def create_html_from_dir(image_folder, **kwargs):
 def create_html(images, save_path, title=None, rename_dict=None):
     """Crete html contactsheet with @images list, save to @save_path.  """
 
-    class Image(object):
-        """Image item.  """
-        exsited_id = []
-
-        def __init__(self, path):
-            name = os.path.basename(rename_dict.get(path, path))
-            path = os.path.normpath(path)
-            name = PurePath(name).shot
-            shot = get_shot(name)
-            if not os.path.isabs(path) and not path.startswith('http:'):
-                path = './{}'.format(path)
-
-            _id = escape(name)
-            for i in count(start=1):
-                if _id in self.exsited_id:
-                    _id = '{}_{}'.format(name, i)
-                else:
-                    self.html_id = _id
-                    self.exsited_id.append(self.html_id)
-                    break
-
-            if shot != name:
-                self.html_name = escape(name).replace(
-                    escape(shot), '<span class="highlight">{}</span>'.format(escape(shot)))
-            else:
-                self.html_name = name
-
-            self.name = name
-            self.path = path
-            self.shot = shot
-
-    body = ''
-    rename_dict = rename_dict or {}
     images = [Image(i) for i in images]
-    total = len(images)
-    task = Progress('生成页面', total)
-    save_dir = os.path.dirname(save_path)
+    for i in images:
+        if i.path in rename_dict:
+            i.name = rename_dict[i.path]
+    csheet = HTMLContactSheet(images)
+    csheet.title = title
 
-    for index, image in enumerate(images):
-        task.step(image.name)
-        try:
-            next_image = images[index + 1]
-        except IndexError:
-            next_image = images[0]
-        body += u'''<figure class='lightbox'>
-    <figure class="preview" id="{this.html_id}">
-        <a href="#{this.html_id}" class="image">
-            <img src="{this.path}" alt="no image" onerror="hide(this.parentNode.parentNode.parentNode)" class="thumb" />
-        </a>
-        <figcaption><a href="#{this.html_id}">{this.html_name}</a></figcaption>
-    </figure>
-    <figure class="full">
-        <figcaption>{this.html_name}</figcaption>
-        <a href="{this.path}" target="_blank" class="viewer">
-            <img src="{this.path}" alt="no image"/>
-        </a>
-        <a class="close" href="#void"></a>
-        <a class="prev" href="#{prev.html_id}">&lt;</a>
-        <a class="next" href="#{next.html_id}">&gt;</a>
-    </figure>
-</figure>
-'''.format(this=image,
-           prev=images[index - 1],
-           next=next_image)
-
-    body = '''<body>
-    <header>{}</header>
-    <div class="shots">
-    {}
-    </div>
-</body>'''.format(total, body)
-
-    title = title or u'色板'
-    with open(os.path.join(__file__, '../csheet.head.html')) as f:
-        head = f.read().replace('<title></title>', '<title>{}</title>'.format(title))
-    html_page = head + body
-
-    try:
-        os.makedirs(save_dir)
-        LOGGER.info('创建目录: %s', save_dir)
-    except OSError as ex:
-        if ex.errno in (errno.EEXIST, errno.EACCES):
-            pass
-        else:
-            LOGGER.error('Unexcepted exception during makedirs. errno: %s',
-                         ex.errno)
-            raise
-    with open(get_encoded(save_path), 'w') as f:
-        f.write(html_page.encode('UTF-8'))
-    LOGGER.info(u'生成: %s', save_path)
-
-    return save_path
+    return csheet.generate(save_path)
 
 
-def dialog_create_html():
+class FootageError(Exception):
+    """Indicate no footage available."""
+
+    def __unicode__(self):
+        return '在文件夹中没有可用图像'
+
+
+def generate_gif(filename, output=None):
+    """Generate a gif with same name.  """
+
+    path = PurePath(filename)
+    _palette = mktemp('.png')
+    _filters = 'fps=15,scale=640:-1:flags=lanczos'
+    ret = PurePath(output or path.with_name('{0.stem}.gif'.format(path)))
+    if PurePath(ret).suffix != '.gif':
+        ret = PurePath('{}.gif'.format(ret))
+
+    # Generate palette
+    cmd = ('ffmpeg -i "{0[filename]}" '
+           '-vf "{0[_filters]}, palettegen" '
+           '-y "{0[_palette]}"').format(locals())
+    proc = Popen(get_encoded(cmd), cwd=str(ret.parent),
+                 stdout=PIPE, stderr=PIPE, env=os.environ)
+    if proc.wait():
+        raise RuntimeError('Error during generate gif palette:\n\t %s' % cmd)
+    # Generate gif
+    cmd = ('ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
+           '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
+           '-y {0[ret]}').format(locals())
+    proc = Popen(get_encoded(cmd), cwd=str(ret.parent),
+                 stdout=PIPE, stderr=PIPE, env=os.environ)
+    if proc.wait():
+        raise RuntimeError('Error during generate gif:\n\t %s' % cmd)
+
+    LOGGER.info('生成GIF: %s', ret)
+    return ret
+
+# Remap deprecated functions.
+
+
+def _dialog_create_html():
     """A dialog for create_html.  """
 
     folder_input_name = '文件夹'
@@ -357,21 +491,4 @@ def dialog_create_html():
             webbrowser.open(csheet)
 
 
-class FootageError(Exception):
-    """Indicate no footage available."""
-
-    def __init__(self):
-        super(FootageError, self).__init__()
-        print(u'\n**错误** - 在images文件夹中没有可用图像\n')
-
-
-def main():
-    """Run this module as script."""
-
-    ContactSheet()
-
-
-if __name__ == '__main__':
-    reload(sys)
-    sys.setdefaultencoding('UTF-8')
-    main()
+locals()['dialog_create_html'] = _dialog_create_html
