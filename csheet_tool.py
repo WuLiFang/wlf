@@ -10,6 +10,7 @@ from wlf import cgtwq, csheet
 import wlf.config
 from wlf.notify import Progress, CancelledError
 from wlf.files import copy
+from wlf.path import get_encoded
 from wlf.Qt import QtWidgets, QtCore
 from wlf.Qt.QtWidgets import QMessageBox
 from wlf.uitools import DialogWithDir, main_show_dialog
@@ -17,7 +18,7 @@ from wlf.uitools import DialogWithDir, main_show_dialog
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.6'
+__version__ = '0.4.7'
 
 
 class Config(wlf.config.Config):
@@ -152,8 +153,8 @@ class Dialog(DialogWithDir):
                     title=u'色板 {}@{}'.format(prefix, database),
                     rename_dict=rename_dict)
             if created_file:
-                webbrowser.open(outdir)
-                webbrowser.open(created_file)
+                webbrowser.open(get_encoded(outdir))
+                webbrowser.open(get_encoded(created_file))
 
             super(Dialog, self).accept()
         except CancelledError:
