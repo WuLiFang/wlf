@@ -11,7 +11,7 @@ import string
 import logging
 import wlf.pathlib2 as pathlib
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -111,6 +111,12 @@ class PurePath(pathlib.PurePath):
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
         return cls._from_parts(args)
+
+    def __unicode__(self):
+        return get_unicode(super(PurePath, self).__str__())
+
+    def __str__(self):
+        return str(self.__unicode__())
 
     @property
     def layer(self):
