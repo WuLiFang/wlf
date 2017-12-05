@@ -13,7 +13,7 @@ import string
 import logging
 import wlf.pathlib2 as pathlib
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 
 with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -102,6 +102,7 @@ class PurePath(pathlib.PurePath):
     with pathlib.Path(pathlib.Path(__file__)
                       / '../precomp.redshift.json').open(encoding='UTF-8') as f:
         layers = json.load(f).get('layers')
+    _unicode = None
 
     def __new__(cls, *args):
         """Construct a PurePath from one or several strings and or existing
@@ -112,13 +113,31 @@ class PurePath(pathlib.PurePath):
 
         if cls is PurePath:
             cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
-        return cls._from_parts(args)
+        args_u = []
+        for i in args:
+            if isinstance(i, str):
+                i = get_unicode(i)
+            args_u.append(i)
+        return cls._from_parts(args_u)
 
     def __unicode__(self):
-        return get_unicode(super(PurePath, self).__str__())
+        """Return the string representation of the path, suitable for
+        passing to system calls."""
+        if self._unicode is None:
+            _parts_u = []
+            for i in self._parts:
+                if isinstance(i, str):
+                    i = get_unicode(i)
+                _parts_u.append(i)
+            setattr(self, '_parts', _parts_u)
+            self._unicode = self._format_parsed_parts(
+                get_unicode(self._drv),
+                get_unicode(self._root),
+                self._parts) or '.'
+        return self._unicode
 
     def __str__(self):
-        return str(self.__unicode__())
+        return get_encoded(self.__unicode__())
 
     @property
     def layer(self):
