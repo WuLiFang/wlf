@@ -19,14 +19,14 @@ from abc import abstractmethod
 from collections import Iterable
 
 import wlf.config
-from wlf.files import version_filter
+from wlf.files import version_filter, copy
 from wlf.notify import HAS_NUKE, Progress
 from wlf.path import get_encoded, get_unicode, PurePath, Path
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.6.0'
+__version__ = '1.6.1'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -48,6 +48,7 @@ class Image(object):
     exsited_id = []
     path = None
     name = None
+    relative_to = None
     _html_id = None
     # Static .png image thumbnail.
     thumb = None
@@ -62,7 +63,7 @@ class Image(object):
 
     def __init__(self, path):
         # Ignore initiated.
-        if self.path:
+        if isinstance(path, Image):
             return
 
         # Initiate.
@@ -70,16 +71,25 @@ class Image(object):
 
         self.path = path
         self.name = path.shot
-        self.thumb = path
+
+    def __nonzero__(self):
+        return bool(self.path)
 
     @property
     def html_path(self):
         """Path for html.  """
 
+        if self.path is None:
+            return self.path
+
         path = PurePath(self.path)
+        try:
+            path = path.relative_to(self.relative_to)
+        except ValueError:
+            pass
         if not path.is_absolute() and not get_unicode(path).startswith('http:'):
             path = './{}'.format(path)
-        return path
+        return get_unicode(path)
 
     @property
     def html_name(self):
@@ -91,7 +101,7 @@ class Image(object):
             return escape(name).replace(
                 escape(highlight),
                 '<span class="highlight">{}</span>'.format(escape(highlight)))
-        return name
+        return get_unicode(name)
 
     @property
     def html_id(self):
@@ -108,7 +118,17 @@ class Image(object):
                     self._html_id = id_
                     break
 
-        return self._html_id
+        return get_unicode(self._html_id)
+
+    @classmethod
+    def get_highlight(cls, filename):
+        """Get highlight part of @filename.  """
+
+        match = re.match(r'.*(sc_?\d+[^\.]*)\b', filename, flags=re.I)
+        if match:
+            return match.group(1)
+
+        return get_unicode(filename)
 
     def generate_preivew(self, source=None):
         """Generate gif preview with @source.  """
@@ -127,15 +147,20 @@ class Image(object):
             LOGGER.error('Error during generate preview.', exc_info=True)
             raise
 
-    @classmethod
-    def get_highlight(cls, filename):
-        """Get highlight part of @filename.  """
+    def download(self, dest):
+        """Download this image to dest.  """
 
-        match = re.match(r'.*(sc_?\d+[^\.]*)\b', filename, flags=re.I)
-        if match:
-            return match.group(1)
-
-        return filename
+        path = PurePath(dest)
+        for attr in ('path', 'thumb', 'preview'):
+            old_value = getattr(self, attr)
+            dirpath = PurePath('images')
+            if attr != 'path':
+                dirpath /= attr
+            if old_value:
+                suffix = PurePath(old_value).suffix
+                new_value = copy(old_value,
+                                 (path / dirpath / self.html_id).with_suffix(suffix))
+                setattr(self, attr, new_value)
 
 
 class ContactSheet(list):
@@ -160,7 +185,7 @@ class ContactSheet(list):
 class HTMLContactSheet(ContactSheet):
     """Contactsheet in html page form.  """
 
-    def to_html(self):
+    def to_html(self, relative_to=None):
         """Convert to html form text.  """
 
         body = ''
@@ -169,18 +194,19 @@ class HTMLContactSheet(ContactSheet):
 
         for index, image in enumerate(self):
             task.step(image.name)
+            image.relative_to = relative_to
             try:
                 next_image = self[index + 1]
             except IndexError:
                 next_image = self[0]
-            body += u'''<figure class='lightbox'>
+            body += '''<figure class='lightbox'>
         <figure class="preview" id="{this.html_id}">
             <a href="#{this.html_id}" class="image">
                 <img alt="no image" class="thumb"
                     onerror="hide(this.parentNode.parentNode.parentNode)"
                     onmouseover="use_preview(this)"
                     onmouseout="use_thumb(this)"
-                    src="{this.thumb}"
+                    src="{this.html_path}"
                     data-thumb="{this.thumb}"
                     data-preivew="{this.preview}"/>
             </a>
@@ -188,8 +214,8 @@ class HTMLContactSheet(ContactSheet):
         </figure>
         <figure class="full">
             <figcaption>{this.html_name}</figcaption>
-            <a href="{this.path}" target="_blank" class="viewer">
-                <img src="{this.path}" alt="no image"/>
+            <a href="{this.html_path}" target="_blank" class="viewer">
+                <img src="{this.html_path}" alt="no image"/>
             </a>
             <a class="close" href="#void"></a>
             <a class="prev" href="#{prev.html_id}">&lt;</a>
@@ -217,7 +243,7 @@ class HTMLContactSheet(ContactSheet):
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open('w', encoding='UTF-8') as f:
-            f.write(self.to_html())
+            f.write(self.to_html(relative_to=path.parent))
         LOGGER.info(u'生成: %s', path)
         return path
 
@@ -429,6 +455,8 @@ def create_html(images, save_path, title=None, rename_dict=None):
     """Crete html contactsheet with @images list, save to @save_path.  """
 
     images = [Image(i) for i in images]
+    rename_dict = rename_dict or {}
+
     for i in images:
         if i.path in rename_dict:
             i.name = rename_dict[i.path]
