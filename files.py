@@ -14,8 +14,9 @@ import multiprocessing.dummy
 
 from wlf.notify import Progress
 import wlf.path
+from wlf.path import get_encoded, get_unicode
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -54,47 +55,49 @@ def copy(src, dst, threading=False):
     """Copy src to dst."""
 
     def _mkdirs():
-        dst_dir = os.path.dirname(dst)
+        dst_dir = os.path.dirname(dst_e)
         if not os.path.exists(dst_dir):
             LOGGER.debug('创建目录: %s', dst_dir)
             os.makedirs(dst_dir)
 
-    assert isinstance(src, (str, unicode))
-    assert isinstance(dst, (str, unicode))
-
+    src_e, dst_e = get_encoded(src), get_encoded(dst)
+    src_u, dst_u = get_unicode(src), get_unicode(dst)
     if threading:
         thread = multiprocessing.dummy.Process(
-            target=copy, args=(src, dst), kwargs={'threading': False})
+            target=copy, args=(src_e, dst_e), kwargs={'threading': False})
         thread.start()
         return thread
 
-    if src.startswith('http:'):
-        LOGGER.info('下载:\n\t\t%s\n\t->\t%s', src, dst)
+    if src_e.startswith('http:'):
+        LOGGER.info('下载:\n\t\t%s\n\t->\t%s', src_u, dst_u)
         _mkdirs()
         try:
-            src_fd = urllib.urlopen(src)
-            with open(dst, 'wb') as dst_fd:
+            src_fd = urllib.urlopen(src_e)
+            with open(dst_e, 'wb') as dst_fd:
                 dst_fd.write(src_fd.read())
         finally:
             src_fd.close()
-    elif not os.path.exists(src):
-        LOGGER.warning('尝试复制不存在的文件: %s', src)
+    elif not os.path.exists(src_e):
+        LOGGER.warning('尝试复制不存在的文件: %s', src_u)
         return
     else:
-        LOGGER.info('复制:\n\t\t%s\n\t->\t%s', src, dst)
+        LOGGER.info('复制:\n\t\t%s\n\t->\t%s', src_u, dst_u)
         _mkdirs()
         try:
-            shutil.copy2(src, dst)
+            shutil.copy2(src_e, dst_e)
         except OSError:
             if sys.platform == 'win32':
-                call(wlf.path.get_encoded('XCOPY /V /Y "{}" "{}"'.format(src, dst)))
+                call(wlf.path.get_encoded(
+                    'XCOPY /V /Y "{}" "{}"'.format(src_e, dst_e)))
             else:
                 raise
 
-    if os.path.isdir(wlf.path.get_encoded(dst)):
-        ret = os.path.join(dst, os.path.basename(src))
+    if os.path.isdir(wlf.path.get_encoded(dst_e)):
+        ret = os.path.join(dst_e, os.path.basename(src_e))
     else:
-        ret = dst
+        ret = dst_e
+
+    ret = get_unicode(ret)
     return ret
 
 
