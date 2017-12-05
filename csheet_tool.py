@@ -18,7 +18,7 @@ from wlf.csheet import HTMLContactSheet, Image
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'
 
 
 class Config(wlf.config.Config):
@@ -81,6 +81,9 @@ class Dialog(DialogWithDir):
         self.actionDir.triggered.connect(self.ask_dir)
         self.comboBoxProject.currentIndexChanged.connect(self.auto_set_prefix)
 
+        # TODO
+        self.checkBoxThumb.setEnabled(False)
+
     @property
     def csheet_name(self):
         """Csheet filename.  """
@@ -127,6 +130,18 @@ class Dialog(DialogWithDir):
         return self.checkBoxPack.checkState()
 
     @property
+    def is_generate_thumb(self):
+        """If generate thumbnails before create csheet.  """
+
+        return self.checkBoxThumb.checkState()
+
+    @property
+    def is_generate_preview(self):
+        """If generate thumbnails before create csheet.  """
+
+        return self.checkBoxPreview.checkState()
+
+    @property
     def save_dir(self):
         """Csheet save dir.  """
 
@@ -164,6 +179,7 @@ class Dialog(DialogWithDir):
                 image = Image(shots.get_shot_image(shot))
                 if image:
                     image.name = shot
+                    image.related_video = shots.get_shot_submit_path(shot)
                     images.append(image)
             images.sort(key=lambda x: x.name)
             return images
@@ -183,14 +199,17 @@ class Dialog(DialogWithDir):
         """ Construct contactsheet.  """
 
         images = self.get_images()
-        is_pack = self.checkBoxPack.checkState()
 
-        if is_pack:
+        if self.is_pack:
             task = Progress('下载图像到本地', total=len(images), parent=self)
             for i in images:
                 task.step(i.name)
                 i.download(PurePath(self.save_dir))
-
+        if self.is_generate_preview:
+            task = Progress('生成预览', total=len(images), parent=self)
+            for i in images:
+                task.step(i.name)
+                i.generate_preivew()
         return HTMLContactSheet(images)
 
     def accept(self):
