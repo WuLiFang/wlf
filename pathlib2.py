@@ -831,7 +831,7 @@ class PurePath(object):
                 # also handle unicode for PY2 (six.text_type = unicode)
                 elif six.PY2 and isinstance(a, six.text_type):
                     # cast to str using filesystem encoding
-                    parts.append(a.encode(sys.getfilesystemencoding()))
+                    parts.append(a.encode(sys.getdefaultencoding()))
                 else:
                     raise TypeError(
                         "argument should be a str object or an os.PathLike "
