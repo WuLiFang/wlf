@@ -11,6 +11,7 @@ import json
 import locale
 import string
 import logging
+
 import wlf.pathlib2 as pathlib
 
 __version__ = '0.2.4'
@@ -42,6 +43,7 @@ def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
 
 def get_encoded(input_str, encoding=None):
     """Return unicode by try decode @string with @encodeing.  """
+
     if encoding is None:
         encoding = locale.getdefaultlocale()[1]
 
@@ -123,13 +125,11 @@ class PurePath(pathlib.PurePath):
     def __unicode__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
+
         if self._unicode is None:
-            _parts_u = []
-            for i in self._parts:
-                if isinstance(i, str):
-                    i = get_unicode(i)
-                _parts_u.append(i)
-            setattr(self, '_parts', _parts_u)
+            setattr(self, '_parts',
+                    tuple(get_unicode(i) if isinstance(i, str) else i
+                          for i in self._parts))
             self._unicode = self._format_parsed_parts(
                 get_unicode(self._drv),
                 get_unicode(self._root),
@@ -330,6 +330,9 @@ class PurePath(pathlib.PurePath):
         """
 
         return self.with_name(u'{}{}'.format(self.shot, self.suffix))
+
+    def relative_to(self, *other):
+        return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
 
 
 class PurePosixPath(PurePath):
