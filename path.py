@@ -14,7 +14,7 @@ import logging
 
 import wlf.pathlib2 as pathlib
 
-__version__ = '0.2.4'
+__version__ = '0.2.5'
 
 with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -130,6 +130,8 @@ class PurePath(pathlib.PurePath):
             setattr(self, '_parts',
                     tuple(get_unicode(i) if isinstance(i, str) else i
                           for i in self._parts))
+            setattr(self, '_drv', get_unicode(self._drv))
+            setattr(self, '_root', get_unicode(self._root))
             self._unicode = self._format_parsed_parts(
                 get_unicode(self._drv),
                 get_unicode(self._root),
