@@ -4,6 +4,8 @@
 from __future__ import print_function, unicode_literals
 
 import os
+import sys
+import io
 import re
 import json
 import locale
@@ -11,7 +13,7 @@ import string
 import logging
 import wlf.pathlib2 as pathlib
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -337,6 +339,22 @@ class Path(pathlib.Path, PurePath):
                                       % (cls.__name__,))
         getattr(self, '_init')()
         return self
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if self._closed:
+            self._raise_closed()
+        if sys.version_info >= (3, 3):
+            return io.open(
+                get_encoded(self), mode, buffering, encoding, errors, newline,
+                opener=self._opener)
+        else:
+            return io.open(get_encoded(self), mode, buffering,
+                           encoding, errors, newline)
 
 
 class PosixPath(Path, PurePosixPath):
