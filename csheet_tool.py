@@ -6,19 +6,19 @@ import os
 import webbrowser
 import logging
 
-from wlf import cgtwq, csheet
+from wlf import cgtwq
 import wlf.config
 from wlf.notify import Progress, CancelledError
-from wlf.files import copy
-from wlf.path import get_encoded
+from wlf.path import get_encoded, PurePath
 from wlf.Qt import QtWidgets, QtCore
 from wlf.Qt.QtWidgets import QMessageBox
 from wlf.uitools import DialogWithDir, main_show_dialog
+from wlf.csheet import HTMLContactSheet, Image
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.4.7'
+__version__ = '0.5.0'
 
 
 class Config(wlf.config.Config):
@@ -81,6 +81,60 @@ class Dialog(DialogWithDir):
         self.actionDir.triggered.connect(self.ask_dir)
         self.comboBoxProject.currentIndexChanged.connect(self.auto_set_prefix)
 
+    @property
+    def csheet_name(self):
+        """Csheet filename.  """
+
+        return '{}色板'.format('_'.join(
+            i for i in [self.project_name,
+                        self.prefix.strip(self.code).strip('_'),
+                        self.pipeline] if i))
+
+    @property
+    def project_name(self):
+        """Project name.  """
+
+        return self.comboBoxProject.currentText()
+
+    @property
+    def code(self):
+        """Project code.  """
+        return self.projects_code.get(self.project_name, '')
+
+    @property
+    def pipeline(self):
+        """Database pipeline.  """
+
+        return self.comboBoxPipeline.currentText()
+
+    @property
+    def prefix(self):
+        """Shots prefix limitation.  """
+
+        return self.lineEditPrefix.text()
+
+    @property
+    def database(self):
+        """Database name on cgtw.  """
+
+        return self.projects_databse.get(
+            self.project_name, CONFIG.default['DATABASE'])
+
+    @property
+    def is_pack(self):
+        """If pack before create csheet.  """
+
+        return self.checkBoxPack.checkState()
+
+    @property
+    def save_dir(self):
+        """Csheet save dir.  """
+
+        if self.is_pack:
+            return PurePath(self.directory) / self.csheet_name
+
+        return PurePath(self.directory)
+
     def auto_set_prefix(self):
         """Set prefix according current project. """
 
@@ -93,65 +147,64 @@ class Dialog(DialogWithDir):
         edit.setFocus(QtCore.Qt.ShortcutFocusReason)
         edit.setSelection(len(text) - 3, 2)
 
-    def accept(self):
-        """Override QDialog.accept .  """
+    def get_images(self):
+        """Get images from database.  """
 
         try:
-            project_name = self.comboBoxProject.currentText()
-            database = self.projects_databse.get(
-                project_name, CONFIG.default['DATABASE'])
-            code = self.projects_code.get(project_name, '')
-            pipeline = self.comboBoxPipeline.currentText()
-            prefix = self.lineEditPrefix.text()
-            outdir = self.directory
-            is_pack = self.checkBoxPack.checkState()
-            chseet_name = '{}色板'.format('_'.join(
-                i for i in [project_name, prefix.strip(code).strip('_'), pipeline] if i))
-
-            try:
-                task = Progress('访问数据库', parent=self)
-                task.step(database)
-                shots = cgtwq.Shots(
-                    database, pipeline=pipeline, prefix=prefix)
-                task.total = len(shots.shots) + 1
-                rename_dict = {}
-                for shot in shots.shots:
-                    task.step(shot)
-                    image = shots.get_shot_image(shot)
-                    if image:
-                        ext = os.path.splitext(image)[1]
-                        rename_dict[image] = ''.join([shot, ext])
-                images = sorted(rename_dict.keys(), key=rename_dict.get)
-            except cgtwq.IDError as ex:
-                QMessageBox.critical(self, '找不到对应条目', str(ex))
-                return
-            except cgtwq.PrefixError as ex:
-                QMessageBox.critical(
-                    self, '无匹配镜头', '''
+            task = Progress('访问数据库', parent=self)
+            task.step(self.database)
+            shots = cgtwq.Shots(
+                self.database,
+                pipeline=self.pipeline,
+                prefix=self.prefix)
+            task.total = len(shots.shots) + 1
+            images = []
+            for shot in shots.shots:
+                task.step(shot)
+                image = Image(shots.get_shot_image(shot))
+                if image:
+                    image.name = shot
+                    images.append(image)
+            images.sort(key=lambda x: x.name)
+            return images
+        except cgtwq.IDError as ex:
+            QMessageBox.critical(self, '找不到对应条目', str(ex))
+            raise
+        except cgtwq.PrefixError as ex:
+            QMessageBox.critical(
+                self, '无匹配镜头', '''
 项目: {} <br>
 流程: {} <br>
 前缀: <span style="color:red;font-weight: bold">{}</span>
-'''.format(project_name, pipeline, ex.prefix)
-                )
-                return
+'''.format(self.project_name, self.pipeline, ex.prefix))
+            raise
 
-            if is_pack:
-                outdir = os.path.join(outdir, chseet_name)
-                task = Progress('下载图像到本地', total=len(images), parent=self)
-                image_dir = os.path.join(outdir, 'images')
-                for f in images:
-                    task.step(f)
-                    dst = os.path.join(image_dir, rename_dict.get(f, ''))
-                    copy(f, dst)
-                created_file = csheet.create_html_from_dir(
-                    image_dir, rename_dict=rename_dict)
-            else:
-                save_path = os.path.join(outdir, '{}.html'.format(chseet_name))
-                created_file = csheet.create_html(
-                    images,
-                    save_path,
-                    title=u'色板 {}@{}'.format(prefix, database),
-                    rename_dict=rename_dict)
+    def contactsheet(self):
+        """ Construct contactsheet.  """
+
+        images = self.get_images()
+        is_pack = self.checkBoxPack.checkState()
+
+        if is_pack:
+            task = Progress('下载图像到本地', total=len(images), parent=self)
+            for i in images:
+                task.step(i.name)
+                i.download(PurePath(self.save_dir))
+
+        return HTMLContactSheet(images)
+
+    def accept(self):
+        """Override QDialog.accept .  """
+
+        outdir = self.directory
+        save_path = self.save_dir / '{}.html'.format(self.csheet_name)
+        try:
+            sheet = self.contactsheet()
+        except cgtwq.CGTeamWorkException:
+            return
+
+        try:
+            created_file = sheet.generate(save_path)
             if created_file:
                 webbrowser.open(get_encoded(outdir))
                 webbrowser.open(get_encoded(created_file))
