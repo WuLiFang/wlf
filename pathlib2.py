@@ -57,7 +57,7 @@ __all__ = [
 def _py2_fsencode(parts):
     # py2 => minimal unicode support
     assert six.PY2
-    return [part.encode('ascii') if isinstance(part, six.text_type)
+    return [part.encode(sys.getdefaultencoding()) if isinstance(part, six.text_type)
             else part for part in parts]
 
 
