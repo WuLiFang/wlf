@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.3'
+__version__ = '1.7.4'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -156,6 +156,10 @@ class Image(object):
 
         return self._preview or self.preview_default
 
+    @preview.setter
+    def preview(self, value):
+        self._preview = value
+
     @classmethod
     def get_highlight(cls, filename):
         """Get highlight part of @filename.  """
@@ -207,7 +211,7 @@ class Image(object):
         """Download this image to dest.  """
 
         path = PurePath(dest)
-        for attr in ('path', 'thumb', '_preview'):
+        for attr in ('path', 'thumb', 'preview'):
             old_value = getattr(self, attr)
             if not old_value:
                 continue
