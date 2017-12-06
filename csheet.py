@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.1'
+__version__ = '1.7.2'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -50,10 +50,8 @@ class Image(object):
     relative_to = None
     related_video = None
     _html_id = None
-    # Static .png image thumbnail.
     thumb = None
-    # Dynamic .gif preview.
-    preview = None
+    _preview = None
 
     def __new__(cls, path):
         if isinstance(path, Image):
@@ -74,6 +72,12 @@ class Image(object):
 
     def __nonzero__(self):
         return bool(self.path)
+
+    def __str__(self):
+        return '<Image: {0.html_id}>'.format(self)
+
+    def __unicode__(self):
+        return '<图像: {0.html_id}>'.format(self)
 
     @property
     def html_path(self):
@@ -123,6 +127,19 @@ class Image(object):
 
         return get_unicode(self._html_id)
 
+    @property
+    def preview_default(self):
+        """Previw path default.  """
+
+        return (PurePath(self.path).parent / 'preview' /
+                self.html_id).with_suffix('.gif')
+
+    @property
+    def preview(self):
+        """Dynamic .gif preview.  """
+
+        return self._preview or self.preview_default
+
     @classmethod
     def get_highlight(cls, filename):
         """Get highlight part of @filename.  """
@@ -153,20 +170,17 @@ class Image(object):
         """Generate gif preview with @source.  """
 
         if self.related_video is None:
+            LOGGER.info('没有关联视频: %s', self)
             return
 
         source = Path(self.related_video)
-        if self.preview:
-            output = Path(get_encoded(self.preview))
-        else:
-            output = (Path(self.path).parent / 'preivew' /
-                      self.html_id).with_suffix('.gif')
+        output = Path(get_encoded(self.preview))
 
         try:
             output.parent.mkdir(exist_ok=True)
             if source.match('*.mov'):
-                self.preview = generate_gif(source, output)
-            return self.preview
+                self._preview = generate_gif(source, output)
+            return self._preview
         except OSError as ex:
             LOGGER.error(os.strerror(ex.errno), exc_info=True)
         except:
@@ -177,15 +191,19 @@ class Image(object):
         """Download this image to dest.  """
 
         path = PurePath(dest)
-        for attr in ('path', 'thumb', 'preview'):
+        for attr in ('path', 'thumb', '_preview'):
             old_value = getattr(self, attr)
+            if not old_value:
+                continue
+            old_path = Path(old_value)
+
             dirpath = PurePath('images')
             if attr != 'path':
                 dirpath /= attr
-            if old_value:
-                suffix = PurePath(old_value).suffix
-                new_value = copy(old_value,
-                                 (path / dirpath / self.html_id).with_suffix(suffix))
+            if old_path.exists():
+                new_path = (path / dirpath /
+                            self.html_id).with_suffix(old_path.suffix)
+                new_value = copy(old_path, new_path)
                 if new_value:
                     setattr(self, attr, new_value)
 
