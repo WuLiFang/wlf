@@ -21,7 +21,7 @@ from wlf.decorators import run_with_memory_require
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'
 
 
 class Config(wlf.config.Config):
@@ -204,6 +204,7 @@ class Dialog(DialogWithDir):
         """ Construct contactsheet.  """
 
         images = self.get_images()
+        sheet = HTMLContactSheet(images)
 
         # Generate preview.
         if self.is_generate_preview:
@@ -213,7 +214,7 @@ class Dialog(DialogWithDir):
             task.set(message='正在使用 {} 线程进行……'.format(thread_count))
             for i in images:
                 pool.apply_async(run_with_memory_require(1, task=task)(
-                    i.generate_preivew), callback=task.step)
+                    i.generate_preivew))
             pool.close()
             pool.join()
 
@@ -224,7 +225,7 @@ class Dialog(DialogWithDir):
                 task.step(i.name)
                 i.download(PurePath(self.save_dir))
 
-        return HTMLContactSheet(images)
+        return sheet
 
     def accept(self):
         """Override QDialog.accept .  """
