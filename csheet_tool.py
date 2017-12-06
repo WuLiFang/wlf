@@ -18,7 +18,7 @@ from wlf.csheet import HTMLContactSheet, Image
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 
 class Config(wlf.config.Config):
@@ -30,6 +30,7 @@ class Config(wlf.config.Config):
         'DATABASE': 'proj_big',
         'PREFIX': 'SNJYW_EP19_',
         'OUTDIR': 'E:/',
+        'IS_GENERATE_PREVIEW': 2,
         'PACK': 0,
     }
     path = os.path.expanduser(u'~/.wlf.csheet.json')
@@ -51,6 +52,7 @@ class Dialog(DialogWithDir):
             'lineEditPrefix': 'PREFIX',
             'lineEditOutDir': 'OUTDIR',
             'checkBoxPack': 'PACK',
+            'checkBoxPreview': 'IS_GENERATE_PREVIEW',
         }
         icons = {
             'toolButtonAskDir': QtWidgets.QStyle.SP_DialogOpenButton,
@@ -219,16 +221,14 @@ class Dialog(DialogWithDir):
         save_path = self.save_dir / '{}.html'.format(self.csheet_name)
         try:
             sheet = self.contactsheet()
-        except cgtwq.CGTeamWorkException:
-            return
-
-        try:
             created_file = sheet.generate(save_path)
             if created_file:
                 webbrowser.open(get_encoded(outdir))
                 webbrowser.open(get_encoded(created_file))
 
             super(Dialog, self).accept()
+        except cgtwq.CGTeamWorkException:
+            return
         except CancelledError:
             LOGGER.debug(u'用户取消创建色板')
         except:
