@@ -205,6 +205,7 @@ class Dialog(DialogWithDir):
 
         images = self.get_images()
         sheet = HTMLContactSheet(images)
+        sheet.title = self.csheet_name
 
         # Generate preview.
         if self.is_generate_preview:
