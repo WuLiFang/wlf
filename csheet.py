@@ -553,7 +553,7 @@ def generate_gif(filename, output=None):
 
     # Skip generated.
     if ret.exists() and path.stat().st_mtime <= ret.stat().st_mtime:
-        LOGGER.info('跳过已有GIF生成: %s', ret)
+        # LOGGER.info('跳过已有GIF生成: %s', ret)
         return ret
 
     # Generate palette
