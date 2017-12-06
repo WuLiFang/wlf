@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -143,7 +143,8 @@ class Image(object):
         try:
             path = path.relative_to(self.relative_to)
         except ValueError:
-            LOGGER.debug('html_relative', exc_info=True)
+            # LOGGER.debug('html_relative', exc_info=True)
+            pass
         if not path.is_absolute() and not get_unicode(path).startswith('http:'):
             path = './{}'.format(path)
         return get_unicode(path)
@@ -230,11 +231,13 @@ class HTMLContactSheet(ContactSheet):
             <a href="#{this.html_id}" class="image">
                 <img alt="no image" class="thumb"
                     onerror="hide(this.parentNode.parentNode.parentNode)"
-                    onmouseover="use_preview(this)"
-                    onmouseout="use_thumb(this)"
+                    onmouseover="use_preview_on_available(this)"
+                    onmouseout="use_minimal(this)"
                     src="{this.html_path}"
                     data-thumb="{this.html_thumb}"
-                    data-preview="{this.html_preview}"/>
+                    data-preview="{this.html_preview}"
+                    data-full="{this.html_path}"
+                />
             </a>
             <figcaption><a href="#{this.html_id}">{this.html_name}</a></figcaption>
         </figure>

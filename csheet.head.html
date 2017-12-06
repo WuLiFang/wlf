@@ -245,6 +245,9 @@
     <script>
         var count = 0;
         function hide(lightbox) {
+            if (use_minimal(lightbox)) {
+                return
+            }
             lightbox.style.display = 'none';
             try {
                 var prev = lightbox.previousElementSibling;
@@ -270,11 +273,16 @@
             count += 1;
             header.innerText = `${total - count}/${total}`;
         }
+        function use_minimal(lightbox) {
+            // Use minaimal image to save memory.
+            return use_thumb(lightbox) || use_full(lightbox) || use_preview(lightbox);
+        }
         function use_thumb(lightbox) {
             var thumb = lightbox.getAttribute("data-thumb")
             if (lightbox.src != thumb && image_available(thumb)) {
                 lightbox.src = thumb;
                 console.log("Use thumb: " + thumb);
+                return thumb;
             }
         }
         function use_preview(lightbox) {
@@ -282,15 +290,29 @@
             if (image_available(preview)) {
                 lightbox.src = preview;
                 console.log("Use preview: " + preview);
-            } else{
+                return preview;
+            } else {
                 console.log("Preview not available: " + preview)
             }
         }
-        function image_available(path){
-            if (path == null | path == 'null'){
+        function use_full(lightbox) {
+            var full = lightbox.getAttribute("data-full")
+            if (lightbox.src != full && image_available(full)) {
+                lightbox.src = full;
+                console.log("Use full: " + full);
+                return full;
+            }
+        }
+        function use_preview_on_available(lightbox) {
+            var preview = lightbox.getAttribute("data-preview");
+            image_available(preview, function () { lightbox.src = preview; });
+        }
+        function image_available(path, callback) {
+            if (path == null | path == 'null') {
                 return false;
             }
             var temp = new Image;
+            temp.onload = callback
             temp.src = path;
             return temp.complete;
         }
