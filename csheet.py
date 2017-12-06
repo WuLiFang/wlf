@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.2'
+__version__ = '1.7.3'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -44,12 +44,13 @@ class Config(wlf.config.Config):
 class Image(object):
     """Image item for contactsheet.  """
 
-    exsited_id = []
+    exsited_ids = set()
     path = None
     name = None
     relative_to = None
     related_video = None
     _html_id = None
+    _parent = None
     thumb = None
     _preview = None
 
@@ -78,6 +79,20 @@ class Image(object):
 
     def __unicode__(self):
         return '<图像: {0.html_id}>'.format(self)
+
+    @property
+    def parent(self):
+        """The contactsheet this image belonged to.  """
+
+        assert self._parent is None or isinstance(self._parent, ContactSheet)
+
+        return self._parent
+
+    @parent.setter
+    def parent(self, value):
+        assert isinstance(value, ContactSheet)
+        self._html_id = None
+        self._parent = value
 
     @property
     def html_path(self):
@@ -115,13 +130,14 @@ class Image(object):
         """Element id for html.  """
 
         if self._html_id is None:
+            existed_ids = self.parent.existed_ids if self.parent else Image.exsited_ids
             name = self.name
             id_ = escape(name)
             for i in count(start=1):
-                if id_ in self.exsited_id:
+                if id_ in existed_ids:
                     id_ = '{}_{}'.format(name, i)
                 else:
-                    self.exsited_id.append(id_)
+                    existed_ids.add(id_)
                     self._html_id = id_
                     break
 
@@ -217,6 +233,8 @@ class ContactSheet(list):
         assert isinstance(images, Iterable)
 
         list.__init__(self, (Image(i) for i in images))
+        for i in images:
+            i.parent = self
 
     def __setitem__(self, index, value):
         return list.__setitem__(self, index, Image(value))
@@ -229,6 +247,11 @@ class ContactSheet(list):
 
 class HTMLContactSheet(ContactSheet):
     """Contactsheet in html page form.  """
+
+    def __init__(self, *args, **kwargs):
+        super(HTMLContactSheet, self).__init__(*args, **kwargs)
+        Image.exsited_ids.clear()
+        self.existed_ids = set()
 
     def to_html(self, relative_to=None):
         """Convert to html form text.  """
