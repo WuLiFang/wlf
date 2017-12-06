@@ -2,23 +2,26 @@
 """GUI for csheet creation.  """
 from __future__ import print_function, unicode_literals
 
+import logging
 import os
 import webbrowser
-import logging
+from multiprocessing.dummy import Pool, cpu_count
 
-from wlf import cgtwq
+
 import wlf.config
-from wlf.notify import Progress, CancelledError
-from wlf.path import get_encoded, PurePath
-from wlf.Qt import QtWidgets, QtCore
+from wlf import cgtwq
+from wlf.csheet import HTMLContactSheet, Image
+from wlf.notify import CancelledError, Progress
+from wlf.path import PurePath, get_encoded
+from wlf.Qt import QtCore, QtWidgets
 from wlf.Qt.QtWidgets import QMessageBox
 from wlf.uitools import DialogWithDir, main_show_dialog
-from wlf.csheet import HTMLContactSheet, Image
+from wlf.decorators import run_with_memory_require
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.6.1'
+__version__ = '0.7.0'
 
 
 class Config(wlf.config.Config):
@@ -202,16 +205,25 @@ class Dialog(DialogWithDir):
 
         images = self.get_images()
 
+        # Generate preview.
+        if self.is_generate_preview:
+            task = Progress('生成预览', total=len(images), parent=self)
+            thread_count = cpu_count()
+            pool = Pool(thread_count)
+            task.set(message='正在使用 {} 线程进行……'.format(thread_count))
+            for i in images:
+                pool.apply_async(run_with_memory_require(1, task=task)(
+                    i.generate_preivew), callback=task.step)
+            pool.close()
+            pool.join()
+
+        # Download resouces to local.
         if self.is_pack:
             task = Progress('下载图像到本地', total=len(images), parent=self)
             for i in images:
                 task.step(i.name)
                 i.download(PurePath(self.save_dir))
-        if self.is_generate_preview:
-            task = Progress('生成预览', total=len(images), parent=self)
-            for i in images:
-                task.step(i.name)
-                i.generate_preivew()
+
         return HTMLContactSheet(images)
 
     def accept(self):
