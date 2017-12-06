@@ -9,7 +9,7 @@ import threading
 import logging
 
 from wlf.Qt import QtCompat, QtWidgets
-from wlf.Qt.QtCore import Signal
+from wlf.Qt.QtCore import Signal, QObject
 from wlf.tray import Tray
 from wlf.decorators import run_in_main_thread
 
@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('com.wlf.notify')
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.5.1'
+__version__ = '0.5.2'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -76,18 +76,26 @@ class ProgressBar(QtWidgets.QDialog):
         event.ignore()
 
 
-class Progress(object):
+class Progress(QObject):
     """A progressbar compatible with or without nuke imported."""
+
     count = -1
     total = 100
+    stepped = Signal(str)
 
     def __init__(self, name='', total=None, parent=None):
+        super(Progress, self).__init__()
+
         self.total = total or self.total
 
         if HAS_NUKE:
             self._task = nuke.ProgressTask(name)
         else:
             self._task = ProgressBar(name, parent)
+
+        self.stepped.connect(self.on_step)
+
+        self.step = self.stepped.emit
 
     def __del__(self):
         if not HAS_NUKE:
@@ -113,7 +121,7 @@ class Progress(object):
 
         return self.count * 100 // self.total
 
-    def step(self, message=None):
+    def on_step(self, message=None):
         """One step forward.  """
 
         self.count += 1
