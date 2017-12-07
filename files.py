@@ -16,7 +16,7 @@ from wlf.notify import Progress
 import wlf.path
 from wlf.path import get_encoded, get_unicode
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -76,7 +76,7 @@ def copy(src, dst, threading=False):
         thread.start()
         return thread
 
-    if src_e.startswith('http:'):
+    if src_u.startswith('http:'):
         LOGGER.info('下载:\n\t\t%s\n\t->\t%s', src_u, dst_u)
         _mkdirs()
         try:
