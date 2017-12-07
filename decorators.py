@@ -21,7 +21,7 @@ assert isinstance(LOGGER, logging.Logger)
 if has_nuke():
     import nuke
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 
 def run_async(func):
@@ -110,8 +110,11 @@ def run_with_memory_require(size=1):
 
         @wraps(func)
         def _func(*args, **kwargs):
-
+            informed = False
             while psutil.virtual_memory().free < size * 1024 ** 3:
+                if not informed:
+                    LOGGER.info('等待%dG空闲内存……', size)
+                    informed = True
                 time.sleep(1)
 
             return func(*args, **kwargs)
