@@ -11,7 +11,7 @@ import sys
 import threading
 import webbrowser
 from tempfile import mktemp
-from subprocess import Popen
+from subprocess import Popen, PIPE
 from cgi import escape
 from itertools import count
 from abc import abstractmethod
@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.4'
+__version__ = '1.7.5'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -186,11 +186,11 @@ class Image(object):
             path = './{}'.format(path)
         return get_unicode(path)
 
-    def generate_preivew(self):
+    def generate_preview(self):
         """Generate gif preview with @source.  """
 
         if self.related_video is None:
-            LOGGER.info('没有关联视频: %s', self)
+            # LOGGER.info('没有关联视频: %s', self)
             return
 
         source = Path(self.related_video)
@@ -567,11 +567,12 @@ def generate_gif(filename, output=None):
     LOGGER.debug(cmd)
     proc = Popen(get_encoded(cmd),
                  cwd=str(ret.parent),
-                 #  stdout=PIPE, stderr=PIPE,
+                 stdout=PIPE, stderr=PIPE,
                  env=os.environ)
-    proc.communicate()
+    stderr = proc.communicate()[1]
     if proc.wait():
-        raise RuntimeError('Error during generate gif palette:\n\t %s' % cmd)
+        raise RuntimeError(
+            'Error during generate gif palette:\n\t %s\n\t%s' % cmd, stderr)
     # Generate gif
     cmd = (u'ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
            '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
@@ -579,11 +580,12 @@ def generate_gif(filename, output=None):
     LOGGER.debug(cmd)
     proc = Popen(get_encoded(cmd),
                  cwd=str(ret.parent),
-                 #  stdout=PIPE, stderr=PIPE,
+                 stdout=PIPE, stderr=PIPE,
                  env=os.environ)
-    proc.communicate()
+    stderr = proc.communicate()[1]
     if proc.wait():
-        raise RuntimeError('Error during generate gif:\n\t %s' % cmd)
+        raise RuntimeError(
+            'Error during generate gif:\n\t %s\n\t%s' % cmd, stderr)
 
     LOGGER.info('生成GIF: %s', ret)
     return ret

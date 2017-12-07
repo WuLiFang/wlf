@@ -111,7 +111,7 @@ def run_with_memory_require(size=1, task=None):
 
     def _wrap(func):
 
-        LOGGER.debug(func.__name__)
+        # LOGGER.debug(func.__name__)
 
         @wraps(func)
         def _func(*args, **kwargs):

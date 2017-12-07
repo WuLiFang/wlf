@@ -213,9 +213,10 @@ class Dialog(DialogWithDir):
             thread_count = cpu_count()
             pool = Pool(thread_count)
             task.set(message='正在使用 {} 线程进行……'.format(thread_count))
-            for i in images:
-                pool.apply_async(run_with_memory_require(1, task=task)(
-                    i.generate_preivew))
+            pool.map(lambda i:
+                     run_with_memory_require(1, task=task)(
+                         i.generate_preview)(),
+                     images)
             pool.close()
             pool.join()
 
