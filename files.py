@@ -16,7 +16,7 @@ from wlf.notify import Progress
 import wlf.path
 from wlf.path import get_encoded, get_unicode
 
-__version__ = '0.7.2'
+__version__ = '0.7.3'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -61,6 +61,7 @@ def copy(src, dst, threading=False):
             os.makedirs(dst_dir)
 
     src_e, dst_e = get_encoded(src), get_encoded(dst)
+    src_u, dst_u = get_unicode(src), get_unicode(dst)
     # Handle exceptions.
     if src_e == dst_e:
         LOGGER.warning('不能原地复制: %s', src_e)
@@ -69,7 +70,6 @@ def copy(src, dst, threading=False):
         LOGGER.warning('尝试复制不存在的文件: %s', src_u)
         return
 
-    src_u, dst_u = get_unicode(src), get_unicode(dst)
     if threading:
         thread = multiprocessing.dummy.Process(
             target=copy, args=(src_e, dst_e), kwargs={'threading': False})
