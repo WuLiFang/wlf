@@ -19,7 +19,7 @@ from wlf.notify import HAS_NUKE, CancelledError, Progress
 from wlf.path import get_unicode, PurePath, Path
 from wlf.uitools import DialogWithDir, main_show_dialog
 
-__version__ = '0.10.3'
+__version__ = '0.10.4'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -261,6 +261,9 @@ class FileListWidget(object):
 
     def update_directory(self):
         """Update current working dir.  """
+
+        if self.directory and self.directory.updating:
+            return
 
         mode = self.parent.mode
         kwargs = {}
