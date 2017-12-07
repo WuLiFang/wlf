@@ -21,7 +21,7 @@ assert isinstance(LOGGER, logging.Logger)
 if has_nuke():
     import nuke
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 
 def run_async(func):
@@ -101,38 +101,20 @@ def run_in_main_thread(func):
     return _func
 
 
-def run_with_memory_require(size=1, task=None):
+def run_with_memory_require(size=1):
     """Run func with a memory require. @size unit is GB.  """
 
-    from wlf.notify import Progress, CancelledError
     import psutil
-
-    assert task is None or isinstance(task, Progress)
 
     def _wrap(func):
 
-        # LOGGER.debug(func.__name__)
-
         @wraps(func)
         def _func(*args, **kwargs):
+
             while psutil.virtual_memory().free < size * 1024 ** 3:
                 time.sleep(1)
-                if task:
-                    task.set(message='等待{}G空闲内存……'.format(size))
 
-            try:
-                if task and task.is_cancelled():
-                    raise CancelledError
-                func(*args, **kwargs)
-            except CancelledError:
-                raise
-            except:
-                LOGGER.error(
-                    'Unexpected exception during function: %s', func.__name__, exc_info=True)
-                raise
-            finally:
-                if task:
-                    task.step()
+            return func(*args, **kwargs)
 
         return _func
 

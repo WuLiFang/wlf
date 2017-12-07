@@ -9,7 +9,7 @@ import threading
 import logging
 
 from wlf.Qt import QtCompat, QtWidgets
-from wlf.Qt.QtCore import Signal, QObject
+from wlf.Qt.QtCore import Signal, Slot, QObject
 from wlf.tray import Tray
 from wlf.decorators import run_in_main_thread
 
@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('com.wlf.notify')
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.5.2'
+__version__ = '0.6.0'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -81,7 +81,10 @@ class Progress(QObject):
 
     count = -1
     total = 100
-    stepped = Signal(str)
+    stepped = Signal()
+    stepped_with_message = Signal(str)
+    progress_changed = Signal(int)
+    message_changed = Signal(str)
 
     def __init__(self, name='', total=None, parent=None):
         super(Progress, self).__init__()
@@ -94,26 +97,14 @@ class Progress(QObject):
             self._task = ProgressBar(name, parent)
 
         self.stepped.connect(self.on_step)
-
-        self.step = self.stepped.emit
+        self.stepped_with_message.connect(self.on_step)
+        self.progress_changed.connect(self.set_progress)
+        self.message_changed.connect(self.set_message)
 
     def __del__(self):
         if not HAS_NUKE:
             self._task.hide()
         del self._task
-
-    def set(self, progress=None, message=None):
-        """Set progress number and message"""
-
-        if self.is_cancelled():
-            raise CancelledError
-
-        if progress:
-            if self.progress != progress:
-                self.count = self.total * progress // 100
-            self._task.setProgress(progress)
-        if message:
-            self._task.setMessage(message)
 
     @property
     def progress(self):
@@ -121,6 +112,44 @@ class Progress(QObject):
 
         return self.count * 100 // self.total
 
+    def set(self, progress=None, message=None):
+        """Set progress number and message"""
+
+        if self.is_cancelled():
+            raise CancelledError
+
+        if progress is not None:
+            self.progress_changed.emit(progress)
+        if message is not None:
+            self.message_changed.emit(message)
+
+    @Slot(int)
+    def set_progress(self, value):
+        """Set progress value.  """
+
+        if self.progress != value:
+            self.count = self.total * value // 100
+        self._task.setProgress(value)
+        QtWidgets.QApplication.processEvents()
+
+    @Slot(str)
+    def set_message(self, message):
+        """Set progress message.  """
+
+        self._task.setMessage(message)
+        QtWidgets.QApplication.processEvents()
+
+    def step(self, message=None):
+        """Signal wrapper.  """
+
+        if message is None:
+            self.stepped.emit()
+        else:
+            self.stepped_with_message.emit(message)
+        QtWidgets.QApplication.processEvents()
+
+    @Slot()
+    @Slot(str)
     def on_step(self, message=None):
         """One step forward.  """
 
@@ -129,9 +158,15 @@ class Progress(QObject):
         self.set(self.progress, message)
 
     def is_cancelled(self):
-        """Return if task is cancelled.  """
+        """Return if task has been cancelled.  """
 
         return self._task.isCancelled()
+
+    def check_cancelled(self):
+        """Raise a `CancelledError` if task has been cancelled.  """
+
+        if self.is_cancelled():
+            raise CancelledError
 
 
 class CancelledError(Exception):

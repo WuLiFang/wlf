@@ -21,7 +21,7 @@ from wlf.decorators import run_with_memory_require
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 
 class Config(wlf.config.Config):
@@ -209,14 +209,16 @@ class Dialog(DialogWithDir):
 
         # Generate preview.
         if self.is_generate_preview:
+            @run_with_memory_require(1)
+            def _run(image):
+                image.generate_preview()
+
             task = Progress('生成预览', total=len(images), parent=self)
             thread_count = cpu_count()
             pool = Pool(thread_count)
             task.set(message='正在使用 {} 线程进行……'.format(thread_count))
-            pool.map(lambda i:
-                     run_with_memory_require(1, task=task)(
-                         i.generate_preview)(),
-                     images)
+            for _ in pool.imap_unordered(_run, images):
+                task.step()
             pool.close()
             pool.join()
 
