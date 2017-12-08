@@ -21,7 +21,7 @@ from wlf.decorators import run_with_memory_require
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.7.3'
+__version__ = '0.7.4'
 
 
 class Config(wlf.config.Config):
@@ -223,10 +223,16 @@ class Dialog(DialogWithDir):
 
         # Generate preview.
         if self.is_generate_preview:
+            height = {
+                '动画': 180,
+                '灯光': 200,
+                '合成': 300,
+            }.get(self.pipeline, None)
+
             @run_with_memory_require(1)
             def _run(image):
                 try:
-                    image.generate_preview()
+                    image.generate_preview(height=height)
                 except:
                     LOGGER.error(
                         'Error during generate preview.', exc_info=True)
