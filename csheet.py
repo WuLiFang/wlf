@@ -53,6 +53,7 @@ class Image(object):
     _parent = None
     thumb = None
     _preview = None
+    _preview_default = None
 
     def __new__(cls, path):
         if isinstance(path, Image):
@@ -147,8 +148,14 @@ class Image(object):
     def preview_default(self):
         """Previw path default.  """
 
-        return (PurePath(self.path).parent / 'preview' /
-                self.html_id).with_suffix('.gif')
+        filename = PurePath(self.html_id).with_suffix('.gif')
+        for i in (self.path, self.related_video):
+            if i is None:
+                continue
+            path = Path(i)
+            if path.exists():
+                return (path.with_name('preview') / filename)
+        return Path.home() / '.wlf.csheet.preview' / filename
 
     @property
     def preview(self):
@@ -275,8 +282,8 @@ class HTMLContactSheet(ContactSheet):
         <figure class="preview" id="{this.html_id}">
             <a href="#{this.html_id}" class="image">
                 <img alt="no image" class="thumb"
-                    onerror="hide(this.parentNode.parentNode.parentNode)"
-                    onmouseover="use_preview_on_available(this)"
+                    onerror="use_minimal(this)"
+                    onmouseover="use_data(this,'preview')"
                     onmouseout="use_minimal(this)"
                     src="{this.html_path}"
                     data-thumb="{this.html_thumb}"
@@ -552,7 +559,7 @@ def generate_gif(filename, output=None):
 
     path = Path(filename)
     _palette = mktemp('.png')
-    _filters = 'fps=15,scale=640:-1:flags=lanczos'
+    _filters = 'fps=15,scale=-1:200:flags=lanczos'
     ret = Path(output or path).with_suffix('.gif')
 
     # Skip generated.
