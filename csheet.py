@@ -10,6 +10,7 @@ import re
 import sys
 import threading
 import webbrowser
+import time
 from tempfile import mktemp
 from subprocess import Popen, PIPE
 from cgi import escape
@@ -25,7 +26,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.8'
+__version__ = '1.7.9'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -594,6 +595,9 @@ def generate_gif(filename, output=None, width=None, height=300):
     if proc.wait():
         raise RuntimeError(
             'Error during generate gif:\n\t %s\n\t%s' % (cmd, stderr))
+
+    # Copy mtime for skip generated.
+    os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
 
     LOGGER.info('生成GIF: %s', ret)
     return ret
