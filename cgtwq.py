@@ -15,9 +15,9 @@ from subprocess import PIPE, Popen
 from functools import wraps
 
 from wlf.notify import Progress
-from wlf.path import get_encoded
+from wlf.path import get_encoded, PurePath, Path
 
-__version__ = '0.6.9'
+__version__ = '0.6.10'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -331,12 +331,16 @@ class Shots(ShotTask):
             if key in filed_info:
                 return filed_info[key]
 
+        image = PurePath(shot).with_suffix('.jpg')
+
         # Get from filebox
         for filebox_sign in ('image', 'submit'):
             dir_ = _get_path(filebox_sign)
             if dir_:
-                image = os.path.join(dir_, '{}.jpg'.format(shot))
+                image = PurePath(dir_) / image
                 break
+
+        image = unicode(image)
 
         # Record result for accelerate next run.
         filed_info = filed_info or {}
@@ -350,6 +354,11 @@ class Shots(ShotTask):
 
         return self.get_shot_filebox_path(shot, 'submit')
 
+    def get_shot_final(self, shot):
+        """Get final dest for @shot.  """
+
+        return self.get_shot_filebox_path(shot, 'final')
+
     def get_shot_submit_path(self, shot):
         """Get submit file path for @shot. """
 
@@ -357,6 +366,13 @@ class Shots(ShotTask):
         shot_info = infos[shot]
         context = shot_info[self.signs['submit_path']]
         if context is None:
+            try:
+                files = Path(self.get_shot_final(shot)).glob(
+                    '{}.mov'.format(shot))
+                for i in files:
+                    return i
+            except SignError:
+                return
             return
         return json.loads(context).get('path')[0]
 
