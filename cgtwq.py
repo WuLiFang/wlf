@@ -17,7 +17,7 @@ from functools import wraps
 from wlf.notify import Progress
 from wlf.path import get_encoded, PurePath, Path
 
-__version__ = '0.6.10'
+__version__ = '0.6.11'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_PATH = r"C:\cgteamwork\bin\base"
@@ -357,6 +357,8 @@ class Shots(ShotTask):
     def get_shot_final(self, shot):
         """Get final dest for @shot.  """
 
+        if self.pipeline not in ('动画'):
+            raise SignError
         return self.get_shot_filebox_path(shot, 'final')
 
     def get_shot_submit_path(self, shot):
