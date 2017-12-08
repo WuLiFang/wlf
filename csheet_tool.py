@@ -211,7 +211,12 @@ class Dialog(DialogWithDir):
         if self.is_generate_preview:
             @run_with_memory_require(1)
             def _run(image):
-                image.generate_preview()
+                try:
+                    image.generate_preview()
+                except:
+                    LOGGER.error(
+                        'Error during generate preview.', exc_info=True)
+                    raise
 
             task = Progress('生成预览', total=len(images), parent=self)
             thread_count = cpu_count()
