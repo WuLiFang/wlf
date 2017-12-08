@@ -21,7 +21,7 @@ from wlf.decorators import run_with_memory_require
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.7.2'
+__version__ = '0.7.3'
 
 
 class Config(wlf.config.Config):
@@ -170,6 +170,7 @@ class Dialog(DialogWithDir):
     def get_images(self):
         """Get images from database.  """
 
+        related_pipeline = {'灯光':  '渲染'}
         try:
             task = Progress('访问数据库', parent=self)
             task.step(self.database)
@@ -178,13 +179,26 @@ class Dialog(DialogWithDir):
                 pipeline=self.pipeline,
                 prefix=self.prefix)
             task.total = len(shots.shots) + 1
+
+            # For pipelines thas has a another video related pipeline.
+            if self.pipeline in related_pipeline:
+                _pipeline = related_pipeline[self.pipeline]
+                LOGGER.debug('Using related pipeline: %s', _pipeline)
+                video_shots = cgtwq.Shots(
+                    self.database,
+                    pipeline=_pipeline,
+                    prefix=self.prefix)
+            else:
+                video_shots = None
+
             images = []
             for shot in shots.shots:
                 task.step(shot)
                 image = Image(shots.get_shot_image(shot))
                 if image:
                     image.name = shot
-                    image.related_video = shots.get_shot_submit_path(shot)
+                    _shots = video_shots if self.pipeline in related_pipeline else shots
+                    image.related_video = _shots.get_shot_submit_path(shot)
                     images.append(image)
             images.sort(key=lambda x: x.name)
             return images
