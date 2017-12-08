@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.7'
+__version__ = '1.7.8'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -192,7 +192,7 @@ class Image(object):
             path = './{}'.format(path)
         return get_unicode(path)
 
-    def generate_preview(self):
+    def generate_preview(self, **kwargs):
         """Generate gif preview with @source.  """
 
         if self.related_video is None:
@@ -205,7 +205,7 @@ class Image(object):
         try:
             output.parent.mkdir(exist_ok=True)
             if source.match('*.mov'):
-                self._preview = generate_gif(source, output)
+                self._preview = generate_gif(source, output, **kwargs)
             return self._preview
         except OSError as ex:
             LOGGER.error(os.strerror(ex.errno), exc_info=True)
@@ -553,12 +553,14 @@ class FootageError(Exception):
         return '在文件夹中没有可用图像'
 
 
-def generate_gif(filename, output=None):
+def generate_gif(filename, output=None, width=None, height=300):
     """Generate a gif with same name.  """
 
     path = Path(filename)
     _palette = mktemp('.png')
-    _filters = 'fps=15,scale=-1:200:flags=lanczos'
+    _filters = 'fps=15,scale={}:{}:flags=lanczos'.format(
+        -1 if width is None else width,
+        -1 if height is None else height)
     ret = Path(output or path).with_suffix('.gif')
 
     # Skip generated.
