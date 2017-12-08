@@ -9,7 +9,7 @@ import threading
 import logging
 
 from wlf.Qt import QtCompat, QtWidgets
-from wlf.Qt.QtCore import Signal, Slot, QObject
+from wlf.Qt.QtCore import Signal
 from wlf.tray import Tray
 from wlf.decorators import run_in_main_thread
 
@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('com.wlf.notify')
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.6.0'
+__version__ = '0.6.1'
 
 
 class ProgressBar(QtWidgets.QDialog):
@@ -76,15 +76,15 @@ class ProgressBar(QtWidgets.QDialog):
         event.ignore()
 
 
-class Progress(QObject):
+class Progress(object):
     """A progressbar compatible with or without nuke imported."""
 
     count = -1
     total = 100
-    stepped = Signal()
-    stepped_with_message = Signal(str)
-    progress_changed = Signal(int)
-    message_changed = Signal(str)
+    # stepped = Signal()
+    # stepped_with_message = Signal(str)
+    # progress_changed = Signal(int)
+    # message_changed = Signal(str)
 
     def __init__(self, name='', total=None, parent=None):
         super(Progress, self).__init__()
@@ -96,10 +96,10 @@ class Progress(QObject):
         else:
             self._task = ProgressBar(name, parent)
 
-        self.stepped.connect(self.on_step)
-        self.stepped_with_message.connect(self.on_step)
-        self.progress_changed.connect(self.set_progress)
-        self.message_changed.connect(self.set_message)
+        # self.stepped.connect(self.on_step)
+        # self.stepped_with_message.connect(self.on_step)
+        # self.progress_changed.connect(self.set_progress)
+        # self.message_changed.connect(self.set_message)
 
     def __del__(self):
         if not HAS_NUKE:
@@ -119,11 +119,13 @@ class Progress(QObject):
             raise CancelledError
 
         if progress is not None:
-            self.progress_changed.emit(progress)
+            # self.progress_changed.emit(progress)
+            self.set_progress(progress)
         if message is not None:
-            self.message_changed.emit(message)
+            # self.message_changed.emit(message)
+            self.set_message(message)
 
-    @Slot(int)
+    # @Slot(int)
     def set_progress(self, value):
         """Set progress value.  """
 
@@ -132,7 +134,7 @@ class Progress(QObject):
         self._task.setProgress(value)
         QtWidgets.QApplication.processEvents()
 
-    @Slot(str)
+    # @Slot(str)
     def set_message(self, message):
         """Set progress message.  """
 
@@ -142,14 +144,15 @@ class Progress(QObject):
     def step(self, message=None):
         """Signal wrapper.  """
 
-        if message is None:
-            self.stepped.emit()
-        else:
-            self.stepped_with_message.emit(message)
+        # if message is None:
+        #     self.stepped.emit()
+        # else:
+        #     self.stepped_with_message.emit(message)
+        self.on_step(message)
         QtWidgets.QApplication.processEvents()
 
-    @Slot()
-    @Slot(str)
+    # @Slot()
+    # @Slot(str)
     def on_step(self, message=None):
         """One step forward.  """
 
