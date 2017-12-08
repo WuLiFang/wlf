@@ -25,7 +25,7 @@ from wlf.path import get_encoded, get_unicode, PurePath, Path
 if HAS_NUKE:
     import nuke
 
-__version__ = '1.7.6'
+__version__ = '1.7.7'
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -53,7 +53,6 @@ class Image(object):
     _parent = None
     thumb = None
     _preview = None
-    _preview_default = None
 
     def __new__(cls, path):
         if isinstance(path, Image):
@@ -152,8 +151,8 @@ class Image(object):
         for i in (self.path, self.related_video):
             if i is None:
                 continue
-            path = Path(i)
-            if path.exists():
+            path = PurePath(i)
+            if path.is_absolute():
                 return (path.with_name('preview') / filename)
         return Path.home() / '.wlf.csheet.preview' / filename
 
