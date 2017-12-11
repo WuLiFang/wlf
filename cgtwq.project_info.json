@@ -25,5 +25,11 @@
         "name": "梦塔",
         "prefix": "MT",
         "fps": 25
+    },
+    "qqfcmv": {
+        "database": "proj_qqfcmv",
+        "name": "QQ飞车MV",
+        "prefix": "QQFCMV",
+        "fps": 25
     }
 }
