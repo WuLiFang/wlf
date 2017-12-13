@@ -12,11 +12,11 @@ import locale
 import string
 import logging
 
-import wlf.pathlib2 as pathlib
+from ._dep import pathlib2
 
 __version__ = '0.2.6'
 
-with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
+with pathlib2.Path(pathlib2.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
@@ -95,14 +95,14 @@ def escape_batch(text):
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
 
 
-class PurePath(pathlib.PurePath):
+class PurePath(pathlib2.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with pathlib.Path(pathlib.Path(__file__)
-                      / '../precomp.redshift.json').open(encoding='UTF-8') as f:
+    with pathlib2.Path(pathlib2.Path(__file__)
+                       / '../precomp.redshift.json').open(encoding='UTF-8') as f:
         layers = json.load(f).get('layers')
     _unicode = None
 
@@ -153,8 +153,8 @@ class PurePath(pathlib.PurePath):
         if not self:
             return
         if layers is None:
-            with pathlib.Path(pathlib.Path(__file__)
-                              / '../precomp.redshift.json').open(encoding='UTF-8') as f:
+            with pathlib2.Path(pathlib2.Path(__file__)
+                               / '../precomp.redshift.json').open(encoding='UTF-8') as f:
                 layers = json.load(f).get('layers')
 
         for layer in layers:
@@ -340,18 +340,18 @@ class PurePath(pathlib.PurePath):
 class PurePosixPath(PurePath):
     """Port from pathlib.PurePosixPath.  """
 
-    _flavour = getattr(pathlib, '_posix_flavour')
+    _flavour = getattr(pathlib2, '_posix_flavour')
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Port from pathlib.PureWindowsPath.  """
 
-    _flavour = getattr(pathlib, '_windows_flavour')
+    _flavour = getattr(pathlib2, '_windows_flavour')
     __slots__ = ()
 
 
-class Path(pathlib.Path, PurePath):
+class Path(pathlib2.Path, PurePath):
     """Port from pathlib.Path.  """
 
     def __new__(cls, *args, **kwargs):
@@ -376,9 +376,8 @@ class Path(pathlib.Path, PurePath):
             return io.open(
                 get_encoded(self), mode, buffering, encoding, errors, newline,
                 opener=self._opener)
-        else:
-            return io.open(get_encoded(self), mode, buffering,
-                           encoding, errors, newline)
+        return io.open(get_encoded(self), mode, buffering,
+                       encoding, errors, newline)
 
 
 class PosixPath(Path, PurePosixPath):

@@ -2,6 +2,9 @@ build/
 *.pyc
 *.spec
 
+# Virtual environment
+/.venv
+
 # vscode
 .vscode/
 

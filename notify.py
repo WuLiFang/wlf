@@ -1,6 +1,6 @@
 # -*- coding=UTF-8 -*-
 """Show notify to user.  """
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, unicode_literals, absolute_import
 
 import os
 import sys
@@ -10,8 +10,9 @@ import logging
 
 from wlf.Qt import QtCompat, QtWidgets
 from wlf.Qt.QtCore import Signal
-from wlf.tray import Tray
-from wlf.decorators import run_in_main_thread
+
+from .tray import Tray
+from .decorators import run_in_main_thread
 
 HAS_NUKE = bool(sys.modules.get('nuke'))
 LOGGER = logging.getLogger('com.wlf.notify')

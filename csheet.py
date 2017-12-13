@@ -19,9 +19,9 @@ from abc import abstractmethod
 from collections import Iterable
 
 import wlf.config
-from wlf.files import version_filter, copy
-from wlf.notify import HAS_NUKE, Progress
-from wlf.path import get_encoded, get_unicode, PurePath, Path
+from .files import version_filter, copy
+from .notify import HAS_NUKE, Progress
+from .path import get_encoded, get_unicode, PurePath, Path
 
 if HAS_NUKE:
     import nuke

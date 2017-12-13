@@ -13,7 +13,7 @@ from multiprocessing.dummy import Queue
 
 from wlf.Qt.QtCore import QObject, Signal, Slot
 from wlf.Qt.QtWidgets import QApplication
-from wlf.env import has_nuke
+from .env import has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
@@ -88,8 +88,8 @@ def run_in_main_thread(func):
         def _func(*args, **kwargs):
             if nuke.GUI and threading.current_thread().name != 'MainThread':
                 return nuke.executeInMainThreadWithResult(func, args, kwargs)
-            else:
-                return func(*args, **kwargs)
+
+            return func(*args, **kwargs)
     else:
         @wraps(func)
         def _func(*args, **kwargs):

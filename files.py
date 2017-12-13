@@ -12,43 +12,12 @@ import errno
 from subprocess import call, Popen
 import multiprocessing.dummy
 
-from wlf.notify import Progress
-import wlf.path
-from wlf.path import get_encoded, get_unicode
+from .notify import Progress
+from .path import get_encoded, get_unicode, PurePath
 
 __version__ = '0.7.4'
 
 LOGGER = logging.getLogger('com.wlf.files')
-
-
-def _remap_deprecated():
-    def _get_func(name):
-        def _func(*args, **kwargs):
-            with warnings.catch_warnings():
-                warnings.simplefilter('once')
-                msg = 'Use wlf.path.{} Instead.'.format(i)
-                warnings.warn(msg, DeprecationWarning)
-            return getattr(wlf.path, name)(*args, **kwargs)
-        return _func
-    i = None
-    for i in ['get_encoded', 'get_unicode', 'split_version', 'expand_frame',
-              'get_footage_name', 'get_layer', 'get_server',
-              'get_tag', 'remove_version', 'is_ascii', 'escape_batch']:
-        setattr(sys.modules[__name__], i, _get_func(i))
-
-    def traytip(*args, **kwargs):
-        """Show a traytip(windows only).  """
-        with warnings.catch_warnings():
-            warnings.simplefilter('once')
-            warnings.warn(
-                'Use wlf.notify.traytip Instead.', DeprecationWarning)
-        from .notify import traytip as _new
-        _new(*args, **kwargs)
-
-    setattr(sys.modules[__name__], 'traytip', traytip)
-
-
-_remap_deprecated()
 
 
 def copy(src, dst, threading=False):
@@ -92,12 +61,12 @@ def copy(src, dst, threading=False):
             shutil.copy2(src_e, dst_e)
         except OSError:
             if sys.platform == 'win32':
-                call(wlf.path.get_encoded(
+                call(get_encoded(
                     'XCOPY /V /Y "{}" "{}"'.format(src_e, dst_e)))
             else:
                 raise
 
-    if os.path.isdir(wlf.path.get_encoded(dst_e)):
+    if os.path.isdir(get_encoded(dst_e)):
         ret = os.path.join(dst_e, os.path.basename(src_e))
     else:
         ret = dst_e
@@ -114,10 +83,11 @@ def version_filter(iterable):
     """
     shots = {}
     iterable = sorted(
-        iterable, key=lambda x: wlf.path.split_version(x)[1], reverse=True)
+        iterable, key=lambda x: PurePath(x).version, reverse=True)
     for i in iterable:
-        shot, version = wlf.path.split_version(i)
-        shot = shot.lower()
+        path = PurePath(i)
+        shot = path.shot.lower()
+        version = path.version
         shots.setdefault(shot, {})
         shots[shot].setdefault('path_list', [])
         if version > shots[shot].get('version'):
@@ -162,17 +132,6 @@ def _url_open(url, isfile=False):
 setattr(sys.modules[__name__], 'url_open', _url_open)
 
 
-def unicode_popen(args, **kwargs):
-    """Return Popen object use encoded args.  """
-    with warnings.catch_warnings():
-        warnings.simplefilter('always')
-        warnings.warn(
-            'Use Popen(wlf.path.get_encoded(arg) Instead.', DeprecationWarning)
-    if isinstance(args, unicode):
-        args = wlf.path.get_encoded(args)
-    return Popen(args, **kwargs)
-
-
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
     checking_list = list(checking_list)
@@ -180,7 +139,7 @@ def checked_exists(checking_list):
 
     def _check(i):
         task.step(i)
-        if os.path.exists(wlf.path.get_encoded(i)):
+        if os.path.exists(get_encoded(i)):
             return i
     pool = multiprocessing.dummy.Pool()
     ret = pool.map(_check, checking_list)
@@ -203,3 +162,51 @@ def is_same(src, dst):
                            os.strerror(ex.errno), exc_info=True)
 
     return False
+
+# Remap deprecated functions.
+
+
+def _unicode_popen(args, **kwargs):
+    """Return Popen object use encoded args.  """
+    with warnings.catch_warnings():
+        warnings.simplefilter('always')
+        warnings.warn(
+            'Use Popen(wlf.path.get_encoded(arg) Instead.', DeprecationWarning)
+    if isinstance(args, unicode):
+        args = get_encoded(args)
+    return Popen(args, **kwargs)
+
+
+locals()['unicode_popen'] = _unicode_popen
+
+
+def _remap_deprecated():
+    from . import path
+
+    def _get_func(name):
+        def _func(*args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('once')
+                msg = 'Use wlf.path.{} Instead.'.format(i)
+                warnings.warn(msg, DeprecationWarning)
+            return getattr(path, name)(*args, **kwargs)
+        return _func
+    i = None
+    for i in ['get_encoded', 'get_unicode', 'split_version', 'expand_frame',
+              'get_footage_name', 'get_layer', 'get_server',
+              'get_tag', 'remove_version', 'is_ascii', 'escape_batch']:
+        setattr(sys.modules[__name__], i, _get_func(i))
+
+    def traytip(*args, **kwargs):
+        """Show a traytip(windows only).  """
+        with warnings.catch_warnings():
+            warnings.simplefilter('once')
+            warnings.warn(
+                'Use wlf.notify.traytip Instead.', DeprecationWarning)
+        from .notify import traytip as _new
+        _new(*args, **kwargs)
+
+    setattr(sys.modules[__name__], 'traytip', traytip)
+
+
+_remap_deprecated()

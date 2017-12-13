@@ -9,7 +9,7 @@ import re
 
 from openpyxl import Workbook
 
-from wlf.notify import Progress
+from .notify import Progress
 
 LOGGER = logging.getLogger('com.wlf.table')
 __version__ = '0.2.0'
