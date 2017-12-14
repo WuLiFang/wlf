@@ -8,8 +8,8 @@ import multiprocessing
 import threading
 import logging
 
-from wlf.Qt import QtCompat, QtWidgets
-from wlf.Qt.QtCore import Signal
+from Qt import QtCompat, QtWidgets
+from Qt.QtCore import Signal
 
 from .tray import Tray
 from .decorators import run_in_main_thread

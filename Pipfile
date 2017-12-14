@@ -8,11 +8,13 @@ name = "pypi"
 [dev-packages]
 
 pylint = "*"
+rope = "*"
 
 
 [packages]
 
 pyside = "*"
+psutil = "*"
 
 
 [requires]

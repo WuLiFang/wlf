@@ -12,7 +12,7 @@ import locale
 import string
 import logging
 
-from ._dep import pathlib2
+import pathlib2
 
 __version__ = '0.2.6'
 
@@ -333,8 +333,42 @@ class PurePath(pathlib2.PurePath):
 
         return self.with_name(u'{}{}'.format(self.shot, self.suffix))
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        f = getattr(self, '_flavour')
+        return unicode(self).replace(f.sep, '/')
+
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
+
+    def html_relative_to(self, *other):
+        r"""Try give relative path for html.
+
+        >>> PurePath('/test/abc').html_relative_to('/test')
+        u'./abc'
+        >>> PurePath('C:/test\\abc/d\\e').html_relative_to('C:\\test')
+        u'./abc/d/e'
+        >>> PurePath('C:/test\\abc').html_relative_to(None)
+        u'file:///C:/test/abc'
+        >>> PurePath('C:/test\\abc').html_relative_to('C:\\def')
+        u'file:///C:/test/abc'
+        >>> PurePath('http://example.com').html_relative_to('C:\\def')
+        u'http://example.com'
+        >>> PurePath('http://example.com/test').html_relative_to('http://example.com')
+        u'./test'
+
+        """
+
+        try:
+            path = self.relative_to(*other)
+            path = './{}'.format(path.as_posix())
+            return path
+        except ValueError:
+            if self.is_absolute():
+                return self.as_uri()
+            else:
+                return unicode(self).replace('http:\\', 'http://').replace('\\', '/')
 
 
 class PurePosixPath(PurePath):

@@ -4,20 +4,30 @@ from __future__ import absolute_import
 
 import os
 import sys
+from site import addsitedir
+
 from .path import PurePath
-from ._dep import Qt
 
 # Remap deprecated module.
 # TODO: Remove at next major version.
-from . import notify as progress
-from . import notify as message
-sys.modules[__name__ + '.Qt'] = Qt
+from . import notify
+progress = notify
+message = notify
+import Qt
+sys.modules['{}.Qt'.format(__name__)] = Qt
+for i in Qt.__all__:
+    sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
+from .csheet import __main__ as csheet_tool
+sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
 
-__version__ = '0.1.0'
+addsitedir('./site-packages')
+
+__version__ = '0.2.0'
+sys.path.append(str(PurePath(__file__).parent / '_dep'))
 
 # Add scandir
 if 'scandir' not in os.__all__:
-    from ._dep import scandir
+    import scandir
     os.__all__.append('scandir')
     os.scandir = scandir.scandir
     os.walk = scandir.walk

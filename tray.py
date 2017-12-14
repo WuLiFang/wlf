@@ -4,11 +4,11 @@ from __future__ import print_function, unicode_literals
 
 import os
 
-from wlf.Qt.QtWidgets import QSystemTrayIcon
-from wlf.Qt.QtGui import QIcon, QCursor
+from Qt.QtWidgets import QSystemTrayIcon
+from Qt.QtGui import QIcon, QCursor
 
-from .uitools import Menu
-from .env import has_gui
+from uitools import Menu
+from env import has_gui
 
 RESOURCE_DIR = os.path.dirname(__file__)
 

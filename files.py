@@ -1,6 +1,6 @@
 # -*- coding=UTF-8 -*-
 """Files operation. """
-from __future__ import unicode_literals, print_function
+from __future__ import unicode_literals, print_function, absolute_import
 
 import os
 import sys
@@ -13,7 +13,7 @@ from subprocess import call, Popen
 import multiprocessing.dummy
 
 from .notify import Progress
-from .path import get_encoded, get_unicode, PurePath
+from .path import PurePath
 
 __version__ = '0.7.4'
 
@@ -23,11 +23,16 @@ LOGGER = logging.getLogger('com.wlf.files')
 def copy(src, dst, threading=False):
     """Copy src to dst."""
 
+    from .path import get_encoded, get_unicode
+
     def _mkdirs():
         dst_dir = os.path.dirname(dst_e)
         if not os.path.exists(dst_dir):
             LOGGER.debug('创建目录: %s', dst_dir)
             os.makedirs(dst_dir)
+        elif os.path.isfile(dst_dir):
+            raise ValueError(
+                'Can not use file as directory: {}'.format(dst_dir))
 
     src_e, dst_e = get_encoded(src), get_encoded(dst)
     src_u, dst_u = get_unicode(src), get_unicode(dst)
@@ -134,6 +139,8 @@ setattr(sys.modules[__name__], 'url_open', _url_open)
 
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
+    from .path import get_encoded
+
     checking_list = list(checking_list)
     task = Progress('验证文件', total=len(checking_list))
 
@@ -168,6 +175,9 @@ def is_same(src, dst):
 
 def _unicode_popen(args, **kwargs):
     """Return Popen object use encoded args.  """
+
+    from .path import get_encoded
+
     with warnings.catch_warnings():
         warnings.simplefilter('always')
         warnings.warn(
@@ -185,10 +195,14 @@ def _remap_deprecated():
 
     def _get_func(name):
         def _func(*args, **kwargs):
+            import traceback
             with warnings.catch_warnings():
                 warnings.simplefilter('once')
-                msg = 'Use wlf.path.{} Instead.'.format(i)
+                msg = 'Use wlf.path.{} Instead.'.format(
+                    i)
                 warnings.warn(msg, DeprecationWarning)
+            traceback.print_stack()
+
             return getattr(path, name)(*args, **kwargs)
         return _func
     i = None

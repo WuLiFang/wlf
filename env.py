@@ -4,7 +4,7 @@
 import sys
 import logging
 
-from wlf.Qt.QtWidgets import QApplication
+from Qt.QtWidgets import QApplication
 
 __version__ = '0.2.0'
 

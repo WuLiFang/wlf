@@ -1,11 +1,11 @@
 # -*- coding=UTF-8 -*-
 """For build UI faster.  """
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, unicode_literals, absolute_import
 
 import sys
 
-from wlf.Qt import QtWidgets, QtCore, QtCompat
-from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
+from Qt import QtWidgets, QtCore, QtCompat
+from Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
 
 from .config import Config
 from .mp_logging import set_basic_logger

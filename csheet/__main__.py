@@ -1,3 +1,4 @@
+#! /usr/bin/env python2
 # -*- coding=UTF-8 -*-
 """GUI for csheet creation.  """
 from __future__ import print_function, unicode_literals
@@ -7,24 +8,23 @@ import os
 import webbrowser
 from multiprocessing.dummy import Pool, cpu_count
 
+from Qt import QtCore, QtWidgets
 
-import wlf.config
-from wlf import cgtwq
-from wlf.csheet import HTMLContactSheet, Image
-from wlf.notify import CancelledError, Progress
-from wlf.path import PurePath, get_encoded
-from wlf.Qt import QtCore, QtWidgets
-from wlf.Qt.QtWidgets import QMessageBox
-from wlf.uitools import DialogWithDir, main_show_dialog
-from wlf.decorators import run_with_memory_require
+from Qt.QtWidgets import QMessageBox
+
+from . import __version__
+from .. import cgtwq
+from ..config import Config as BaseConfig
+from ..decorators import run_with_memory_require
+from ..notify import CancelledError, Progress
+from ..path import PurePath, get_encoded
+from ..uitools import DialogWithDir, main_show_dialog
+from .html import HTMLContactSheet, HTMLImage
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
 
-__version__ = '0.7.4'
-
-
-class Config(wlf.config.Config):
+class Config(BaseConfig):
     """Comp config.  """
 
     default = {
@@ -62,7 +62,7 @@ class Dialog(DialogWithDir):
             None: QtWidgets.QStyle.SP_FileDialogListView,
         }
         super(Dialog, self).__init__(
-            '../csheet_tool.ui',
+            PurePath(__file__).parent / '__main__.ui',
             config=CONFIG,
             icons=icons,
             edits_key=edits_key,
@@ -194,7 +194,7 @@ class Dialog(DialogWithDir):
             images = []
             for shot in shots.shots:
                 task.step(shot)
-                image = Image(shots.get_shot_image(shot))
+                image = HTMLImage(shots.get_shot_image(shot))
                 if image:
                     image.name = shot
                     _shots = video_shots if self.pipeline in related_pipeline else shots

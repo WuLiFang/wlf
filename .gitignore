@@ -10,3 +10,7 @@ build/
 
 # Bin folder
 /bin/
+
+# UML
+packages.png
+classes.png

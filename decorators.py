@@ -1,18 +1,20 @@
 # -*- coding=UTF-8 -*-
 """Function decorators.  """
 
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
-import logging
-import time
 import inspect
+import logging
+import sys
+import threading
+import time
 import types
 from functools import wraps
-import threading
 from multiprocessing.dummy import Queue
 
-from wlf.Qt.QtCore import QObject, Signal, Slot
-from wlf.Qt.QtWidgets import QApplication
+from Qt.QtCore import QObject, Signal, Slot
+from Qt.QtWidgets import QApplication
+
 from .env import has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
@@ -93,8 +95,11 @@ def run_in_main_thread(func):
     else:
         @wraps(func)
         def _func(*args, **kwargs):
+            app = QApplication.instance()
+            if app is None:
+                app = QApplication(sys.argv)
             runner = Runner()
-            runner.moveToThread(QApplication.instance().thread())
+            runner.moveToThread(app.thread())
             runner.execute.emit(func, args, kwargs)
             return runner.result.get()
 
