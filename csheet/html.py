@@ -109,8 +109,8 @@ class HTMLContactSheet(ContactSheet):
     """Contactsheet in html page form.  """
     resources = ('csheet.css',
                  'html5shiv.min.js',
-                 #  'jquery-3.2.1.min.js',
-                 #  'jquery.appear.js',
+                 'jquery-3.2.1.min.js',
+                 'jquery.appear.js',
                  'csheet.js')
     highlight_regex = re.compile(r'.*(sc_?\d+[^\.]*)\b', flags=re.I)
 
@@ -243,9 +243,6 @@ class HTMLContactSheet(ContactSheet):
                 'figure', id=image.html_id, **{'class': 'preview'})
             anchor = soup.new_tag('a', href='#{}'.format(image.html_id))
             img = soup.new_tag('img', alt='no image',
-                               onerror="use_minimal(this)",
-                               onmouseover="use_data(this,'preview')",
-                               onmouseout="use_minimal(this)",
                                src=data_src,
                                **{'class': "thumb",
                                   'data-thumb': data_thumb,

@@ -1,7 +1,7 @@
 # -*- coding=UTF-8 -*-
 """Contactsheet creation."""
 
-__version__ = '1.8.2'
+__version__ = '1.8.3'
 
 from logging import getLogger
 

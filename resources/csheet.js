@@ -1,4 +1,33 @@
 var count = 0;
+$("document").ready(function() {
+    $(".lightbox .thumb").each(
+        function() {
+            use_minimal(this);
+            // $(this).attr("src", null);
+        }
+    );
+    $(".lightbox .thumb").mouseenter(
+        function() {
+            use_data(this, "preview");
+        }
+    );
+    $(".lightbox .thumb").mouseout(
+        function() {
+            use_minimal(this);
+        }
+    );
+    // $(".lightbox .thumb").appear();
+    // $(".lightbox .thumb").on("appear", function(e, $affected) {
+    //     $affected.each(function() {
+    //         use_data(this, "preview");
+    //     });
+    // });
+    // $(".lightbox .thumb").on("disappear", function(e, $affected) {
+    //     $affected.each(function() {
+    //         $(this).attr("src", null);
+    //     });
+    // });
+})
 
 function hide(lightbox) {
     lightbox = lightbox.parentNode.parentNode.parentNode;
@@ -46,11 +75,9 @@ function use_minimal(lightbox) {
 
 function use_data(lightbox, data, onerror) {
     var path = lightbox.getAttribute("data-" + data);
-    console.log("Try use: " + data + " value :" + path);
     image_available(
         path,
         function() {
-            console.log("Use " + data + ": " + path);
             lightbox.src = path;
         },
         onerror
