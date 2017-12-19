@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 BIN_FOLDER = 'bin'
 
@@ -36,14 +36,21 @@ def _init():
 
     set_default_encoding('UTF-8')
 
+    def _set_attr(name, value):
+        setattr(sys.modules[__name__], name, value)
+
     # Remap deprecated module.
     # TODO: Remove at next major version.
     sys.modules['{}.progress'.format(__name__)] = notify
+    _set_attr('progress', notify)
     sys.modules['{}.message'.format(__name__)] = notify
+    _set_attr('message', notify)
     sys.modules['{}.Qt'.format(__name__)] = Qt
+    _set_attr('Qt', Qt)
     for i in Qt.__all__:
         sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
     from .csheet import __main__ as csheet_tool
+    _set_attr('csheet_tool', csheet_tool)
     sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
 
     sys.path.append(str(PurePath(__file__).parent / '_dep'))
