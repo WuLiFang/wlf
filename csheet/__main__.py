@@ -16,6 +16,7 @@ from . import __version__
 from .. import cgtwq
 from ..config import Config as BaseConfig
 from ..decorators import run_with_memory_require
+from ..ffmpeg import GenerateError
 from ..notify import CancelledError, Progress
 from ..path import PurePath, get_encoded
 from ..uitools import DialogWithDir, main_show_dialog
@@ -229,13 +230,19 @@ class Dialog(DialogWithDir):
                 '合成': 300,
             }.get(self.pipeline, None)
 
+            errors = set()
+
             @run_with_memory_require(1)
             def _run(image):
                 try:
                     image.generate_preview(height=height)
+                except GenerateError:
+                    LOGGER.error(
+                        '%s: Cannot generate preview.', image, exc_info=True)
+                    errors.add(image)
                 except:
                     LOGGER.error(
-                        'Error during generate preview.', exc_info=True)
+                        'Unexcept error during generate preview.', exc_info=True)
                     raise
 
             task = Progress('生成预览', total=len(images), parent=self)
@@ -246,6 +253,9 @@ class Dialog(DialogWithDir):
                 task.step()
             pool.close()
             pool.join()
+            if errors:
+                QMessageBox.warning(self, '以下预览生成失败', '\n'.join(
+                    unicode(i) for i in sorted(errors)))
 
         # Download resouces to local.
         if self.is_pack:

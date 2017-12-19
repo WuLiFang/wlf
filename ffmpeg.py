@@ -39,7 +39,7 @@ def generate_gif(filename, output=None, width=None, height=300):
                  env=os.environ)
     stderr = proc.communicate()[1]
     if proc.wait():
-        raise RuntimeError(
+        raise GenerateError(
             'Error during generate gif palette:\n\t %s\n\t%s' % (cmd, stderr))
     # Generate gif
     cmd = (u'ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
@@ -52,7 +52,7 @@ def generate_gif(filename, output=None, width=None, height=300):
                  env=os.environ)
     stderr = proc.communicate()[1]
     if proc.wait():
-        raise RuntimeError(
+        raise GenerateError(
             'Error during generate gif:\n\t %s\n\t%s' % (cmd, stderr))
 
     # Copy mtime for skip generated.
@@ -60,3 +60,8 @@ def generate_gif(filename, output=None, width=None, height=300):
 
     LOGGER.info('生成GIF: %s', ret)
     return ret
+
+
+class GenerateError(RuntimeError):
+    """Exception during generate.  """
+    pass
