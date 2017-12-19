@@ -17,21 +17,16 @@ from functools import wraps
 from .notify import Progress
 from .path import get_encoded, PurePath, Path
 
-__version__ = '0.6.11'
+__version__ = '0.6.12'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
-CGTW_PATH = r"C:\cgteamwork\bin\base"
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
 
 
 # Test if module should be enabled
 MODULE_ENABLE = True
 try:
-    if os.path.isdir(CGTW_PATH):
-        sys.path.append(CGTW_PATH)
-        import cgtw
-    else:
-        raise ImportError('not a dir: {}'.format(CGTW_PATH))
+    import cgtw
 except ImportError:
     LOGGER.warning('CGTeamWork not found, related module disabled.')
     MODULE_ENABLE = False
