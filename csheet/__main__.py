@@ -249,10 +249,13 @@ class Dialog(DialogWithDir):
 
         # Download resouces to local.
         if self.is_pack:
+            dest = PurePath(self.save_dir)
+            sheet.pack(dest)
             task = Progress('下载图像到本地', total=len(images), parent=self)
+            dest = PurePath(self.save_dir) / 'images'
             for i in images:
                 task.step(i.name)
-                i.download(PurePath(self.save_dir))
+                i.download(dest)
 
         return sheet
 

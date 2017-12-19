@@ -15,7 +15,6 @@ class Image(object):
     def __new__(cls, path):
         if isinstance(path, Image):
             return path
-
         return super(Image, cls).__new__(cls, path)
 
     def __init__(self, path):
@@ -24,10 +23,18 @@ class Image(object):
             return
 
         # Initiate.
-        path = PurePath(path)
+        self.__path = PurePath(path)
+        self.name = self.path.shot
 
-        self.path = path
-        self.name = path.shot
+    @property
+    def path(self):
+        """Path for this image.  """
+        assert isinstance(self.__path, PurePath)
+        return self.__path
+
+    @path.setter
+    def path(self, value):
+        self.__path = PurePath(value)
 
     def __nonzero__(self):
         return bool(self.path)
