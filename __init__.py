@@ -2,37 +2,58 @@
 """wlf studio common lib.  """
 from __future__ import absolute_import
 
+
 import os
 import sys
-from site import addsitedir
 
-from .path import PurePath
+__version__ = '0.2.1'
 
-# Remap deprecated module.
-# TODO: Remove at next major version.
-from . import notify
-progress = notify
-message = notify
-import Qt
-sys.modules['{}.Qt'.format(__name__)] = Qt
-for i in Qt.__all__:
-    sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
-from .csheet import __main__ as csheet_tool
-sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
+BIN_FOLDER = 'bin'
 
-addsitedir('./site-packages')
 
-__version__ = '0.2.0'
-sys.path.append(str(PurePath(__file__).parent / '_dep'))
+def _setup():
+    from os.path import dirname, abspath, join
+    from site import addsitedir
 
-# Add scandir
-if 'scandir' not in os.__all__:
+    __folder__ = dirname(abspath(__file__))
+    dirname = join(__folder__, 'site-packages')
+    addsitedir(dirname)
+
+    # Add bin folder to path.
+    bin_folder = join(__folder__, BIN_FOLDER)
+    if bin_folder not in os.environ['path']:
+        os.environ['path'] = bin_folder + os.pathsep + os.environ['path']
+    setattr(sys.modules[__name__], 'BIN_FOLDER', bin_folder)
+
+
+def _init():
+    import Qt
     import scandir
-    os.__all__.append('scandir')
-    os.scandir = scandir.scandir
-    os.walk = scandir.walk
 
-# Add bin folder to path.
-BIN_FOLDER = str(PurePath(__file__).parent / 'bin')
-if BIN_FOLDER not in os.environ['path']:
-    os.environ['path'] = BIN_FOLDER + os.pathsep + os.environ['path']
+    from .path import PurePath
+    from .env import set_default_encoding
+    from . import notify
+
+    set_default_encoding('UTF-8')
+
+    # Remap deprecated module.
+    # TODO: Remove at next major version.
+    sys.modules['{}.progress'.format(__name__)] = notify
+    sys.modules['{}.message'.format(__name__)] = notify
+    sys.modules['{}.Qt'.format(__name__)] = Qt
+    for i in Qt.__all__:
+        sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
+    from .csheet import __main__ as csheet_tool
+    sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
+
+    sys.path.append(str(PurePath(__file__).parent / '_dep'))
+
+    # Add scandir
+    if 'scandir' not in os.__all__:
+        os.__all__.append('scandir')
+        os.scandir = scandir.scandir
+        os.walk = scandir.walk
+
+
+_setup()
+_init()
