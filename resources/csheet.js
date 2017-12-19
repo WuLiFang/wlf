@@ -16,21 +16,29 @@ $("document").ready(function() {
             use_minimal(this);
         }
     );
-    // $(".lightbox .thumb").appear();
+    $(".lightbox .thumb").appear();
     // $(".lightbox .thumb").on("appear", function(e, $affected) {
     //     $affected.each(function() {
     //         use_data(this, "preview");
     //     });
     // });
-    // $(".lightbox .thumb").on("disappear", function(e, $affected) {
-    //     $affected.each(function() {
-    //         $(this).attr("src", null);
-    //     });
-    // });
+    $(".lightbox .thumb").on("disappear", function(e, $affected) {
+        $affected.each(function() {
+            use_minimal(this);
+        });
+    });
 })
 
+function get_lightbox(element) {
+    var $element = $(element);
+    if ($element.is(".lightbox")) {
+        return element
+    }
+    return $element.parents(".lightbox")[0]
+}
+
 function hide(lightbox) {
-    lightbox = lightbox.parentNode.parentNode.parentNode;
+    var lightbox = get_lightbox(lightbox);
     lightbox.style.display = 'none';
     try {
         var prev = lightbox.previousElementSibling;
@@ -54,17 +62,15 @@ function hide(lightbox) {
     header.children[0].innerText = `${total - count}/${total}`;
 }
 
-function use_minimal(lightbox) {
+function use_minimal(element) {
     // Use minaimal image to save memory.
-    // console.log("use_minimal");
-    var lightbox = lightbox;
-    use_data(lightbox, "thumb",
+    use_data(element, "thumb",
         function() {
-            use_data(lightbox, "full",
+            use_data(element, "full",
                 function() {
-                    use_data(lightbox, "preview",
+                    use_data(element, "preview",
                         function() {
-                            hide(lightbox);
+                            hide(element);
                         }
                     );
                 }
@@ -73,12 +79,13 @@ function use_minimal(lightbox) {
     );
 }
 
-function use_data(lightbox, data, onerror) {
+function use_data(element, data, onerror) {
+    var lightbox = get_lightbox(element);
     var path = lightbox.getAttribute("data-" + data);
     image_available(
         path,
         function() {
-            lightbox.src = path;
+            element.src = path;
         },
         onerror
     );

@@ -235,7 +235,11 @@ class HTMLContactSheet(ContactSheet):
                     image.preview).html_relative_to(relative_to)
             except TypeError:
                 data_preview = 'null'
-            lightbox = soup.new_tag('figure', **{'class': 'lightbox'})
+            lightbox = soup.new_tag('figure',
+                                    **{'class': 'lightbox',
+                                       'data-thumb': data_thumb,
+                                       'data-preview': data_preview,
+                                       'data-full': data_src})
             figcatption = _get_figcaption(image)
 
             # Preview.
@@ -243,11 +247,8 @@ class HTMLContactSheet(ContactSheet):
                 'figure', id=image.html_id, **{'class': 'preview'})
             anchor = soup.new_tag('a', href='#{}'.format(image.html_id))
             img = soup.new_tag('img', alt='no image',
-                               src=data_src,
-                               **{'class': "thumb",
-                                  'data-thumb': data_thumb,
-                                  'data-preview': data_preview,
-                                  'data-full': data_src})
+                               src=data_thumb if data_thumb != 'null' else data_src,
+                               **{'class': "thumb"})
             anchor.append(img)
             anchor.append(figcatption.__copy__())
             preview.append(anchor)
