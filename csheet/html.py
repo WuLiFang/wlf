@@ -186,7 +186,14 @@ class HTMLContactSheet(ContactSheet):
             body = soup.new_tag('body')
 
             header = soup.new_tag('header')
-            header.append(str(total))
+            span = soup.new_tag('span', **{'class': 'count'})
+            span.append(str(total))
+            header.append(span)
+            noscript = soup.new_tag('noscript')
+            noscript.append('需要浏览器启用javascript')
+            span = soup.new_tag('span', **{'class': 'noscript'})
+            span.append(noscript)
+            header.append(span)
             body.append(header)
 
             div = soup.new_tag('div', **{'class': 'shots'})

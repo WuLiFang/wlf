@@ -22,7 +22,7 @@ function hide(lightbox) {
     var lightboxes = document.getElementsByClassName('lightbox');
     var total = lightboxes.length;
     count += 1;
-    header.innerText = `${total - count}/${total}`;
+    header.children[0].innerText = `${total - count}/${total}`;
 }
 
 function use_minimal(lightbox) {

@@ -17,11 +17,11 @@ header {
     opacity: 0.3;
 }
 
-header:before {
+header .count:before {
     content: "总计: "
 }
 
-header:after {
+header .count:after {
     content: " 图像"
 }
 
