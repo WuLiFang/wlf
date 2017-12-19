@@ -63,6 +63,7 @@ header:hover {
 .lightbox .thumb {
     height: 200px !important;
     border: 1px solid grey;
+    cursor: zoom-in;
 }
 
 .lightbox .image {
@@ -152,8 +153,16 @@ header:hover {
     left: -10%;
 }
 
+.lightbox a.prev:before {
+    content: "<";
+}
+
 .lightbox a.next {
     right: -10%;
+}
+
+.lightbox a.next:after {
+    content: ">";
 }
 
 .lightbox a.prev:hover,
@@ -168,6 +177,7 @@ header:hover {
     height: 100%;
     top: 0px;
     left: 0px;
+    cursor: zoom-out;
 }
 
 .lightbox .preview:target~.full {

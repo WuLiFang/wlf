@@ -265,7 +265,6 @@ class HTMLContactSheet(ContactSheet):
             image = self[index - 1]
             anchor = soup.new_tag('a', href='#{}'.format(
                 image.html_id), **{'class': 'prev'})
-            anchor.append('<')
             full.append(anchor)
             # Next botton.
             try:
@@ -274,7 +273,6 @@ class HTMLContactSheet(ContactSheet):
                 image = self[0]
             anchor = soup.new_tag('a', href='#{}'.format(
                 image.html_id), **{'class': 'next'})
-            anchor.append('>')
             full.append(anchor)
 
             lightbox.append(full)
