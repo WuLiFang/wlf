@@ -14,8 +14,8 @@ import sys
 from subprocess import PIPE, Popen
 from functools import wraps
 
-from wlf.notify import Progress
-from wlf.path import get_encoded, PurePath, Path
+from .notify import Progress
+from .path import get_encoded, PurePath, Path
 
 __version__ = '0.6.11'
 

@@ -1,14 +1,15 @@
 # -*- coding=UTF-8 -*-
 """For build UI faster.  """
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, unicode_literals, absolute_import
 
 import sys
 
-import wlf.config
-from wlf.Qt import QtWidgets, QtCore, QtCompat
-from wlf.Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
-from wlf.mp_logging import set_basic_logger
-from wlf.path import Path
+from Qt import QtWidgets, QtCore, QtCompat
+from Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
+
+from .config import Config
+from .mp_logging import set_basic_logger
+from .path import Path
 
 __version__ = '0.2.2'
 
@@ -17,7 +18,7 @@ class DialogWithDir(QDialog):
     """Dialog with a lineEdit dir input, can restore from config.  """
 
     def __init__(self, uifile, config=None, parent=None, icons=None, edits_key=None, dir_edit=None):
-        assert isinstance(config, wlf.config.Config)
+        assert isinstance(config, Config)
         assert isinstance(icons, dict)
         assert isinstance(edits_key, dict)
 

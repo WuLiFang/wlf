@@ -12,11 +12,11 @@ import locale
 import string
 import logging
 
-import wlf.pathlib2 as pathlib
+import pathlib2
 
 __version__ = '0.2.6'
 
-with pathlib.Path(pathlib.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
+with pathlib2.Path(pathlib2.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
@@ -95,14 +95,14 @@ def escape_batch(text):
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
 
 
-class PurePath(pathlib.PurePath):
+class PurePath(pathlib2.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with pathlib.Path(pathlib.Path(__file__)
-                      / '../precomp.redshift.json').open(encoding='UTF-8') as f:
+    with pathlib2.Path(pathlib2.Path(__file__)
+                       / '../precomp.redshift.json').open(encoding='UTF-8') as f:
         layers = json.load(f).get('layers')
     _unicode = None
 
@@ -153,8 +153,8 @@ class PurePath(pathlib.PurePath):
         if not self:
             return
         if layers is None:
-            with pathlib.Path(pathlib.Path(__file__)
-                              / '../precomp.redshift.json').open(encoding='UTF-8') as f:
+            with pathlib2.Path(pathlib2.Path(__file__)
+                               / '../precomp.redshift.json').open(encoding='UTF-8') as f:
                 layers = json.load(f).get('layers')
 
         for layer in layers:
@@ -333,25 +333,59 @@ class PurePath(pathlib.PurePath):
 
         return self.with_name(u'{}{}'.format(self.shot, self.suffix))
 
+    def as_posix(self):
+        """Return the string representation of the path with forward (/)
+        slashes."""
+        f = getattr(self, '_flavour')
+        return unicode(self).replace(f.sep, '/')
+
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
+
+    def html_relative_to(self, *other):
+        r"""Try give relative path for html.
+
+        >>> PurePath('/test/abc').html_relative_to('/test')
+        u'./abc'
+        >>> PurePath('C:/test\\abc/d\\e').html_relative_to('C:\\test')
+        u'./abc/d/e'
+        >>> PurePath('C:/test\\abc').html_relative_to(None)
+        u'file:///C:/test/abc'
+        >>> PurePath('C:/test\\abc').html_relative_to('C:\\def')
+        u'file:///C:/test/abc'
+        >>> PurePath('http://example.com').html_relative_to('C:\\def')
+        u'http://example.com'
+        >>> PurePath('http://example.com/test').html_relative_to('http://example.com')
+        u'./test'
+
+        """
+
+        try:
+            path = self.relative_to(*other)
+            path = './{}'.format(path.as_posix())
+            return path
+        except ValueError:
+            if self.is_absolute():
+                return self.as_uri()
+            else:
+                return unicode(self).replace('http:\\', 'http://').replace('\\', '/')
 
 
 class PurePosixPath(PurePath):
     """Port from pathlib.PurePosixPath.  """
 
-    _flavour = getattr(pathlib, '_posix_flavour')
+    _flavour = getattr(pathlib2, '_posix_flavour')
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Port from pathlib.PureWindowsPath.  """
 
-    _flavour = getattr(pathlib, '_windows_flavour')
+    _flavour = getattr(pathlib2, '_windows_flavour')
     __slots__ = ()
 
 
-class Path(pathlib.Path, PurePath):
+class Path(pathlib2.Path, PurePath):
     """Port from pathlib.Path.  """
 
     def __new__(cls, *args, **kwargs):
@@ -376,9 +410,8 @@ class Path(pathlib.Path, PurePath):
             return io.open(
                 get_encoded(self), mode, buffering, encoding, errors, newline,
                 opener=self._opener)
-        else:
-            return io.open(get_encoded(self), mode, buffering,
-                           encoding, errors, newline)
+        return io.open(get_encoded(self), mode, buffering,
+                       encoding, errors, newline)
 
 
 class PosixPath(Path, PurePosixPath):

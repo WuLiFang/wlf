@@ -11,20 +11,20 @@ from wlf.Qt.QtCore import QObject, Signal, Slot, QTimer, Qt
 from wlf.Qt.QtGui import QBrush, QColor
 from wlf.Qt.QtWidgets import QFileDialog, QStyle, QListWidgetItem
 
-import wlf.config
-from wlf import cgtwq
-from wlf.decorators import run_async
-from wlf.files import copy, is_same, version_filter
-from wlf.notify import HAS_NUKE, CancelledError, Progress
-from wlf.path import get_unicode, PurePath, Path
-from wlf.uitools import DialogWithDir, main_show_dialog
+from . import cgtwq
+from .config import Config as _Config
+from .decorators import run_async
+from .files import copy, is_same, version_filter
+from .notify import HAS_NUKE, CancelledError, Progress
+from .path import get_unicode, PurePath, Path
+from .uitools import DialogWithDir, main_show_dialog
 
 __version__ = '0.10.4'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
 
-class Config(wlf.config.Config):
+class Config(_Config):
     """A disk config can be manipulated like a dict."""
 
     default = {
