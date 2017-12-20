@@ -1,32 +1,33 @@
 var count = 0;
-$("document").ready(function() {
-    $(".lightbox .thumb").each(
-        function() {
-            use_minimal(this);
-            // $(this).attr("src", null);
-        }
-    );
-    $(".lightbox .thumb").mouseenter(
+$(document).ready(function() {
+    $(".lightbox .small").mouseenter(
         function() {
             use_data(this, "preview");
         }
     );
-    $(".lightbox .thumb").mouseout(
+    $(".lightbox .small").mouseout(
         function() {
             use_minimal(this);
         }
     );
-    $(".lightbox .thumb").appear();
+    // $(".lightbox .small").appear();
     // $(".lightbox .thumb").on("appear", function(e, $affected) {
     //     $affected.each(function() {
-    //         use_data(this, "preview");
+    //         use_minimal(this);
     //     });
     // });
-    $(".lightbox .thumb").on("disappear", function(e, $affected) {
-        $affected.each(function() {
+    // $(".lightbox .small").on("disappear", function(e, $affected) {
+    //     $affected.each(function() {
+    //         use_minimal(this);
+    //     });
+    // });
+
+    $("img").each(
+        function() {
+            // $(this).attr("src", null);
             use_minimal(this);
-        });
-    });
+        }
+    );
 })
 
 function get_lightbox(element) {
@@ -39,6 +40,9 @@ function get_lightbox(element) {
 
 function hide(lightbox) {
     var lightbox = get_lightbox(lightbox);
+    if (lightbox.style.display == 'none') {
+        return
+    }
     lightbox.style.display = 'none';
     try {
         var prev = lightbox.previousElementSibling;
@@ -49,9 +53,11 @@ function hide(lightbox) {
         while (next.style.display == 'none') {
             next = next.nextElementSibling;
         }
+        prev = $(prev);
+        next = $(next);
 
-        prev.children[1].children[3].href = next.children[0].children[0].href;
-        next.children[1].children[2].href = prev.children[0].children[0].href;
+        prev.find('a.next').attr("href", ("#" + next.attr("id")));
+        next.find('a.prev').attr("href", ("#" + prev.attr("id")));
     } catch (TypeError) {}
 
     // deal count
@@ -59,7 +65,7 @@ function hide(lightbox) {
     var lightboxes = document.getElementsByClassName('lightbox');
     var total = lightboxes.length;
     count += 1;
-    header.children[0].innerText = `${total - count}/${total}`;
+    header.children[0].innerText = (total - count).toString() + "/" + total.toString();
 }
 
 function use_minimal(element) {

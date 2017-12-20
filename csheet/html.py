@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 
 from ..ffmpeg import generate_gif
 from ..files import copy
-from ..notify import Progress
 from ..path import Path, PurePath, get_encoded, get_unicode
 from .base import ContactSheet, Image
 
@@ -186,21 +185,19 @@ class HTMLContactSheet(ContactSheet):
             body = soup.new_tag('body')
 
             header = soup.new_tag('header')
-            span = soup.new_tag('span', **{'class': 'count'})
+            span = soup.new_tag('div', **{'class': 'count'})
             span.append(str(total))
             header.append(span)
             noscript = soup.new_tag('noscript')
             noscript.append('需要浏览器启用javascript')
-            span = soup.new_tag('span', **{'class': 'noscript'})
+            span = soup.new_tag('div', **{'class': 'noscript'})
             span.append(noscript)
             header.append(span)
             body.append(header)
 
-            div = soup.new_tag('div', **{'class': 'shots'})
-            task = Progress('生成页面', total)
+            div = soup.new_tag('ul', **{'class': 'images'})
             for index, image in enumerate(self):
                 assert isinstance(image, HTMLImage)
-                task.step(image.name)
                 div.append(_get_lightbox(index))
             body.append(div)
 
@@ -235,42 +232,43 @@ class HTMLContactSheet(ContactSheet):
                     image.preview).html_relative_to(relative_to)
             except TypeError:
                 data_preview = 'null'
-            lightbox = soup.new_tag('figure',
+            lightbox = soup.new_tag('li', id=image.html_id,
                                     **{'class': 'lightbox',
                                        'data-thumb': data_thumb,
                                        'data-preview': data_preview,
                                        'data-full': data_src})
             figcatption = _get_figcaption(image)
 
-            # Preview.
-            preview = soup.new_tag(
-                'figure', id=image.html_id, **{'class': 'preview'})
-            anchor = soup.new_tag('a', href='#{}'.format(image.html_id))
+            # Small image.
+            small = soup.new_tag('figure', **{'class': 'small'})
             img = soup.new_tag('img', alt='no image',
-                               src=data_thumb if data_thumb != 'null' else data_src,
-                               **{'class': "thumb"})
-            anchor.append(img)
-            anchor.append(figcatption.__copy__())
-            preview.append(anchor)
-            lightbox.append(preview)
+                               src=data_thumb if data_thumb != 'null' else data_src)
+            small.append(img)
+            small.append(figcatption.__copy__())
+            # Anchor to open viewer.
+            anchor = soup.new_tag('a', href='#{}'.format(image.html_id))
+            anchor.append(small)
+            lightbox.append(anchor)
 
-            # Full.
-            full = soup.new_tag('figure', **{'class': 'full'})
-            anchor = soup.new_tag('a', href=data_src,
-                                  target='_blank', **{'class': 'viewer'})
-            img = soup.new_tag('img', src=data_src, alt='no image')
-            anchor.append(img)
-            anchor.append(figcatption.__copy__())
-            full.append(anchor)
-            # Buttons in full viewer.
+            # Full image with a viewer.
+            viewer = soup.new_tag('div', **{'class': 'viewer'})
             # Close button.
             anchor = soup.new_tag('a', href='#void', **{'class': 'close'})
+            viewer.append(anchor)
+            # Figure
+            full = soup.new_tag(
+                'figure', **{'class': 'full'})
+            anchor = soup.new_tag('a', href=data_src, target='_blank')
+            img = soup.new_tag('img', src=data_src, alt='no image')
+            anchor.append(img)
             full.append(anchor)
+            full.append(figcatption.__copy__())
+            viewer.append(full)
             # Prev botton.
             image = self[index - 1]
             anchor = soup.new_tag('a', href='#{}'.format(
                 image.html_id), **{'class': 'prev'})
-            full.append(anchor)
+            viewer.append(anchor)
             # Next botton.
             try:
                 image = self[index + 1]
@@ -278,12 +276,12 @@ class HTMLContactSheet(ContactSheet):
                 image = self[0]
             anchor = soup.new_tag('a', href='#{}'.format(
                 image.html_id), **{'class': 'next'})
-            full.append(anchor)
+            viewer.append(anchor)
 
-            lightbox.append(full)
+            lightbox.append(viewer)
             return lightbox
 
-        soup = BeautifulSoup('<html></html>', "html.parser")
+        soup = BeautifulSoup('<!DOCTYPE html><html></html>', "html.parser")
         soup.html.append(_head())
         soup.html.append(_body())
 
