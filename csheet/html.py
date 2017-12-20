@@ -172,9 +172,10 @@ class HTMLContactSheet(ContactSheet):
                 else:
                     LOGGER.warning('Ignore resource: %s', path)
             head.append(BeautifulSoup('''\
- <!--[if lt IE 9]>
+ <!--[if IE]>
   <script type="text/javascript">
-   alert('IE版本太低，请升级后使用');
+   alert('请使用现代浏览器浏览本页面');
+   window.open("http://outdatedbrowser.com/zh-cn", "_self");
   </script>
  <![endif]-->\
 ''', 'html.parser'))
@@ -281,7 +282,8 @@ class HTMLContactSheet(ContactSheet):
             lightbox.append(viewer)
             return lightbox
 
-        soup = BeautifulSoup('<!DOCTYPE html><html></html>', "html.parser")
+        soup = BeautifulSoup(
+            '<!DOCTYPE html><html lang="zh"></html>', "html.parser")
         soup.html.append(_head())
         soup.html.append(_body())
 
