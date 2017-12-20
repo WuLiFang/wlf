@@ -1,47 +1,74 @@
 var count = 0;
-$(document).ready(function() {
-    $(".lightbox .small").mouseenter(
-        function() {
-            use_data(this, "preview");
+$(document).ready(function () {
+    $('.lightbox .small').mouseenter(
+        function () {
+            useData(this, 'preview');
         }
     );
-    $(".lightbox .small").mouseout(
-        function() {
-            use_minimal(this);
+    $('.lightbox .small').mouseout(
+        function () {
+            useMinimal(this);
         }
     );
-    // $(".lightbox .small").appear();
-    // $(".lightbox .thumb").on("appear", function(e, $affected) {
-    //     $affected.each(function() {
-    //         use_minimal(this);
-    //     });
-    // });
+    $('.lightbox .small').click(
+        function () {
+            var lightbox = getLightbox(this);
+            $(lightbox).find('img').each(
+                function () {
+                    var element = this;
+                    useData(element, 'full',
+                        function () {
+                            useData(element, 'preview');
+                        }
+                    );
+                }
+            );
+        }
+    );
+    $('.lightbox .small img').appear();
+    $('.lightbox .small img').on('appear',
+        function (e, $affected) {
+            $affected.each(function () {
+                useMinimal(this);
+            });
+        }
+    );
+
     // $(".lightbox .small").on("disappear", function(e, $affected) {
     //     $affected.each(function() {
     //         use_minimal(this);
     //     });
     // });
 
-    $("img").each(
-        function() {
-            // $(this).attr("src", null);
-            use_minimal(this);
+    $('img').each(
+        function () {
+            $(this).attr('src', null);
+            useMinimal(this);
         }
     );
-})
+});
 
-function get_lightbox(element) {
+/**
+ * get a light box from element parent.
+ * @param {element} element this element.
+ * @return {element} lightbox element.
+ */
+function getLightbox(element) {
     var $element = $(element);
-    if ($element.is(".lightbox")) {
-        return element
+    if ($element.is('.lightbox')) {
+        return element;
     }
-    return $element.parents(".lightbox")[0]
+    return $element.parents('.lightbox')[0];
 }
 
+/**
+ * Hide lightbox  element then set count.
+ * @param {element} lightbox lightbox to hide.
+ */
 function hide(lightbox) {
-    var lightbox = get_lightbox(lightbox);
+    lightbox = getLightbox(lightbox);
     if (lightbox.style.display == 'none') {
-        return
+        return;
     }
     lightbox.style.display = 'none';
     try {
@@ -56,26 +83,32 @@ function hide(lightbox) {
         prev = $(prev);
         next = $(next);
 
-        prev.find('a.next').attr("href", ("#" + next.attr("id")));
-        next.find('a.prev').attr("href", ("#" + prev.attr("id")));
-    } catch (TypeError) {}
+        prev.find('a.next').attr('href', ('#' + next.attr('id')));
+        next.find('a.prev').attr('href', ('#' + prev.attr('id')));
+    } catch (TypeError) { }
 
     // deal count
-    var header = document.getElementsByTagName("header")[0];
+    var header = document.getElementsByTagName('header')[0];
     var lightboxes = document.getElementsByClassName('lightbox');
     var total = lightboxes.length;
     count += 1;
-    header.children[0].innerText = (total - count).toString() + "/" + total.toString();
+    header.children[0].innerText = (
+        (total - count).toString() + '/' + total.toString()
+    );
 }
 
-function use_minimal(element) {
+/**
+ * use minimal images for this element.
+ * @param {element} element root element.
+ */
+function useMinimal(element) {
     // Use minaimal image to save memory.
-    use_data(element, "thumb",
-        function() {
-            use_data(element, "full",
-                function() {
-                    use_data(element, "preview",
-                        function() {
+    useData(element, 'thumb',
+        function () {
+            useData(element, 'full',
+                function () {
+                    useData(element, 'preview',
+                        function () {
                             hide(element);
                         }
                     );
@@ -85,30 +118,45 @@ function use_minimal(element) {
     );
 }
 
-function use_data(element, data, onerror) {
-    var lightbox = get_lightbox(element);
-    var path = lightbox.getAttribute("data-" + data);
-    image_available(
+/**
+ * Choose data to use on image.
+ * @param {element} element root element.
+ * @param {string} data data name.
+ * @param {function} onerror callback
+ * @return {string} Used data
+ */
+function useData(element, data, onerror) {
+    var lightbox = getLightbox(element);
+    var path = lightbox.getAttribute('data-' + data);
+    imageAvailable(
         path,
-        function() {
-            element.src = path;
+        function (temp) {
+            element.src = temp.src;
         },
         onerror
     );
     return path;
 }
 
-function image_available(path, onload, onerror) {
+/**
+ * Load image in background.
+ * @param {string} path image path.
+ * @param {function} onload callback.
+ * @param {function} onerror callback.
+ */
+function imageAvailable(path, onload, onerror) {
     if (path == null | path == 'null') {
-        if (typeof(onerror) != "undefined") {
+        if (typeof (onerror) != 'undefined') {
             onerror();
         }
         return;
     }
     var temp = new Image;
-    temp.onload = onload;
+    temp.onload = function () {
+        onload(temp);
+    };
     temp.onerror = onerror;
     // temp.src = path + "?r=" + Date.now() / 1000;
-    temp.src = path;
+    temp.src = path + '?timestamp=' + new Date().getTime().toPrecision(9);
     // console.log(path + ' complete: ' + temp.complete);
 }
