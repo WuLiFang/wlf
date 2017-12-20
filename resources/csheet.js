@@ -25,13 +25,18 @@ $(document).ready(function () {
             );
         }
     );
-    $('.lightbox .small img').appear();
-    $('.lightbox .small img').on('appear',
-        function (e, $affected) {
-            $affected.each(function () {
-                useMinimal(this);
-            });
-        }
+    $('.lightbox img').each(function () {
+        var $this = $(this);
+        $this.appear();
+        $this.on('appear',
+            function (e, $affected) {
+                $affected.each(function () {
+                    useMinimal(this);
+                    // console.log(this);
+                });
+            }
+        );
+    }
     );
 
     // $(".lightbox .small").on("disappear", function(e, $affected) {
