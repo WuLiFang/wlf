@@ -1,23 +1,23 @@
 let count = 0;
-$(document).ready(function() {
+$(document).ready(function () {
     $('.lightbox .small').mouseenter(
-        function() {
+        function () {
             useData(this, 'preview');
         }
     );
     $('.lightbox .small').mouseout(
-        function() {
+        function () {
             useMinimal(this);
         }
     );
     $('.lightbox .small').click(
-        function() {
+        function () {
             let lightbox = getLightbox(this);
             $(lightbox).find('img').each(
-                function() {
+                function () {
                     let element = this;
                     useData(element, 'full',
-                        function() {
+                        function () {
                             useData(element, 'preview');
                         }
                     );
@@ -25,12 +25,12 @@ $(document).ready(function() {
             );
         }
     );
-    $('.lightbox figure').each(function() {
+    $('.lightbox figure').each(function () {
         let $this = $(this);
         $this.appear();
         $this.on('appear',
-            function(e, $affected) {
-                $affected.each(function() {
+            function (e, $affected) {
+                $affected.each(function () {
                     useMinimal(this);
                     // console.log(this);
                 });
@@ -38,7 +38,7 @@ $(document).ready(function() {
         );
     });
     $('.lightbox .viewer a').click(
-        function() {
+        function () {
             let $this = $(this);
             let $lightbox = $(getLightbox(this));
             let href;
@@ -48,7 +48,7 @@ $(document).ready(function() {
                     while (prev.is('.hidden')) {
                         prev = prev.prev();
                     }
-                    href = '#' + prev.attr('href');
+                    href = '#' + prev.attr('id');
                     break;
                 case 'next':
                     let next = $lightbox.next();
@@ -69,7 +69,7 @@ $(document).ready(function() {
 
 
     $('img').each(
-        function() {
+        function () {
             $(this).attr('src', null);
             useMinimal(this);
         }
@@ -137,11 +137,11 @@ function updateCount() {
 function useMinimal(element) {
     // Use minaimal image to save memory.
     useData(element, 'thumb',
-        function() {
+        function () {
             useData(element, 'full',
-                function() {
+                function () {
                     useData(element, 'preview',
-                        function() {
+                        function () {
                             hide(element);
                         }
                     );
@@ -163,7 +163,7 @@ function useData(element, data, onerror) {
     let path = lightbox.getAttribute('data-' + data);
     imageAvailable(
         path,
-        function(temp) {
+        function (temp) {
             let $element = $(element);
             if (!$element.is('img')) {
                 $element = $element.find('img');
@@ -190,7 +190,7 @@ function imageAvailable(path, onload, onerror) {
         return;
     }
     let temp = new Image;
-    temp.onload = function() {
+    temp.onload = function () {
         onload(temp);
     };
     temp.onerror = onerror;
