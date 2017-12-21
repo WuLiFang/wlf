@@ -76,7 +76,6 @@ ul.images a:visited .highlight {
     display: inline-block;
     *max-width: 400px;
     margin: 0;
-    transition: 0.5s ease-in-out;
 }
 
 .lightbox figcaption {
@@ -199,7 +198,21 @@ ul.images a:visited .highlight {
     visibility: visible;
 }
 
-
+/* hidden lightbox style */
+.lightbox.hidden{
+    width: 10px;
+    overflow: hidden;
+    height: 200px;
+    background: linear-gradient(black,grey 33%,black);
+}
+.lightbox.hidden .small{
+    width: 10px;
+    height: 200px;
+}
+.lightbox.hidden .small :not(a)
+{
+    display: none;
+}
 /* full view final style */
 
 .lightbox:target>.viewer {

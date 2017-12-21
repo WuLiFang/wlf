@@ -25,7 +25,7 @@ $(document).ready(function() {
             );
         }
     );
-    $('.lightbox img').each(function() {
+    $('.lightbox figure').each(function() {
         let $this = $(this);
         $this.appear();
         $this.on('appear',
@@ -37,6 +37,27 @@ $(document).ready(function() {
             }
         );
     });
+    $('.lightbox .viewer a').click(
+        function() {
+            let $this = $(this);
+            let $lightbox = $(getLightbox(this));
+            if ($this.is('.prev')) {
+                let prev = $lightbox.prev();
+                while (prev.is('.hidden')) {
+                    prev = prev.prev();
+                }
+                let href = '#' + prev.attr('id');
+                $this.attr('href', href);
+            } else if ($this.is('.next')) {
+                let next = $lightbox.next();
+                while (next.is('.hidden')) {
+                    next = next.next();
+                }
+                let href = '#' + next.attr('id');
+                $this.attr('href', href);
+            }
+        }
+    );
 
     // $(".lightbox .small").on("disappear", function(e, $affected) {
     //     $affected.each(function() {
@@ -71,38 +92,41 @@ function getLightbox(element) {
  */
 function hide(lightbox) {
     lightbox = getLightbox(lightbox);
-    if (lightbox.style.display == 'none') {
+    let $lightbox = $(lightbox);
+    if ($lightbox.is('.hidden')) {
         return;
     }
-    lightbox.style.display = 'none';
-    try {
-        let prev = lightbox.previousElementSibling;
-        while (prev.style.display == 'none') {
-            prev = prev.previousElementSibling;
-        }
-        let next = lightbox.nextElementSibling;
-        while (next.style.display == 'none') {
-            next = next.nextElementSibling;
-        }
-        prev = $(prev);
-        next = $(next);
+    $lightbox.addClass('hidden');
 
-        prev.find('a.next').attr('href', ('#' + next.attr('id')));
-        next.find('a.prev').attr('href', ('#' + prev.attr('id')));
-    } catch (TypeError) {
+    count += 1;
+    updateCount();
+}
+
+/**
+ * Show element related lightbox.
+ * @param {element} element The root element.
+ */
+function show(element) {
+    let lightbox = $(getLightbox(element));
+    if (!lightbox.is('.hidden')) {
         return;
     }
+    lightbox.removeClass('.hidden');
+    count -= 1;
+    updateCount();
+}
 
-    // deal count.
+/**
+ * Update count display.
+ */
+function updateCount() {
     let header = document.getElementsByTagName('header')[0];
     let lightboxes = document.getElementsByClassName('lightbox');
     let total = lightboxes.length;
-    count += 1;
     header.children[0].innerText = (
         (total - count).toString() + '/' + total.toString()
     );
 }
-
 /**
  * use minimal images for this element.
  * @param {element} element root element.
@@ -142,6 +166,7 @@ function useData(element, data, onerror) {
                 $element = $element.find('img');
             }
             $element.attr('src', temp.src);
+            show(element);
         },
         onerror
     );
