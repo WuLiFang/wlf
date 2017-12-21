@@ -1,23 +1,23 @@
-var count = 0;
-$(document).ready(function () {
+let count = 0;
+$(document).ready(function() {
     $('.lightbox .small').mouseenter(
-        function () {
+        function() {
             useData(this, 'preview');
         }
     );
     $('.lightbox .small').mouseout(
-        function () {
+        function() {
             useMinimal(this);
         }
     );
     $('.lightbox .small').click(
-        function () {
-            var lightbox = getLightbox(this);
+        function() {
+            let lightbox = getLightbox(this);
             $(lightbox).find('img').each(
-                function () {
-                    var element = this;
+                function() {
+                    let element = this;
                     useData(element, 'full',
-                        function () {
+                        function() {
                             useData(element, 'preview');
                         }
                     );
@@ -25,19 +25,18 @@ $(document).ready(function () {
             );
         }
     );
-    $('.lightbox img').each(function () {
-        var $this = $(this);
+    $('.lightbox img').each(function() {
+        let $this = $(this);
         $this.appear();
         $this.on('appear',
-            function (e, $affected) {
-                $affected.each(function () {
+            function(e, $affected) {
+                $affected.each(function() {
                     useMinimal(this);
                     // console.log(this);
                 });
             }
         );
-    }
-    );
+    });
 
     // $(".lightbox .small").on("disappear", function(e, $affected) {
     //     $affected.each(function() {
@@ -46,7 +45,7 @@ $(document).ready(function () {
     // });
 
     $('img').each(
-        function () {
+        function() {
             $(this).attr('src', null);
             useMinimal(this);
         }
@@ -59,7 +58,7 @@ $(document).ready(function () {
  * @return {element} lightbox element.
  */
 function getLightbox(element) {
-    var $element = $(element);
+    let $element = $(element);
     if ($element.is('.lightbox')) {
         return element;
     }
@@ -77,11 +76,11 @@ function hide(lightbox) {
     }
     lightbox.style.display = 'none';
     try {
-        var prev = lightbox.previousElementSibling;
+        let prev = lightbox.previousElementSibling;
         while (prev.style.display == 'none') {
             prev = prev.previousElementSibling;
         }
-        var next = lightbox.nextElementSibling;
+        let next = lightbox.nextElementSibling;
         while (next.style.display == 'none') {
             next = next.nextElementSibling;
         }
@@ -90,12 +89,14 @@ function hide(lightbox) {
 
         prev.find('a.next').attr('href', ('#' + next.attr('id')));
         next.find('a.prev').attr('href', ('#' + prev.attr('id')));
-    } catch (TypeError) { }
+    } catch (TypeError) {
+        return;
+    }
 
     // deal count
-    var header = document.getElementsByTagName('header')[0];
-    var lightboxes = document.getElementsByClassName('lightbox');
-    var total = lightboxes.length;
+    let header = document.getElementsByTagName('header')[0];
+    let lightboxes = document.getElementsByClassName('lightbox');
+    let total = lightboxes.length;
     count += 1;
     header.children[0].innerText = (
         (total - count).toString() + '/' + total.toString()
@@ -109,11 +110,11 @@ function hide(lightbox) {
 function useMinimal(element) {
     // Use minaimal image to save memory.
     useData(element, 'thumb',
-        function () {
+        function() {
             useData(element, 'full',
-                function () {
+                function() {
                     useData(element, 'preview',
-                        function () {
+                        function() {
                             hide(element);
                         }
                     );
@@ -131,11 +132,11 @@ function useMinimal(element) {
  * @return {string} Used data
  */
 function useData(element, data, onerror) {
-    var lightbox = getLightbox(element);
-    var path = lightbox.getAttribute('data-' + data);
+    let lightbox = getLightbox(element);
+    let path = lightbox.getAttribute('data-' + data);
     imageAvailable(
         path,
-        function (temp) {
+        function(temp) {
             element.src = temp.src;
         },
         onerror
@@ -156,8 +157,8 @@ function imageAvailable(path, onload, onerror) {
         }
         return;
     }
-    var temp = new Image;
-    temp.onload = function () {
+    let temp = new Image;
+    temp.onload = function() {
         onload(temp);
     };
     temp.onerror = onerror;
