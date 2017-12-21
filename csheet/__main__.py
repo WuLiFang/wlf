@@ -298,14 +298,17 @@ def main():
         description='吾立方色板工具 {}'.format(__version__))
     parser.add_argument('-d', '--dir', metavar='目录', required=False,
                         help='包含色板所需图像的目录')
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
 
-    if args.dir:
-        from wlf.csheet import create_html_from_dir
-        result = create_html_from_dir(args.dir)
-        print('生成色板: {}'.format(result))
-        webbrowser.open(str(result))
-        return
+        if args.dir:
+            from wlf.csheet import create_html_from_dir
+            result = create_html_from_dir(args.dir)
+            print('生成色板: {}'.format(result))
+            webbrowser.open(str(result))
+            return
+    except SystemExit:
+        pass
 
     main_show_dialog(Dialog)
 
