@@ -93,7 +93,7 @@ function hide(lightbox) {
         return;
     }
 
-    // deal count
+    // deal count.
     let header = document.getElementsByTagName('header')[0];
     let lightboxes = document.getElementsByClassName('lightbox');
     let total = lightboxes.length;
@@ -137,7 +137,11 @@ function useData(element, data, onerror) {
     imageAvailable(
         path,
         function(temp) {
-            element.src = temp.src;
+            let $element = $(element);
+            if (!$element.is('img')) {
+                $element = $element.find('img');
+            }
+            $element.attr('src', temp.src);
         },
         onerror
     );
