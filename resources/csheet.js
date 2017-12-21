@@ -41,29 +41,32 @@ $(document).ready(function() {
         function() {
             let $this = $(this);
             let $lightbox = $(getLightbox(this));
-            if ($this.is('.prev')) {
-                let prev = $lightbox.prev();
-                while (prev.is('.hidden')) {
-                    prev = prev.prev();
-                }
-                let href = '#' + prev.attr('id');
-                $this.attr('href', href);
-            } else if ($this.is('.next')) {
-                let next = $lightbox.next();
-                while (next.is('.hidden')) {
-                    next = next.next();
-                }
-                let href = '#' + next.attr('id');
-                $this.attr('href', href);
+            let href;
+            switch ($this.attr('class')) {
+                case 'prev':
+                    let prev = $lightbox.prev();
+                    while (prev.is('.hidden')) {
+                        prev = prev.prev();
+                    }
+                    href = '#' + prev.attr('href');
+                    break;
+                case 'next':
+                    let next = $lightbox.next();
+                    while (next.is('.hidden')) {
+                        next = next.next();
+                    }
+                    href = '#' + next.attr('id');
+                    break;
+                default:
+                    href = $this.attr('href');
+            }
+            $this.attr('href', href);
+            if (href == '#undefined') {
+                return false;
             }
         }
     );
 
-    // $(".lightbox .small").on("disappear", function(e, $affected) {
-    //     $affected.each(function() {
-    //         use_minimal(this);
-    //     });
-    // });
 
     $('img').each(
         function() {
@@ -111,7 +114,7 @@ function show(element) {
     if (!lightbox.is('.hidden')) {
         return;
     }
-    lightbox.removeClass('.hidden');
+    lightbox.removeClass('hidden');
     count -= 1;
     updateCount();
 }
@@ -191,7 +194,5 @@ function imageAvailable(path, onload, onerror) {
         onload(temp);
     };
     temp.onerror = onerror;
-    // temp.src = path + "?r=" + Date.now() / 1000;
     temp.src = path + '?timestamp=' + new Date().getTime().toPrecision(9);
-    // console.log(path + ' complete: ' + temp.complete);
 }
