@@ -198,11 +198,6 @@ ul.images a:visited .highlight {
     visibility: visible;
 }
 
-/* hide invaid anchor */
-a[href=\#undefined]{
-    display: none;
-}
-
 /* hidden lightbox style */
 .lightbox.hidden{
     width: 10px;
@@ -250,4 +245,9 @@ a[href=\#undefined]{
 
 .lightbox:target>.viewer a.next {
     right: 1%;
+}
+
+/* Indicate invaid anchor */
+a[href=\#undefined]{
+    opacity: 0.2!important;
 }
