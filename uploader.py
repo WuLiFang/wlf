@@ -7,9 +7,9 @@ import logging
 import os
 import webbrowser
 
-from wlf.Qt.QtCore import QObject, Signal, Slot, QTimer, Qt
-from wlf.Qt.QtGui import QBrush, QColor
-from wlf.Qt.QtWidgets import QFileDialog, QStyle, QListWidgetItem
+from Qt.QtCore import QObject, Signal, Slot, QTimer, Qt
+from Qt.QtGui import QBrush, QColor
+from Qt.QtWidgets import QFileDialog, QStyle, QListWidgetItem
 
 from . import cgtwq
 from .config import Config as _Config

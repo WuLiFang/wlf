@@ -1,5 +1,6 @@
-this package used third-party code under its license listed below:
+第三方许可
 ====================================================================
+this package used third-party code under its license listed below:
 
 ---------------
 Qt.py
