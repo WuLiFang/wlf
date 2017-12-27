@@ -5,6 +5,7 @@ this package used third-party code under its license listed below:
 ---------------
 Qt.py
 ---------------
+
 The MIT License (MIT)
 
 Copyright (c) 2016 Marcus Ottosson
@@ -30,6 +31,7 @@ SOFTWARE.
 --------------
 pathlib2
 --------------
+
 Copyright (c) 2014-2017 Matthias C. M. Troffaes
 Copyright (c) 2012-2014 Antoine Pitrou and contributors
 Distributed under the terms of the MIT License.
@@ -37,6 +39,7 @@ Distributed under the terms of the MIT License.
 --------------
 six
 --------------
+
 Copyright (c) 2010-2015 Benjamin Peterson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -68,15 +71,15 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this
-list of conditions and the following disclaimer.
+  list of conditions and the following disclaimer.
 
 * Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
 
 * Neither the name of Ben Hoyt nor the names of its contributors may be used
-to endorse or promote products derived from this software without specific
-prior written permission.
+  to endorse or promote products derived from this software without specific
+  prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -92,21 +95,25 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ---------------
 BeautifulSoup4
 ---------------
+
 MIT license
 
 ---------------
 HTML5 Shiv
 ---------------
+
 HTML5 Shiv 3.7.3 | @afarkas @jdalton @jon_neal @rem | MIT/GPL2 Licensed
 
 ---------------
 jQuery
 ---------------
+
 jQuery v3.2.1 | (c) JS Foundation and other contributors | jquery.org
 
 ---------------
 jQuery-appear
 ---------------
+
 jQuery appear plugin
 
 Copyright (c) 2012 Andrey Sidorov
@@ -119,6 +126,7 @@ Version: 0.3.6
 --------------
 openpyxl
 --------------
+
 Copyright (c) 2010 openpyxl
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -154,6 +162,7 @@ Note: backport changes by Raymond were originally distributed under MIT
 ------------------
 jdcal
 ------------------
+
 Copyright (c) 2011, Prasanth Nair
 All rights reserved.
 

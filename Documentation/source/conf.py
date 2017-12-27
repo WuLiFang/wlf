@@ -131,7 +131,7 @@ htmlhelp_basename = 'WuLiFangwlfdoc'
 latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
-    # 'papersize': 'letterpaper',
+    'papersize': 'a4paper',
 
     # The font size ('10pt', '11pt' or '12pt').
     #
@@ -150,8 +150,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'WuLiFangwlf.tex', u'WuLiFang/wlf Documentation',
-     u'NateScarlet@Gmail.com', 'manual'),
+    (master_doc, 'WuLiFangwlf.tex', u'WuLiFang/wlf 文档',
+     u'北京吾立方数码科技有限公司', 'manual'),
 ]
 
 
