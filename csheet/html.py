@@ -15,17 +15,20 @@ from ..path import Path, PurePath, get_encoded, get_unicode
 from .base import ContactSheet, Image
 
 LOGGER = getLogger('wlf.chseet.html')
-RESOURCES_DIR = Path(Path(__file__).parent.parent / 'resources')
+RESOURCES_DIR = Path(Path(__file__).parent.parent / 'static')
 RESOURCES_DIR.resolve()
 
 
 class HTMLImage(Image):
     """A image in html contactsheet page.  """
 
-    html_id = None
     thumb = None
     _preview = None
     related_video = None
+
+    def __init__(self, path):
+        super(HTMLImage, self).__init__(path)
+        self.html_id = PurePath(self.path).name
 
     def __str__(self):
         return '<Image: {0.html_id}>'.format(self)

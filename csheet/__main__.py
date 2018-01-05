@@ -291,6 +291,13 @@ class Dialog(DialogWithDir):
             raise
 
 
+def run_server(port=5000):
+    from . views import APP
+    from socket import gethostname, gethostbyname
+    print('服务器运行于此: https://{}:{}'.format(gethostbyname(gethostname()), port))
+    APP.run(port=port)
+
+
 def main():
     import argparse
 
@@ -298,6 +305,8 @@ def main():
         description='吾立方色板工具 {}'.format(__version__))
     parser.add_argument('-d', '--dir', metavar='目录', required=False,
                         help='包含色板所需图像的目录')
+    parser.add_argument('-p', '--port', metavar='端口', required=False,
+                        help='服务器运行端口')
     try:
         args = parser.parse_args()
 
@@ -307,6 +316,8 @@ def main():
             print('生成色板: {}'.format(result))
             webbrowser.open(str(result))
             return
+        elif args.port:
+            return run_server(args.port)
     except SystemExit:
         pass
 

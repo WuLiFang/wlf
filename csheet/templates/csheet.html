@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8" />
+    <title>
+        {{ title }}
+    </title>
+    <link href="static/csheet.css" rel="stylesheet" type="text/css" />
+    <script src="static/html5shiv.min.js" type="text/javascript">
+    </script>
+    <script src="static/jquery-3.2.1.min.js" type="text/javascript">
+    </script>
+    <script src="static/jquery.appear.js" type="text/javascript">
+    </script>
+    <script src="static/csheet.js" type="text/javascript">
+    </script>
+    <!--[if IE]>
+  <script type="text/javascript">
+   alert('请使用现代浏览器浏览本页面');
+   window.open("http://outdatedbrowser.com/zh-cn", "_self");
+  </script>
+ <![endif]-->
+</head>
+
+<body>
+    <header href="/">
+        <div class="count">
+            {{ count }}
+        </div>
+        <div class="noscript">
+            <noscript>
+                需要浏览器启用javascript
+            </noscript>
+        </div>
+        <div>
+            <a href="/" class="button">[返回]</a>
+        </div>
+    </header>
+    <ul class="images">
+        {% for image in images %}
+        <li class="lightbox" data-full="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" data-preview="previews/{{database}}/{{pipeline}}/{{prefix}}/{{image}}"
+            data-thumb="null" id="{{image}}">
+            <a href="#{{image}}">
+                <figure class="small">
+                    <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" />
+                    <figcaption>
+                        {{image}}
+                        <!-- SNJYW_EP26_01_
+                        <span class="highlight">
+                            sc001
+                        </span> -->
+                    </figcaption>
+                </figure>
+            </a>
+            <div class="viewer">
+                <a class="close" href="#void">
+                </a>
+                <div class="detail">
+
+                </div>
+                <figure class="full">
+                    <a href="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" target="_blank">
+                        <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" />
+                    </a>
+                    <figcaption>
+                        {{image}}
+                    </figcaption>
+                </figure>
+                <a class="prev" href="#{{ loop.previtem }}">
+                </a>
+                <a class="next" href="#{{ loop.nextitem }}">
+                </a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+
+</html>

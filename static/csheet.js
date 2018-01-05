@@ -72,6 +72,7 @@ $(document).ready(function() {
     $('img').each(
         function() {
             $(this).attr('src', null);
+            hide(this);
             useMinimal(this);
         }
     );
