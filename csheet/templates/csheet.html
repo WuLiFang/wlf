@@ -35,13 +35,13 @@
     </header>
     <ul class="images">
         {% for image in images %}
-        <li class="lightbox" data-full="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" data-preview="previews/{{database}}/{{pipeline}}/{{prefix}}/{{image}}"
-            data-thumb="null" id="image{{ loop.index }}">
+        <li class="lightbox" data-full="images/{{database}}/{{pipeline}}/{{prefix}}/{{image.name}}" data-preview="previews/{{database}}/{{pipeline}}/{{prefix}}/{{image.name}}"
+            data-thumb="null" id="image{{ loop.index }}" data-drag="{{ image.path }}">
             <a href="#image{{ loop.index }}">
                 <figure class="small">
-                    <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" />
+                    <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image.name}}" draggable="true" />
                     <figcaption>
-                        {{image}}
+                        {{image.name}}
                         <!-- SNJYW_EP26_01_
                         <span class="highlight">
                             sc001
@@ -56,8 +56,8 @@
 
                 </div>
                 <figure class="full">
-                    <a href="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" target="_blank">
-                        <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image}}" />
+                    <a href="images/{{database}}/{{pipeline}}/{{prefix}}/{{image.name}}" target="_blank">
+                        <img alt="no image" src="images/{{database}}/{{pipeline}}/{{prefix}}/{{image.name}}" draggable="true" />
                     </a>
                     <figcaption>
                         {{image}}

@@ -67,9 +67,14 @@ $(document).ready(function() {
             }
         }
     );
+    $('.lightbox img').on('dragstart', function(ev) {
+        ev.originalEvent.dataTransfer
+            .setData('text', $(getLightbox(this)).data('drag'));
+    }
 
+    );
 
-    $('img').each(
+    $('.lightbox img').each(
         function() {
             $(this).attr('src', null);
             hide(this);

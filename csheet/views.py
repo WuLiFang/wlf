@@ -48,6 +48,8 @@ def index():
         title = '{}色板'.format('_'.join(
             i for i in [project, prefix.strip(code).strip('_'), pipeline] if i))
         images = shots.shots
+        images = [get_html_image(database, pipeline, prefix, i)
+                  for i in images]
         count = len(images)
 
         return render_template('csheet.html', database=database, pipeline=pipeline,
