@@ -3,7 +3,7 @@ $(document).ready(
         $('#inputProject').change(function() {
             $.get('/project_code/' + $(this).children(':selected').text(),
                 function(result) {
-                    $('#inputPrefix').attr('value', result + '_EP01_');
+                    $('#inputPrefix').val(result + '_EP01_');
                     let inputPrefix = $('#inputPrefix')[0];
                     inputPrefix.focus();
                     inputPrefix.setSelectionRange(

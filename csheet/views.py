@@ -6,7 +6,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 from functools import update_wrapper
 
 from flask import (Flask, render_template, request, send_file,
-                   abort, session, make_response)
+                   abort, make_response)
 
 from ..cgtwq import Project, Shots
 from .html import HTMLImage
@@ -39,9 +39,6 @@ def index():
         project = args['project']
         prefix = args.get('prefix')
         pipeline = args.get('pipeline')
-        session['project'] = project
-        session['pipeline'] = pipeline
-        session['prefix'] = prefix
         database = PROJECT.get_info(project, 'database')
         code = PROJECT.get_info(project, 'code')
         shots = get_shots(database, prefix=prefix, pipeline=pipeline)
@@ -52,8 +49,15 @@ def index():
                   for i in images]
         count = len(images)
 
-        return render_template('csheet.html', database=database, pipeline=pipeline,
-                               prefix=prefix, title=title, images=images, count=count, session=session)
+        resp = make_response(
+            render_template('csheet.html', database=database, pipeline=pipeline,
+                            prefix=prefix, title=title, images=images, count=count))
+        cookie_life = 60 * 60 * 24 * 90
+        resp.set_cookie('project', project, max_age=cookie_life)
+        resp.set_cookie('pipeline', pipeline, max_age=cookie_life)
+        resp.set_cookie('prefix', prefix, max_age=cookie_life)
+
+        return resp
 
     return render_template('index.html', projects=PROJECT.names())
 
