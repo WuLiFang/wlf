@@ -3,17 +3,31 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-from flask import Flask, render_template, request, send_file, abort, session
+from functools import update_wrapper
+
+from flask import (Flask, render_template, request, send_file,
+                   abort, session, make_response)
 
 from ..cgtwq import Project, Shots
 from .html import HTMLImage
 from . import __version__
 
 APP = Flask(__name__, static_folder='../static')
-APP.secret_key = '}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d'
+APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
+                  '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
 PROJECT = Project()
 SHOTS_CACHE = {}
+
+
+def nocache(func):
+    """(Decorator)Tell falsk make respon with no_cache.  """
+
+    def _func(*args, **kwargs):
+        resp = make_response(func(*args, **kwargs))
+        resp.cache_control.no_cache = True
+        return resp
+    return update_wrapper(_func, func)
 
 
 @APP.route('/', methods=('GET',))
@@ -75,6 +89,7 @@ def test():
 
 
 @APP.route('/images/<database>/<pipeline>/<prefix>/<name>')
+@nocache
 def get_image(database, pipeline, prefix, name):
     """Respon image request.  """
 
@@ -87,6 +102,7 @@ def get_image(database, pipeline, prefix, name):
 
 
 @APP.route('/previews/<database>/<pipeline>/<prefix>/<name>')
+@nocache
 def get_preview(database, pipeline, prefix, name):
     """Respon preview request.  """
 
@@ -107,3 +123,10 @@ def get_preview(database, pipeline, prefix, name):
         abort(404)
 
     return send_file(unicode(preview))
+
+
+@APP.route('/project_code/<project>')
+def get_project_code(project):
+    """Get proejct code for @project.  """
+
+    return PROJECT.get_info(project, 'code')

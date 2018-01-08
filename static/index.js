@@ -1,8 +1,17 @@
 $(document).ready(
-    $('#open').click(
-        function () {
-            $(this).attr('href', 'test.html');
+    function() {
+        $('#inputProject').change(function() {
+            $.get('/project_code/' + $(this).children(':selected').text(),
+                function(result) {
+                    $('#inputPrefix').attr('value', result + '_EP01_');
+                    let inputPrefix = $('#inputPrefix')[0];
+                    inputPrefix.focus();
+                    inputPrefix.setSelectionRange(
+                        result.length + 3,
+                        result.length + 5);
+                });
         }
-    )
-)
+        );
+    }
+);
 

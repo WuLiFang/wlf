@@ -163,17 +163,39 @@ function useMinimal(element) {
 function useData(element, data, onerror) {
     let lightbox = getLightbox(element);
     let path = lightbox.getAttribute('data-' + data);
+    let $element = $(element);
+    if ($element.has('span.mark[for="' + data + '"]').length > 0) {
+        return;
+    }
+    // get container.
+    let container = $element.children('.container.mark');
+    if (container.length <= 0) {
+        container = $('<div/>', {
+            'class': 'mark container',
+        });
+        $element.prepend(container);
+    }
+    let mark = $('<span/>', {
+        'class': 'mark',
+        'for': data,
+    });
+    container.append(mark);
     imageAvailable(
         path,
         function(temp) {
-            let $element = $(element);
             if (!$element.is('img')) {
                 $element = $element.find('img');
             }
             $element.attr('src', temp.src);
+            $('span.mark[for="' + data + '"]', container).remove();
             show(element);
+
+            mark.remove();
         },
-        onerror
+        function() {
+            $('span.mark[for="' + data + '"]', container).remove();
+            onerror();
+        }
     );
     return path;
 }

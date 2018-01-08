@@ -260,3 +260,27 @@ a.button {
     text-decoration: none;
     color: initial;
 }
+
+/* loading indicator*/
+
+.lightbox .mark.container{
+    position:absolute;
+}
+
+.lightbox span.mark:after{
+    content: "读取中...";
+    font-size: 50%;
+    opacity: 0.5;
+}
+
+.lightbox .mark[for="thumb"]:before{
+    content: "缩略图";
+}
+
+.lightbox .mark[for="preview"]:before{
+    content: "动图";
+}
+
+.lightbox .mark[for="full"]:before{
+    content: "大图";
+}
