@@ -6,6 +6,15 @@ $(document).ready(function() {
             useData(this, 'preview');
         }
     );
+    $('body').dblclick(
+        function() {
+            $('.lightbox .small:appeared').each(
+                function() {
+                    useData(this, 'preview');
+                }
+            );
+        }
+    );
     $('.lightbox .small').mouseout(
         function() {
             useMinimal(this);
@@ -80,6 +89,15 @@ $(document).ready(function() {
             hide(this);
             useMinimal(this);
         }
+    );
+    // simlpe help
+    $('nav').append(
+        $('<button/>', {
+            text: '帮助',
+            click: function() {
+                $('.help').toggleClass('hidden');
+            },
+        })
     );
 });
 

@@ -14,7 +14,7 @@
     <!--[if IE]>
   <script type="text/javascript">
    alert('请使用现代浏览器浏览本页面');
-   window.open("http://outdatedbrowser.com/zh-cn", "_self");
+   // window.open("http://outdatedbrowser.com/zh-cn", "_self");
   </script>
  <![endif]-->
 </head>
@@ -29,8 +29,22 @@
                 需要浏览器启用javascript
             </noscript>
         </div>
-        <div>
-            <a href="/" class="button">[返回]</a>
+        <nav>
+            <a href="/" class="button">
+                <button>返回</button>
+            </a>
+        </nav>
+        <div class="help hidden">
+            <table>
+                <tr>
+                    <th>快捷键</th>
+                    <th>用途</th>
+                </tr>
+                <tr>
+                    <td>双击空白处</td>
+                    <td>切换至动图</td>
+                </tr>
+            </table>
         </div>
     </header>
     <ul class="images">

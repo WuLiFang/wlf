@@ -19,6 +19,18 @@ header {
     opacity: 0.3;
 }
 
+.help.hidden{
+    display: none;
+}
+
+nav button{
+    display:  inline;
+}
+
+a.button{
+    text-decoration: none;
+}
+
 header .count:before {
     content: "总计: "
 }
@@ -97,6 +109,11 @@ ul.images a:visited .highlight {
     border: 1px solid grey;
     cursor: zoom-in;
 }
+
+/* .lightbox .small figcaption{
+    position: absolute;
+    bottom: 0;
+} */
 
 .lightbox .viewer {
     visibility: hidden;
@@ -252,21 +269,16 @@ a[href=\#undefined]{
     opacity: 0.2!important;
 }
 
-a.button {
-    -webkit-appearance: button;
-    -moz-appearance: button;
-    appearance: button;
-
-    text-decoration: none;
-    color: initial;
-}
-
 /* loading indicator*/
 
 .lightbox .mark.container{
     position:absolute;
+    padding: 10px;
 }
 
+.lightbox span{
+    padding: 5px;
+}
 .lightbox span.mark:after{
     content: "读取中...";
     font-size: 50%;
