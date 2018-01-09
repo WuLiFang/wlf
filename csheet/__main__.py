@@ -292,10 +292,12 @@ class Dialog(DialogWithDir):
 
 
 def run_server(port=5000):
-    from . views import APP
+    from gevent.wsgi import WSGIServer
+    from .views import APP
     from socket import gethostname, gethostbyname
-    print('服务器运行于此: https://{}:{}'.format(gethostbyname(gethostname()), port))
-    APP.run(port=port)
+    server = WSGIServer(('0.0.0.0', port), APP)
+    print('服务器运行于: https://{}:{}'.format(gethostbyname(gethostname()), port))
+    server.serve_forever()
 
 
 def main():
@@ -305,7 +307,7 @@ def main():
         description='吾立方色板工具 {}'.format(__version__))
     parser.add_argument('-d', '--dir', metavar='目录', required=False,
                         help='包含色板所需图像的目录')
-    parser.add_argument('-p', '--port', metavar='端口', required=False,
+    parser.add_argument('-p', '--port', metavar='端口', type=int, required=False,
                         help='服务器运行端口')
     try:
         args = parser.parse_args()

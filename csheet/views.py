@@ -4,9 +4,12 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 from functools import update_wrapper
+from tempfile import gettempdir
+from os.path import join
 
 from flask import (Flask, render_template, request, send_file,
                    abort, make_response)
+from diskcache import FanoutCache
 
 from ..cgtwq import Project, Shots
 from .html import HTMLImage
@@ -18,6 +21,7 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
 APP.config['version'] = __version__
 PROJECT = Project()
 SHOTS_CACHE = {}
+CACHE = FanoutCache(join(gettempdir(), 'csheet_server'))
 
 
 def nocache(func):
@@ -63,12 +67,15 @@ def index():
 
 
 def get_shots(database, pipeline, prefix):
+    """Get shots, try from cache.  """
+
     key = (database, pipeline, prefix)
     if not SHOTS_CACHE.has_key(key):
         SHOTS_CACHE[key] = Shots(database, prefix=prefix, pipeline=pipeline)
     return SHOTS_CACHE[key]
 
 
+@CACHE.memoize(tag='htmlimage', expire=3600)
 def get_html_image(database, pipeline, prefix, name):
     """Get HTMLImage object.  """
 

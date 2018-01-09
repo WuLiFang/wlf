@@ -6,10 +6,10 @@ from wlf.csheet.views import APP
 
 
 def main():
-    port = 5000
-    from wlf.mp_logging import set_basic_logger
-    set_basic_logger()
-    APP.run(host='0.0.0.0', port=port, debug=True)
+    port = 5001
+    # from wlf.mp_logging import set_basic_logger
+    # set_basic_logger()
+    APP.run(host='localhost', port=port, debug=True)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 # -*- coding=UTF-8 -*-
 """wlf studio common lib.  """
+
 from __future__ import absolute_import
 
 
@@ -27,6 +28,10 @@ def _setup():
 
 
 def _init():
+    if 'nuke' not in sys.modules:
+        # Use gevent when not run as nuke plugin.
+        from gevent import monkey
+        monkey.patch_all()
     import Qt
     import scandir
 

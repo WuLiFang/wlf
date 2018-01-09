@@ -26,21 +26,11 @@ class HTMLImage(Image):
     _preview = None
     related_video = None
 
-    def __init__(self, path):
-        super(HTMLImage, self).__init__(path)
-        self.html_id = PurePath(self.path).name
-
-    def __str__(self):
-        return '<Image: {0.html_id}>'.format(self)
-
-    def __unicode__(self):
-        return '<图像: {0.html_id}>'.format(self)
-
     @property
     def preview_default(self):
         """Previw path default.  """
 
-        filename = PurePath(self.html_id).with_suffix('.gif')
+        filename = PurePath(self.path).with_suffix('.gif')
         for i in (self.path, self.related_video):
             if i is None:
                 continue
@@ -83,12 +73,6 @@ class HTMLImage(Image):
     def download(self, dest):
         """Download this image to dest.  """
 
-        if self.html_id is None:
-            raise ValueError('Should get html id from contactsheet first')
-        elif not isinstance(self.html_id, (str, unicode)):
-            raise ValueError('html id should be a str, got %s',
-                             type(self.html_id))
-
         path = PurePath(dest)
         for attr in ('path', 'thumb', 'preview'):
             old_value = getattr(self, attr)
@@ -101,7 +85,7 @@ class HTMLImage(Image):
                 dirpath /= attr
             if old_path.exists():
                 new_path = (path / dirpath /
-                            self.html_id).with_suffix(old_path.suffix)
+                            self.name).with_suffix(old_path.suffix)
                 new_value = copy(old_path, new_path)
                 if new_value:
                     setattr(self, attr, new_value)

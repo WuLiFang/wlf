@@ -12,7 +12,7 @@ from ..files import copy
 class Image(object):
     """Image item for contactsheet.  """
 
-    def __new__(cls, path):
+    def __new__(cls, path=None):
         if isinstance(path, Image):
             return path
         return super(Image, cls).__new__(cls, path)
@@ -25,6 +25,11 @@ class Image(object):
         # Initiate.
         self.__path = PurePath(path)
         self.name = self.path.shot
+
+    def __eq__(self, other):
+        if isinstance(other, Image):
+            return other.name == self.name and other.path == self.path
+        return False
 
     @property
     def path(self):
