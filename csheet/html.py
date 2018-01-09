@@ -26,9 +26,14 @@ class HTMLImage(Image):
     _preview = None
     related_video = None
 
+    def get_drag_path(self, for_pack=False):
+        if for_pack:
+            return './images/{}'.format(self.path.name)
+        return self.path
+
     @property
     def preview_default(self):
-        """Previw path default.  """
+        """Preview path default.  """
 
         filename = PurePath(self.path).with_suffix('.gif')
         for i in (self.path, self.related_video):

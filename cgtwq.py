@@ -265,6 +265,7 @@ class Shots(ShotTask):
         self._info = proj_info(database=database)
         self.module = module or self._info.get('module')
         self.pipeline = pipeline or self._info.get('pipeline')
+        self.prefix = prefix
 
         filters = []
         if self.pipeline:

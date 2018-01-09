@@ -23,6 +23,12 @@ header {
     display: none;
 }
 
+.help table td, .help table th{
+    max-width: 200px;
+    word-break: break-all;
+    text-align: center;
+}
+
 nav button{
     display:  inline;
 }
@@ -117,7 +123,7 @@ ul.images a:visited .highlight {
 
 .lightbox .viewer {
     visibility: hidden;
-    /* display: table; */
+    z-index: 100;
     position: fixed;
     height: 100%;
     width: 100%;
@@ -274,6 +280,7 @@ a[href=\#undefined]{
 .lightbox .mark.container{
     position:absolute;
     padding: 10px;
+    z-index: 1;
 }
 
 .lightbox span{

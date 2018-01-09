@@ -1,0 +1,9 @@
+{% set data_full_root='images/' + database + '/' + pipeline + '/' + prefix %} {% set data_preview_root='previews/' + database
++ '/' + pipeline + '/' + prefix%} {% set is_pack=False %} {% extends "csheet.html "%} {% block nav %}
+<a href="/" class="button">
+    <button>返回</button>
+</a>
+<a href="/?{{ request.query_string }}&amp;pack=1" class="button" download="{{ title }}.zip" onclick="alert('正在由服务器打包, 请耐心等待')">
+    <button>打包</button>
+</a>
+{% endblock %}

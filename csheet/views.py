@@ -4,8 +4,9 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 from functools import update_wrapper
-from tempfile import gettempdir
+from tempfile import gettempdir, mkstemp
 from os.path import join
+from zipfile import ZipFile
 
 from flask import (Flask, render_template, request, send_file,
                    abort, make_response)
@@ -16,6 +17,7 @@ from .html import HTMLImage
 from . import __version__
 
 APP = Flask(__name__, static_folder='../static')
+APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
@@ -40,22 +42,18 @@ def index():
 
     if request.query_string:
         args = request.args
+
         project = args['project']
         prefix = args.get('prefix')
         pipeline = args.get('pipeline')
-        database = PROJECT.get_info(project, 'database')
-        code = PROJECT.get_info(project, 'code')
-        shots = get_shots(database, prefix=prefix, pipeline=pipeline)
-        title = '{}色板'.format('_'.join(
-            i for i in [project, prefix.strip(code).strip('_'), pipeline] if i))
-        images = shots.shots
-        images = [get_html_image(database, pipeline, prefix, i)
-                  for i in images]
-        count = len(images)
 
-        resp = make_response(
-            render_template('csheet.html', database=database, pipeline=pipeline,
-                            prefix=prefix, title=title, images=images, count=count))
+        config = get_csheet_config(project, pipeline, prefix)
+
+        if 'pack' in args:
+            return send_file(packed_page(config))
+
+        # Respon with cookies set.
+        resp = make_response(render_template('csheet_web.html', **config))
         cookie_life = 60 * 60 * 24 * 90
         resp.set_cookie('project', project, max_age=cookie_life)
         resp.set_cookie('pipeline', pipeline, max_age=cookie_life)
@@ -64,6 +62,68 @@ def index():
         return resp
 
     return render_template('index.html', projects=PROJECT.names())
+
+
+def get_images(shots):
+    assert isinstance(shots, Shots)
+    images = shots.shots
+    images = [get_html_image(shots.database, shots.pipeline, shots.prefix, i)
+              for i in images]
+    return images
+
+
+def get_csheet_config(project, pipeline, prefix):
+    """Provide infos a csheet needed.  """
+
+    database = PROJECT.get_info(project, 'database')
+    config = {
+        'project': project,
+        'database': database,
+        'pipeline': pipeline,
+        'prefix': prefix,
+        'images': get_images(get_shots(database, pipeline=pipeline, prefix=prefix)),
+        'title': '{}色板'.format('_'.join(
+            i for i in
+            (project, prefix.strip(get_project_code(project)).strip('_'), pipeline) if i)),
+        'static': ('csheet.css', 'html5shiv.min.js',
+                   'jquery-3.2.1.min.js', 'jquery.appear.js', 'csheet.js')
+    }
+    return config
+
+
+@CACHE.memoize(tag='zip', expire=600)
+def packed_page(config):
+    """Return zip packed local version.  """
+
+    _, filename = mkstemp('.zip', prefix=config.get(
+        'title'), dir=APP.config.get('PACK_FOLDER'))
+    APP.logger.debug('Start archive page.')
+
+    with ZipFile(filename, 'w') as f:
+        index_page = render_template('csheet_pack.html', **config)
+
+        # Pack index.
+        f.writestr('{}.html'.format(
+            config.get('title', 'index')), bytes(index_page))
+
+        # Pack static files:
+        for i in config.get('static', ()):
+            f.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
+
+        # Pack images.
+        for i in config.get('images', ()):
+            assert isinstance(i, HTMLImage)
+            try:
+                f.write(unicode(i.path), 'images/{}.jpg'.format(i.name))
+            except OSError:
+                pass
+            try:
+                f.write(unicode(i.generate_preview()),
+                        'previews/{}.gif'.format(i.name))
+            except OSError:
+                pass
+
+    return filename
 
 
 def get_shots(database, pipeline, prefix):
@@ -105,7 +165,7 @@ def test():
 @nocache
 def get_image(database, pipeline, prefix, name):
     """Respon image request.  """
-
+    name = name.split('.')[0]
     try:
         image = get_html_image(database, pipeline, prefix, name)
         return send_file(unicode(image.path))
@@ -119,6 +179,7 @@ def get_image(database, pipeline, prefix, name):
 def get_preview(database, pipeline, prefix, name):
     """Respon preview request.  """
 
+    name = name.split('.')[0]
     height = {
         '动画': 180,
         '灯光': 200,
