@@ -1,105 +1,146 @@
 // TODO: button image loop
 let count = 0;
-$(document).ready(function() {
-    $('.lightbox .small').mouseenter(
-        function() {
-            useData(this, 'preview');
-        }
-    );
-    $('body').dblclick(
-        function() {
-            $('.lightbox .small:appeared').each(
-                function() {
-                    useData(this, 'preview');
-                }
-            );
-        }
-    );
-    $('.lightbox .small').mouseout(
-        function() {
-            useMinimal(this);
-        }
-    );
-    $('.lightbox .small').click(
-        function() {
-            let lightbox = getLightbox(this);
-            $(lightbox).find('img').each(
-                function() {
-                    let element = this;
-                    useData(element, 'full',
-                        function() {
-                            useData(element, 'preview');
-                        }
-                    );
-                }
-            );
-        }
-    );
-    $('.lightbox figure').each(function() {
-        let $this = $(this);
-        $this.appear();
-        $this.on('appear',
-            function(e, $affected) {
-                $affected.each(function() {
-                    useMinimal(this);
-                    // console.log(this);
-                });
+$(document).ready(
+    function() {
+        $('.lightbox .small').mouseenter(
+            function() {
+                useData(this, 'preview');
             }
         );
-    });
-    $('.lightbox .viewer a').click(
-        function() {
+        $('body').dblclick(
+            function() {
+                $('.lightbox .small:appeared').each(
+                    function() {
+                        useData(this, 'preview');
+                    }
+                );
+            }
+        );
+        $('.lightbox .small').mouseout(
+            function() {
+                useMinimal(this);
+            }
+        );
+        $('.lightbox .small').click(
+            function() {
+                let lightbox = getLightbox(this);
+                $(lightbox).find('img').each(
+                    function() {
+                        let element = this;
+                        useData(element, 'full',
+                            function() {
+                                useData(element, 'preview');
+                            }
+                        );
+                    }
+                );
+            }
+        );
+        $('.lightbox figure').each(function() {
             let $this = $(this);
-            let $lightbox = $(getLightbox(this));
-            let href;
-            switch ($this.attr('class')) {
-                case 'prev':
-                    let prev = $lightbox.prev();
-                    while (prev.is('.hidden')) {
-                        prev = prev.prev();
-                    }
-                    href = '#' + prev.attr('id');
-                    break;
-                case 'next':
-                    let next = $lightbox.next();
-                    while (next.is('.hidden')) {
-                        next = next.next();
-                    }
-                    href = '#' + next.attr('id');
-                    break;
-                default:
-                    href = $this.attr('href');
+            $this.appear();
+            $this.on('appear',
+                function(e, $affected) {
+                    $affected.each(function() {
+                        useMinimal(this);
+                        // console.log(this);
+                    });
+                }
+            );
+        });
+        $('.lightbox .viewer a').click(
+            function() {
+                let $this = $(this);
+                let $lightbox = $(getLightbox(this));
+                let href;
+                switch ($this.attr('class')) {
+                    case 'prev':
+                        let prev = $lightbox.prev();
+                        while (prev.is('.hidden')) {
+                            prev = prev.prev();
+                        }
+                        href = '#' + prev.attr('id');
+                        break;
+                    case 'next':
+                        let next = $lightbox.next();
+                        while (next.is('.hidden')) {
+                            next = next.next();
+                        }
+                        href = '#' + next.attr('id');
+                        break;
+                    default:
+                        href = $this.attr('href');
+                }
+                $this.attr('href', href);
+                if (href == '#undefined') {
+                    return false;
+                }
             }
-            $this.attr('href', href);
-            if (href == '#undefined') {
-                return false;
-            }
+        );
+        $('.lightbox img').on('dragstart', function(ev) {
+            ev.originalEvent.dataTransfer
+                .setData('text', $(getLightbox(this)).data('drag'));
         }
-    );
-    $('.lightbox img').on('dragstart', function(ev) {
-        ev.originalEvent.dataTransfer
-            .setData('text', $(getLightbox(this)).data('drag'));
+
+        );
+
+        $('.lightbox img').each(
+            function() {
+                $(this).attr('src', null);
+                hide(this);
+                useMinimal(this);
+            }
+        );
+        // simlpe help
+        $('nav').append(
+            $('<button/>', {
+                text: '帮助',
+                click: function() {
+                    $('.help').toggleClass('hidden');
+                },
+            })
+        );
+        // show pack progress
+        $('button.pack').click(
+            function() {
+                let progressBar = $('progress.pack');
+                let isStarted = false;
+                progressBar.removeClass('hidden');
+                $(this).addClass('hidden');
+                if (typeof (EventSource) != 'undefined') {
+                    let source = new EventSource('/pack_progress');
+                    source.onmessage = function(event) {
+                        if (event.data > 0) {
+                            isStarted = true;
+                        }
+                        progressBar.val(event.data);
+                        if (isStarted && event.data < 0) {
+                            source.close();
+                            progressBar.addClass('hidden');
+                        }
+                    };
+                } else {
+                    alert('由于不是火狐或者Chrome, 不能显示进度');
+                    // $.get('/pack_progress'
+                    //     + '?timestamp=' + new Date().getTime(),
+                    //     function(progress) {
+                    //         let update = function() {
+                    //             progressBar.val(progress);
+                    //             if (progress > 0) {
+                    //                 isStarted = true;
+                    //             } else if (isStarted && progress < 0) {
+                    //                 progressBar.addClass('hidden');
+                    //                 return;
+                    //             }
+                    //             setInterval(update, isStarted ? 1000 : 10000);
+                    //         };
+                    //         update();
+                    //     });
+                }
+            }
+        );
     }
-
-    );
-
-    $('.lightbox img').each(
-        function() {
-            $(this).attr('src', null);
-            hide(this);
-            useMinimal(this);
-        }
-    );
-    // simlpe help
-    $('nav').append(
-        $('<button/>', {
-            text: '帮助',
-            click: function() {
-                $('.help').toggleClass('hidden');
-            },
-        })
-    );
-});
+);
 
 /**
  * get a light box from element parent.

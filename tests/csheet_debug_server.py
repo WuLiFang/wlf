@@ -3,13 +3,14 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from wlf.csheet.views import APP
+from gevent.wsgi import WSGIServer
 
 
 def main():
     port = 5001
-    # from wlf.mp_logging import set_basic_logger
-    # set_basic_logger()
-    APP.run(host='localhost', port=port, debug=True)
+    APP.debug = True
+    server = WSGIServer(('localhost', port), APP)
+    server.serve_forever()
 
 
 if __name__ == '__main__':

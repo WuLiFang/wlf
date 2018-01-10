@@ -11,7 +11,10 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, abort, make_response, render_template, request,
-                   send_file)
+                   send_file, g, Response)
+from gevent import spawn, sleep
+from gevent.queue import Queue
+import time
 
 from . import __version__
 from ..cgtwq import Project, Shots
@@ -23,7 +26,9 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
 PROJECT = Project()
+STATUS = {}
 SHOTS_CACHE = {}
+PROGRESS_EVENT_LISTENER = []
 CACHE = FanoutCache(join(gettempdir(), 'csheet_server'))
 
 
@@ -38,7 +43,7 @@ def nocache(func):
 
 
 @APP.route('/', methods=('GET',))
-def index():
+def render_main():
     """main page.  """
 
     if request.query_string:
@@ -87,32 +92,70 @@ def get_csheet_config(project, pipeline, prefix):
             i for i in
             (project, prefix.strip(get_project_code(project)).strip('_'), pipeline) if i)),
         'static': ('csheet.css', 'html5shiv.min.js',
-                   'jquery-3.2.1.min.js', 'jquery.appear.js', 'csheet.js')
+                   'jquery-3.2.1.min.js', 'jquery.appear.js', 'csheet.js'),
+        'pack_progress': pack_progress()
     }
     return config
+
+
+def pack_progress(value=None):
+    """Return server pack progress status.  """
+
+    if value is not None:
+        old_value = STATUS.get('PACK_PROGRESS')
+        STATUS['PACK_PROGRESS'] = value
+        if old_value != value:
+            for queue in PROGRESS_EVENT_LISTENER:
+                queue.put(value)
+        return
+    return str(STATUS.get('PACK_PROGRESS', -1))
+
+
+@APP.route('/pack_progress')
+@nocache
+def pack_event():
+    def _sse(data):
+        return 'data: {}\n\n'.format(data)
+
+    if request.headers.get('accept') == 'text/event-stream':
+        def events():
+            queue = Queue()
+            PROGRESS_EVENT_LISTENER.append(queue)
+            try:
+                while True:
+                    yield _sse(queue.get())
+            except GeneratorExit:
+                PROGRESS_EVENT_LISTENER.remove(queue)
+
+        return Response(events(), content_type='text/event-stream')
+    return pack_progress()
 
 
 def packed_page(**config):
     """Return zip packed local version.  """
 
+    if float(pack_progress()) != -1:
+        abort(429)
+    pack_progress(0)
+
     f = TemporaryFile(suffix='.zip', prefix=config.get(
         'title'), dir=APP.config.get('PACK_FOLDER'))
     filename = '{}.zip'.format(config.get('title', 'temp'))
-    APP.logger.debug('Start archive page.')
+    APP.logger.info('Start archive page.')
 
     with ZipFile(f, 'w', allowZip64=True) as zipfile:
-        index_page = render_template('csheet_pack.html', **config)
-
         # Pack index.
+        index_page = render_template('csheet_pack.html', **config)
         zipfile.writestr('{}.html'.format(
             config.get('title', 'index')), bytes(index_page))
 
-        # Pack static files:
-        for i in config.get('static', ()):
-            zipfile.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
-
         # Pack images.
-        for i in config.get('images', ()):
+        images = config.get('images')
+        if not images:
+            abort(404)
+        total = len(images)
+
+        def _write_image(image):
             assert isinstance(i, HTMLImage)
             try:
                 zipfile.write(unicode(i.path), 'images/{}.jpg'.format(i.name))
@@ -123,6 +166,13 @@ def packed_page(**config):
                               'previews/{}.gif'.format(i.name))
             except OSError:
                 pass
+        for index, i in enumerate(images, 1):
+            spawn(_write_image(i)).join()
+            pack_progress(index * 100.0 / total)
+
+        # Pack static files:
+        for i in config.get('static', ()):
+            zipfile.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
 
     f.seek(0, SEEK_END)
     size = f.tell()
@@ -133,6 +183,7 @@ def packed_page(**config):
         'Content-Length': size,
         'Cache-Control': 'no-cache'
     })
+    pack_progress(-1)
     return resp
 
 
@@ -164,11 +215,6 @@ def get_html_image(database, pipeline, prefix, name):
     image = HTMLImage(path)
     image.related_video = (video_shots or shots).get_shot_submit_path(name)
     return image
-
-
-@APP.route('/test')
-def test():
-    return 'test text'
 
 
 @APP.route('/images/<database>/<pipeline>/<prefix>/<name>')
