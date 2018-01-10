@@ -44,5 +44,32 @@ class CSheetTestCase(TestCase):
         self.assertEqual(image_a, image_b)
 
 
+class WSGICsheetTestCase(TestCase):
+    def setUp(self):
+        from wlf.csheet.views import APP
+        import wlf.cgtwq
+        self.dummy_projects = ['test1', '测试项目2', '测试项目 3']
+        for _ in xrange(20):
+            self.dummy_projects.append(mktemp(dir=''))
+
+        wlf.cgtwq.Project.names = lambda *args: self.dummy_projects
+        APP.testing = True
+        self.app = APP.test_client()
+
+    def test_index(self):
+        import wlf.csheet.views
+        wlf.csheet.views.MODULE_ENABLE = False
+        recieve = self.app.get('/')
+        self.assertEqual(recieve.status_code, 503)
+        wlf.csheet.views.MODULE_ENABLE = True
+        recieve = self.app.get('/')
+        self.assertEqual(recieve.status_code, 200)
+        for i in self.dummy_projects:
+            self.assertIn(i, recieve.data)
+
+    def tearDown(self):
+        pass
+
+
 if __name__ == '__main__':
     main()

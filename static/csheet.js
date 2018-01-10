@@ -120,7 +120,7 @@ $(document).ready(
                         }
                     };
                 } else {
-                    alert('由于不是火狐或者Chrome, 不能显示进度');
+                    alert('由于当前浏览器不支持SSE, 不能显示进度');
                     // $.get('/pack_progress'
                     //     + '?timestamp=' + new Date().getTime(),
                     //     function(progress) {

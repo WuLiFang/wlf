@@ -10,14 +10,13 @@ from tempfile import TemporaryFile, gettempdir
 from zipfile import ZipFile
 
 from diskcache import FanoutCache
-from flask import (Flask, abort, make_response, render_template, request,
-                   send_file, g, Response)
-from gevent import spawn, sleep
+from flask import (Flask, Response, abort, make_response, render_template,
+                   request, send_file)
+from gevent import sleep, spawn
 from gevent.queue import Queue
-import time
 
 from . import __version__
-from ..cgtwq import Project, Shots
+from ..cgtwq import MODULE_ENABLE, Project, Shots
 from .html import HTMLImage
 
 APP = Flask(__name__, static_folder='../static')
@@ -45,6 +44,9 @@ def nocache(func):
 @APP.route('/', methods=('GET',))
 def render_main():
     """main page.  """
+
+    if not MODULE_ENABLE:
+        return '服务器无法连接CGTeamWork', 503
 
     if request.query_string:
         args = request.args
@@ -167,7 +169,8 @@ def packed_page(**config):
             except OSError:
                 pass
         for index, i in enumerate(images, 1):
-            spawn(_write_image(i)).join()
+            spawn(_write_image(i))
+            sleep()
             pack_progress(index * 100.0 / total)
 
         # Pack static files:
