@@ -3,7 +3,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from tempfile import mkstemp, mktemp
-from unittest import TestCase, main
+from unittest import TestCase, main, skip
 import pickle
 
 
@@ -18,9 +18,11 @@ class CSheetTestCase(TestCase):
         sheet = HTMLContactSheet(images)
         return sheet
 
+    @skip('todo')
     def test_html(self):
         self._sheet().generate(mkstemp('.html')[1], is_pack=False)
 
+    @skip('todo')
     def test_packed_html(self):
         self._sheet().generate(mkstemp('.html')[1], is_pack=True)
 
