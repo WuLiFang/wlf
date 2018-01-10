@@ -60,7 +60,7 @@ class CGTeamWork(object):
 
     initiated_class = None
     is_logged_in = False
-    _tw = None
+    __tw = None
     _task_module = None
     _sys_module = None
     _pipeline_module = None
@@ -71,10 +71,11 @@ class CGTeamWork(object):
     SIGNS = {'shot': 'shot.shot',
              'pipeline': 'shot_task.pipeline'}
 
-    def __init__(self):
-        super(CGTeamWork, self).__init__()
-        if not CGTeamWork._tw:
-            CGTeamWork._tw = cgtw.tw()
+    @property
+    def _tw(self):
+        if self.__tw is None:
+            self.__tw = cgtw.tw()
+        return self.__tw
 
     def reset(self):
         """Reset connection.  """
