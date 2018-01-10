@@ -22,11 +22,11 @@
         <div class="count">
             {{ images.__len__() }}
         </div>
-        <div class="noscript">
-            <noscript>
+        <noscript>
+            <div class="noscript">
                 需要浏览器启用javascript
-            </noscript>
-        </div>
+            </div>
+        </noscript>
         <nav>
             {% block nav %} {% endblock %}
         </nav>

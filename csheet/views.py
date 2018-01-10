@@ -1,20 +1,21 @@
 # -*- coding=UTF-8 -*-
 """Run as web app.  """
 
-from __future__ import unicode_literals, print_function, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
 from functools import update_wrapper
-from tempfile import gettempdir, mkstemp
+from os import SEEK_END
 from os.path import join
+from tempfile import TemporaryFile, gettempdir
 from zipfile import ZipFile
 
-from flask import (Flask, render_template, request, send_file,
-                   abort, make_response)
 from diskcache import FanoutCache
+from flask import (Flask, abort, make_response, render_template, request,
+                   send_file)
 
+from . import __version__
 from ..cgtwq import Project, Shots
 from .html import HTMLImage
-from . import __version__
 
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
@@ -50,7 +51,7 @@ def index():
         config = get_csheet_config(project, pipeline, prefix)
 
         if 'pack' in args:
-            return send_file(packed_page(config))
+            return packed_page(**config)
 
         # Respon with cookies set.
         resp = make_response(render_template('csheet_web.html', **config))
@@ -91,39 +92,48 @@ def get_csheet_config(project, pipeline, prefix):
     return config
 
 
-@CACHE.memoize(tag='zip', expire=600)
-def packed_page(config):
+def packed_page(**config):
     """Return zip packed local version.  """
 
-    _, filename = mkstemp('.zip', prefix=config.get(
+    f = TemporaryFile(suffix='.zip', prefix=config.get(
         'title'), dir=APP.config.get('PACK_FOLDER'))
+    filename = '{}.zip'.format(config.get('title', 'temp'))
     APP.logger.debug('Start archive page.')
 
-    with ZipFile(filename, 'w') as f:
+    with ZipFile(f, 'w', allowZip64=True) as zipfile:
         index_page = render_template('csheet_pack.html', **config)
 
         # Pack index.
-        f.writestr('{}.html'.format(
+        zipfile.writestr('{}.html'.format(
             config.get('title', 'index')), bytes(index_page))
 
         # Pack static files:
         for i in config.get('static', ()):
-            f.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
+            zipfile.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
 
         # Pack images.
         for i in config.get('images', ()):
             assert isinstance(i, HTMLImage)
             try:
-                f.write(unicode(i.path), 'images/{}.jpg'.format(i.name))
+                zipfile.write(unicode(i.path), 'images/{}.jpg'.format(i.name))
             except OSError:
                 pass
             try:
-                f.write(unicode(i.generate_preview()),
-                        'previews/{}.gif'.format(i.name))
+                zipfile.write(unicode(i.generate_preview()),
+                              'previews/{}.gif'.format(i.name))
             except OSError:
                 pass
 
-    return filename
+    f.seek(0, SEEK_END)
+    size = f.tell()
+    f.seek(0)
+    resp = send_file(f, as_attachment=True, attachment_filename=filename,
+                     add_etags=False)
+    resp.headers.extend({
+        'Content-Length': size,
+        'Cache-Control': 'no-cache'
+    })
+    return resp
 
 
 def get_shots(database, pipeline, prefix):
