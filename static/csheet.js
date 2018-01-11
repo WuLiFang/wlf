@@ -107,7 +107,7 @@ $(document).ready(
                 let isStarted = false;
                 progressBar.removeClass('hidden');
                 $(this).addClass('hidden');
-                if (typeof (EventSource) != 'undefined') {
+                if (false) {
                     let source = new EventSource('/pack_progress');
                     source.onmessage = function(event) {
                         if (event.data > 0) {
@@ -121,26 +121,33 @@ $(document).ready(
                     };
                 } else {
                     alert('由于当前浏览器不支持SSE, 不能显示进度');
-                    // $.get('/pack_progress'
-                    //     + '?timestamp=' + new Date().getTime(),
-                    //     function(progress) {
-                    //         let update = function() {
-                    //             progressBar.val(progress);
-                    //             if (progress > 0) {
-                    //                 isStarted = true;
-                    //             } else if (isStarted && progress < 0) {
-                    //                 progressBar.addClass('hidden');
-                    //                 return;
-                    //             }
-                    //             setInterval(update, isStarted ? 1000 : 10000);
-                    //         };
-                    //         update();
-                    //     });
-                }
+                    // updateProgressBar(progressBar);
+                };
             }
         );
     }
 );
+let getCount = 0;
+/**
+ * Update progress bar value without sse.
+ * @argument {element} progressBar progressbar to update.
+ */
+function updateProgressBar(progressBar) {
+    $.get('/pack_progress', function(progress) {
+        console.log(progress);
+        progressBar.val(progress);
+        if (progress < 0) {
+            progressBar.addClass('hidden');
+            return;
+        }
+        getCount += 1;
+        if (getCount < 100) {
+            setInterval(function() {
+                updateProgressBar(progressBar);
+            }, 100);
+        }
+    });
+}
 
 /**
  * get a light box from element parent.

@@ -177,8 +177,8 @@ def packed_page(**config):
                 pass
 
         for index, i in enumerate(images, 1):
-            spawn(_write_image(i))
-            sleep()
+            job = spawn(_write_image, i)
+            job.join()
             pack_progress(index * 100.0 / total)
 
         # Pack static files:
@@ -255,7 +255,9 @@ def get_preview(database, pipeline, prefix, name):
 
     try:
         image = get_html_image(database, pipeline, prefix, name)
-        preview = image.generate_preview(height=height)
+        job = spawn(image.generate_preview, height=height)
+        job.join()
+        preview = job.value
         if preview is None:
             return get_image(database, pipeline, prefix, name)
         APP.logger.debug(u'获取动图: %s', preview)
