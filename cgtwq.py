@@ -73,15 +73,15 @@ class CGTeamWork(object):
 
     @property
     def _tw(self):
-        if self.__tw is None:
-            self.__tw = cgtw.tw()
-        return self.__tw
+        if CGTeamWork.__tw is None:
+            CGTeamWork.__tw = cgtw.tw()
+        return CGTeamWork.__tw
 
     def reset(self):
         """Reset connection.  """
 
         LOGGER.debug('Reset connection.')
-        CGTeamWork._tw = cgtw.tw()
+        CGTeamWork.__tw = None
         self._task_module = None
         self._sys_module = None
         self._pipeline_module = None
