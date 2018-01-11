@@ -28,10 +28,6 @@ def _setup():
 
 
 def _init():
-    if 'nuke' not in sys.modules:
-        # Use gevent when not run as nuke plugin.
-        from gevent import monkey
-        monkey.patch_all()
     import Qt
     import scandir
 

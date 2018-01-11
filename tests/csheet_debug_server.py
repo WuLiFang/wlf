@@ -2,8 +2,9 @@
 """Contactsheet test.  """
 from __future__ import absolute_import, print_function, unicode_literals
 
-from wlf.csheet.views import APP
 from gevent.wsgi import WSGIServer
+
+from wlf.csheet.views import APP
 
 
 def main():

@@ -24,7 +24,8 @@ def updated_config(config=None):
                           'html5shiv.min.js',
                           'jquery-3.2.1.min.js',
                           'jquery.appear.js',
-                          'csheet.js')}
+                          'csheet.js'),
+               'static_folder': 'static'}
 
     if config:
         default.update(config)
@@ -43,7 +44,7 @@ class HTMLImage(Image):
         """get path used on drag.  """
 
         if config.get('is_pack'):
-            return './images/{}'.format(self.path.name)
+            return 'images/{}'.format(self.path.name)
 
         return self.path.html_relative_to(config.get('relative_to'))
 
@@ -51,7 +52,7 @@ class HTMLImage(Image):
         """get full image path.  """
 
         if config.get('is_pack'):
-            return './images/{}'.format(self.path.name)
+            return 'images/{}'.format(self.path.name)
         elif config.get('is_web'):
             return ('/images/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
                     .format(config, self.path.name))
@@ -61,7 +62,7 @@ class HTMLImage(Image):
         """get preview image path.  """
 
         if config.get('is_pack'):
-            return './previews/{}'.format(self.preview.name)
+            return 'previews/{}'.format(self.preview.name)
         elif config.get('is_web'):
             return ('/previews/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
                     .format(config, self.preview.name))
@@ -143,6 +144,8 @@ def from_dir(images_folder, **config):
                             and i.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.mov'))
 
     config.setdefault('title', path.name)
+    config['static_folder'] = RESOURCES_DIR
+
     return from_list(images, **updated_config(config))
 
 
@@ -157,6 +160,7 @@ def from_list(images_list, **config):
         loader=PackageLoader(__name__),
     )
 
-    template = env.get_template('csheet.html',)
+    template = env.get_template('csheet.html')
+    config['static_folder'] = RESOURCES_DIR
 
     return template.render(**updated_config(config))

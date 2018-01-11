@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+
 from functools import update_wrapper
 from os import SEEK_END
 from os.path import join
@@ -12,13 +13,15 @@ from zipfile import ZipFile
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, render_template,
                    request, send_file)
-from gevent import sleep, spawn
+from gevent import sleep, spawn, monkey
 from gevent.queue import Queue
 
 from . import __version__
 from ..cgtwq import MODULE_ENABLE, Project, Shots
 from .html import HTMLImage, updated_config
 
+
+monkey.patch_all()
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'

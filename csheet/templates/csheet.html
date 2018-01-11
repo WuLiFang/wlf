@@ -8,8 +8,8 @@
         {{ config['title'] }}
     </title>
     {% for i in static %} {% if i.endswith('.css') %}
-    <link href="static/{{ i }}" rel="stylesheet" type="text/css" /> {% elif i.endswith('.js') %}
-    <script src="static/{{ i }}" type="text/javascript"></script> {% endif %} {% endfor %}
+    <link href="{{ static_folder }}/{{ i }}" rel="stylesheet" type="text/css" /> {% elif i.endswith('.js') %}
+    <script src="{{ static_folder }}/{{ i }}" type="text/javascript"></script> {% endif %} {% endfor %}
     <!--[if IE]>
   <script type="text/javascript">
    alert('请使用现代浏览器浏览本页面');

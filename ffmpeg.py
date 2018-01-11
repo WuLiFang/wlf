@@ -2,6 +2,13 @@
 """Manipulate video with FFMPEG."""
 from __future__ import absolute_import, print_function, unicode_literals
 
+# Use gevent
+try:
+    from gevent import monkey
+    monkey.patch_subprocess()
+except ImportError:
+    pass
+
 import os
 import time
 from logging import getLogger
