@@ -20,7 +20,7 @@ from ..ffmpeg import GenerateError
 from ..notify import CancelledError, Progress
 from ..path import PurePath, get_encoded, Path
 from ..uitools import DialogWithDir, main_show_dialog
-from .html import HTMLImage, from_list
+from .html import HTMLImage, from_list, RESOURCES_DIR
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -219,7 +219,11 @@ class Dialog(DialogWithDir):
         """ Construct contactsheet.  """
 
         images = self.get_images()
-        sheet = from_list(images, title=self.csheet_name)
+        sheet = from_list(
+            images,
+            title=self.csheet_name,
+            static_folder=RESOURCES_DIR
+        )
 
         # Generate preview.
         if self.is_generate_preview:
@@ -291,12 +295,13 @@ class Dialog(DialogWithDir):
             raise
 
 
-def run_server(port=5000):
+def run_server(port=5000, local_dir=None):
     """Run csheet server at @port.  """
 
     from gevent.wsgi import WSGIServer
     from .views import APP
     from socket import gethostname, gethostbyname
+    APP.config['local_dir'] = local_dir
     server = WSGIServer(('0.0.0.0', port), APP)
     print('服务器运行于: https://{}:{}'.format(gethostbyname(gethostname()), port))
     server.serve_forever()
@@ -311,19 +316,16 @@ def main():
                         help='包含色板所需图像的目录')
     parser.add_argument('-p', '--port', metavar='端口', type=int, required=False,
                         help='服务器运行端口')
-    try:
-        args = parser.parse_args()
+    args = parser.parse_args()
 
-        if args.dir:
-            from . import create_html_from_dir
-            result = create_html_from_dir(args.dir)
-            print('生成色板: {}'.format(result))
-            webbrowser.open(str(result))
-            return
-        elif args.port:
-            return run_server(args.port)
-    except SystemExit:
-        pass
+    if args.port:
+        return run_server(args.port, args.dir)
+    elif args.dir:
+        from . import create_html_from_dir
+        result = create_html_from_dir(args.dir)
+        print('生成色板: {}'.format(result))
+        webbrowser.open(str(result))
+        return
 
     main_show_dialog(Dialog)
 

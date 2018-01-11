@@ -12,13 +12,14 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, render_template,
-                   request, send_file)
+                   request, send_file, redirect, send_from_directory)
 from gevent import sleep, spawn, monkey
 from gevent.queue import Queue
 
 from . import __version__
 from ..cgtwq import MODULE_ENABLE, Project, Shots
-from .html import HTMLImage, updated_config
+from .html import HTMLImage, updated_config, from_dir,get_images_from_dir
+from ..path import Path
 
 
 monkey.patch_all()
@@ -48,6 +49,9 @@ def nocache(func):
 def render_main():
     """main page.  """
 
+    if APP.config['local_dir']:
+        return redirect('/local')
+
     if not MODULE_ENABLE:
         return '服务器无法连接CGTeamWork', 503
 
@@ -74,8 +78,29 @@ def render_main():
 
         return resp
 
+
+    
     return render_template('index.html', projects=PROJECT.names())
 
+@APP.route('/local')
+def render_local_dir():
+    """Render page for local dir.  """
+
+    local_dir = APP.config['local_dir']
+    if not Path(local_dir).exists():
+        abort(404)
+
+    if request.args.get('pack'):
+        return packed_page(images=get_images_from_dir(local_dir))
+
+    return  from_dir(local_dir, is_local=True, relative_to=local_dir)
+
+@APP.route('/local/<path:filename>')
+@nocache
+def get_local(filename):
+    """get file in local_dir.  """
+
+    return send_from_directory(APP.config['local_dir'], filename)
 
 def get_images(shots):
     """Get all images relate @shots.  """
@@ -143,10 +168,12 @@ def packed_page(**config):
 
     if float(pack_progress()) != -1:
         abort(429)
+    config = updated_config(config)
     pack_progress(0)
 
-    f = TemporaryFile(suffix='.zip', prefix=config.get(
-        'title'), dir=APP.config.get('PACK_FOLDER'))
+    f = TemporaryFile(suffix='.zip',
+                      prefix=config.get('title', 'packing_csheet_'),
+                      dir=APP.config.get('PACK_FOLDER'))
     filename = '{}.zip'.format(config.get('title', 'temp'))
     APP.logger.info('Start archive page.')
     config['is_pack'] = True
@@ -167,18 +194,19 @@ def packed_page(**config):
             assert isinstance(image, HTMLImage)
             try:
                 zipfile.write(unicode(image.path),
-                              'images/{}.jpg'.format(image.name))
+                              'images/{}'.format(image.path.name))
             except OSError:
                 pass
             try:
                 zipfile.write(unicode(image.generate_preview()),
-                              'previews/{}.gif'.format(image.name))
+                              'previews/{}'.format(image.preview.name))
             except OSError:
                 pass
 
         for index, i in enumerate(images, 1):
             job = spawn(_write_image, i)
-            job.join()
+            while not job.ready():
+                sleep(0.1)
             pack_progress(index * 100.0 / total)
 
         # Pack static files:
@@ -256,8 +284,9 @@ def get_preview(database, pipeline, prefix, name):
     try:
         image = get_html_image(database, pipeline, prefix, name)
         job = spawn(image.generate_preview, height=height)
-        job.join()
-        preview = job.value
+        while not job.ready():
+            sleep(0.1)
+        preview = job.get()
         if preview is None:
             return get_image(database, pipeline, prefix, name)
         APP.logger.debug(u'获取动图: %s', preview)

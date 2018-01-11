@@ -34,12 +34,8 @@ class Image(object):
     @property
     def path(self):
         """Path for this image.  """
-        assert isinstance(self.__path, PurePath)
-        return self.__path
 
-    @path.setter
-    def path(self, value):
-        self.__path = PurePath(value)
+        return self.__path
 
     def __nonzero__(self):
         return bool(self.path)

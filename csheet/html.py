@@ -56,6 +56,8 @@ class HTMLImage(Image):
         elif config.get('is_web'):
             return ('/images/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
                     .format(config, self.path.name))
+        elif config.get('is_local'):
+            return '/local/{}'.format(self.path.relative_to(config['relative_to']))
         return self.path.html_relative_to(config.get('relative_to'))
 
     def get_preview(self, **config):
@@ -66,6 +68,8 @@ class HTMLImage(Image):
         elif config.get('is_web'):
             return ('/previews/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
                     .format(config, self.preview.name))
+        elif config.get('is_local'):
+            return 'null'
         return self.preview.html_relative_to(config.get('relative_to'))
 
     @property
@@ -137,16 +141,21 @@ def from_dir(images_folder, **config):
     """Create a html page for a @images_folder.  """
 
     path = Path(images_folder)
+    images = get_images_from_dir(images_folder)
+    config.setdefault('title', path.name)
+
+    return from_list(images, **updated_config(config))
+
+def get_images_from_dir(images_folder):
+    """Get HTMLImage for @images_folder.  """
+
+    path = Path(images_folder)
     if not path.is_dir():
-        raise ValueError('Not a dir : %s', images_folder)
+        raise ValueError('Not a dir : {}'.format(images_folder))
     images = version_filter(i for i in path.iterdir()
                             if i.is_file()
                             and i.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.mov'))
-
-    config.setdefault('title', path.name)
-    config['static_folder'] = RESOURCES_DIR
-
-    return from_list(images, **updated_config(config))
+    return [HTMLImage(i) for i in images]
 
 
 def from_list(images_list, **config):
@@ -161,6 +170,5 @@ def from_list(images_list, **config):
     )
 
     template = env.get_template('csheet.html')
-    config['static_folder'] = RESOURCES_DIR
 
     return template.render(**updated_config(config))

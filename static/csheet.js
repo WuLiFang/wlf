@@ -78,9 +78,9 @@ $(document).ready(
             }
         );
         $('.lightbox img').on('dragstart', function(ev) {
-            ev.originalEvent.dataTransfer
-                .setData('text', $(getLightbox(this)).data('drag'));
-        }
+                ev.originalEvent.dataTransfer
+                    .setData('text', $(getLightbox(this)).data('drag'));
+            }
 
         );
 
@@ -265,7 +265,9 @@ function useData(element, data, onerror) {
         },
         function() {
             $('span.mark[for="' + data + '"]', container).remove();
-            onerror();
+            if (onerror) {
+                onerror();
+            }
         }
     );
     return path;
