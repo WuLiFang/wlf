@@ -13,7 +13,7 @@ from subprocess import call, Popen
 import multiprocessing.dummy
 
 from .notify import Progress
-from .path import PurePath
+from .path import PurePath, Path
 
 __version__ = '0.7.4'
 
@@ -105,7 +105,7 @@ def version_filter(iterable):
         shots[shot] = sorted(
             shots[shot]['path_list'],
             key=lambda shot:
-            os.path.getmtime(shot) if os.path.exists(shot) else None,
+            Path(shot).stat().st_mtime if Path(shot).exists() else None,
             reverse=True)[0]
     return sorted(shots.values())
 

@@ -18,9 +18,9 @@ from ..config import Config as BaseConfig
 from ..decorators import run_with_memory_require
 from ..ffmpeg import GenerateError
 from ..notify import CancelledError, Progress
-from ..path import PurePath, get_encoded
+from ..path import PurePath, get_encoded, Path
 from ..uitools import DialogWithDir, main_show_dialog
-from .html import HTMLContactSheet, HTMLImage
+from .html import HTMLImage, from_list
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -219,8 +219,7 @@ class Dialog(DialogWithDir):
         """ Construct contactsheet.  """
 
         images = self.get_images()
-        sheet = HTMLContactSheet(images)
-        sheet.title = self.csheet_name
+        sheet = from_list(images, title=self.csheet_name)
 
         # Generate preview.
         if self.is_generate_preview:
@@ -276,10 +275,11 @@ class Dialog(DialogWithDir):
         save_path = self.save_dir / '{}.html'.format(self.csheet_name)
         try:
             sheet = self.contactsheet()
-            created_file = sheet.generate(save_path)
-            if created_file:
-                webbrowser.open(get_encoded(outdir))
-                webbrowser.open(get_encoded(created_file))
+            with Path(save_path).open('w', encoding='UTF-8') as f:
+                f.write(sheet)
+
+            webbrowser.open(get_encoded(outdir))
+            webbrowser.open(get_encoded(save_path))
 
             super(Dialog, self).accept()
         except cgtwq.CGTeamWorkException:
@@ -313,7 +313,7 @@ def main():
         args = parser.parse_args()
 
         if args.dir:
-            from wlf.csheet import create_html_from_dir
+            from . import create_html_from_dir
             result = create_html_from_dir(args.dir)
             print('生成色板: {}'.format(result))
             webbrowser.open(str(result))

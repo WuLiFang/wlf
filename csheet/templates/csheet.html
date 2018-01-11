@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+<!DOCTYPE html> {% set config = {'database': database, 'pipeline': pipeline, 'prefix': prefix, 'is_pack': is_pack, 'is_web' : is_web, 'relative_to'
+: relative_to} %}
 <html lang="zh-CN">
 
 <head>
     <meta charset="utf-8" />
     <title>
-        {{ title }}
+        {{ config['title'] }}
     </title>
     {% for i in static %} {% if i.endswith('.css') %}
     <link href="static/{{ i }}" rel="stylesheet" type="text/css" /> {% elif i.endswith('.js') %}
@@ -49,11 +50,11 @@
     </header>
     <ul class="images">
         {% for image in images %}
-        <li class="lightbox" data-full="{{ data_full_root }}/{{ image.path.name }}" data-preview="{{ data_preview_root }}/{{ image.preview.name }}"
-            data-thumb="null" id="image{{ loop.index }}" data-drag="{{ image.get_drag_path(is_pack) }}">
+        <li class="lightbox" data-full="{{ image.get_full(**config) }}" data-preview="{{ image.get_preview(**config) }}" data-thumb="null"
+            id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
             <a href="#image{{ loop.index }}">
                 <figure class="small">
-                    <img alt="no image" src="{{ data_full_root }}/{{ image.path.name }}" draggable="true" />
+                    <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
                     <figcaption>
                         {{image.name}}
                         <!-- SNJYW_EP26_01_
@@ -70,8 +71,8 @@
 
                 </div>
                 <figure class="full">
-                    <a href="{{ data_full_root }}/{{ image.path.name }}" target="_blank">
-                        <img alt="no image" src="{{ data_full_root }}/{{ image.path.name }}" draggable="true" />
+                    <a href="{{ image.get_full(**config) }}" target="_blank">
+                        <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
                     </a>
                     <figcaption>
                         {{image}}

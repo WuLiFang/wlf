@@ -17,7 +17,7 @@ from gevent.queue import Queue
 
 from . import __version__
 from ..cgtwq import MODULE_ENABLE, Project, Shots
-from .html import HTMLImage
+from .html import HTMLImage, updated_config
 
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
@@ -60,6 +60,8 @@ def render_main():
         if 'pack' in args:
             return packed_page(**config)
 
+        config['is_web'] = True
+
         # Respon with cookies set.
         resp = make_response(render_template('csheet_web.html', **config))
         cookie_life = 60 * 60 * 24 * 90
@@ -93,11 +95,9 @@ def get_csheet_config(project, pipeline, prefix):
         'title': '{}色板'.format('_'.join(
             i for i in
             (project, prefix.strip(get_project_code(project)).strip('_'), pipeline) if i)),
-        'static': ('csheet.css', 'html5shiv.min.js',
-                   'jquery-3.2.1.min.js', 'jquery.appear.js', 'csheet.js'),
         'pack_progress': pack_progress()
     }
-    return config
+    return updated_config(config)
 
 
 def pack_progress(value=None):
@@ -144,10 +144,11 @@ def packed_page(**config):
         'title'), dir=APP.config.get('PACK_FOLDER'))
     filename = '{}.zip'.format(config.get('title', 'temp'))
     APP.logger.info('Start archive page.')
+    config['is_pack'] = True
 
     with ZipFile(f, 'w', allowZip64=True) as zipfile:
         # Pack index.
-        index_page = render_template('csheet_pack.html', **config)
+        index_page = render_template('csheet.html', **config)
         zipfile.writestr('{}.html'.format(
             config.get('title', 'index')), bytes(index_page))
 
