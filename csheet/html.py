@@ -9,7 +9,7 @@ from jinja2 import Environment, PackageLoader
 
 from ..ffmpeg import generate_gif
 from ..files import copy, version_filter
-from ..path import Path, PurePath, get_encoded, get_unicode
+from ..path import Path, PurePath, get_encoded
 from .base import Image
 
 LOGGER = getLogger('wlf.chseet.html')

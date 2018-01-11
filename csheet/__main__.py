@@ -292,6 +292,8 @@ class Dialog(DialogWithDir):
 
 
 def run_server(port=5000):
+    """Run csheet server at @port.  """
+
     from gevent.wsgi import WSGIServer
     from .views import APP
     from socket import gethostname, gethostbyname

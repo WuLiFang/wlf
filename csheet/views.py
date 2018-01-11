@@ -78,6 +78,8 @@ def render_main():
 
 
 def get_images(shots):
+    """Get all images relate @shots.  """
+
     assert isinstance(shots, Shots)
     images = shots.shots
     images = [get_html_image(shots.database, shots.pipeline, shots.prefix, i)
@@ -162,16 +164,18 @@ def packed_page(**config):
         total = len(images)
 
         def _write_image(image):
-            assert isinstance(i, HTMLImage)
+            assert isinstance(image, HTMLImage)
             try:
-                zipfile.write(unicode(i.path), 'images/{}.jpg'.format(i.name))
+                zipfile.write(unicode(image.path),
+                              'images/{}.jpg'.format(image.name))
             except OSError:
                 pass
             try:
-                zipfile.write(unicode(i.generate_preview()),
-                              'previews/{}.gif'.format(i.name))
+                zipfile.write(unicode(image.generate_preview()),
+                              'previews/{}.gif'.format(image.name))
             except OSError:
                 pass
+
         for index, i in enumerate(images, 1):
             spawn(_write_image(i))
             sleep()
