@@ -1,127 +1,106 @@
+@charset "UTF-8";
 * {
-    transition: 0.5s ease-in-out;
-}
+  transition: 0.5s ease-in-out; }
 
 body {
-    background: black;
-    font-family: "Microsoft YaHei", SimHei, sans-serif;
-}
+  background: black;
+  font-family: "Microsoft YaHei", SimHei, sans-serif; }
 
 header {
-    position: fixed;
-    border: 1px solid white;
-    color: white;
-    padding: 0.5em;
-    margin: 0.5em;
-    right: 0%;
-    top: 0%;
-    text-align: right;
-    opacity: 0.3;
-}
+  position: fixed;
+  border: 1px solid white;
+  color: white;
+  padding: 0.5em;
+  margin: 0.5em;
+  right: 0%;
+  top: 0%;
+  text-align: right;
+  opacity: 0.3; }
 
-.hidden{
-    display: none;
-}
+.hidden {
+  display: none; }
 
-.help table td, .help table th{
-    max-width: 200px;
-    word-break: break-all;
-    text-align: center;
-}
+.help table td,
+.help table th {
+  max-width: 200px;
+  word-break: break-all;
+  text-align: center; }
 
-nav button{
-    display:  inline;
-}
+nav button {
+  display: inline; }
 
-a.button{
-    text-decoration: none;
-}
+a.button {
+  text-decoration: none; }
 
 header .count:before {
-    content: "总计: "
-}
-
+  content: "总计: "; }
 header .count:after {
-    content: " 图像"
-}
-
+  content: " 图像"; }
 header:hover {
-    opacity: 1;
-    background: black;
-}
+  opacity: 1;
+  background: black; }
 
 ul.images {
-    width: 85%;
-    color: grey;
-    margin: auto;
-    display: block;
-    text-align: center;
-}
-
-ul.images:hover {
+  width: 85%;
+  color: grey;
+  margin: auto;
+  display: block;
+  text-align: center; }
+  ul.images:hover {
     background: #050505;
     border-left: 1px dotted rgba(255, 255, 255, 0.3);
-    border-right: 1px dotted rgba(255, 255, 255, 0.3);
-}
-
-ul.images:hover .image:not(:hover):not(:target) {
-    opacity: 0.4;
-}
-
-ul.images a {
-    text-decoration: none;
-}
-
-ul.images a:link {
-    color: inherit;
-}
-
-ul.images .highlight {
+    border-right: 1px dotted rgba(255, 255, 255, 0.3); }
+    ul.images:hover .image:not(:hover):not(:target) {
+      opacity: 0.4; }
+  ul.images a {
+    text-decoration: none; }
+    ul.images a:link {
+      color: inherit; }
+  ul.images .highlight {
     color: black;
-    background: grey;
-}
-
-ul.images a:visited {
-    color: burlywood;
-}
-
-ul.images a:visited .highlight {
-    color: black;
-    background: burlywood;
-}
+    background: grey; }
+  ul.images a:visited {
+    color: burlywood; }
+    ul.images a:visited .highlight {
+      color: black;
+      background: burlywood; }
 
 .lightbox {
-    display: inline-block;
-    *max-width: 400px;
-    margin: 0;
-}
-
-.lightbox figcaption {
+  display: inline-block;
+  *max-width: 400px;
+  margin: 0;
+  /* loading indicator*/ }
+  .lightbox figcaption {
     word-break: keep-all;
     text-overflow: ellipsis;
     overflow: hidden;
     margin: auto;
-    transition: inherit;
-}
-
-.lightbox .small {
+    transition: inherit; }
+  .lightbox .mark.container {
+    position: absolute;
+    padding: 10px;
+    z-index: 1; }
+    .lightbox .mark.container span.mark {
+      padding: 5px; }
+      .lightbox .mark.container span.mark[for="thumb"]:before {
+        content: "缩略图"; }
+      .lightbox .mark.container span.mark[for="preview"]:before {
+        content: "动图"; }
+      .lightbox .mark.container span.mark[for="full"]:before {
+        content: "大图"; }
+      .lightbox .mark.container span.mark:after {
+        content: "读取中...";
+        font-size: 50%;
+        opacity: 0.5; }
+  .lightbox .small {
     display: block;
     text-align: center;
-    margin: 0;
-}
-
-.lightbox .small img {
-    height: 200px !important;
-    border: 1px solid grey;
-    cursor: zoom-in;
-}
-
-/* .lightbox .small figcaption{
-    position: absolute;
-    bottom: 0;
-} */
-
-.lightbox .viewer {
+    margin: 0; }
+    .lightbox .small img {
+      height: 200px !important;
+      border: 1px solid grey;
+      cursor: zoom-in; }
+  .lightbox .viewer {
     visibility: hidden;
     z-index: 100;
     position: fixed;
@@ -131,10 +110,8 @@ ul.images a:visited .highlight {
     top: 0;
     left: 0;
     /* for animation */
-    transform: translate(0, -100%);
-}
-
-.lightbox .full {
+    transform: translate(0, -100%); }
+  .lightbox .full {
     z-index: 2;
     position: fixed;
     top: 0%;
@@ -147,21 +124,17 @@ ul.images a:visited .highlight {
     outline: none;
     /* for animation */
     transition: inherit;
-    opacity: 0;
-}
-
-.lightbox .full img {
-    position: fixed;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    max-height: 70%;
-    max-width: 90%;
-    pointer-events: auto;
-    /* For animation */
-    top: 30%;
-}
-
-.lightbox .viewer .full figcaption {
+    opacity: 0; }
+    .lightbox .full img {
+      position: fixed;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-height: 70%;
+      max-width: 90%;
+      pointer-events: auto;
+      /* For animation */
+      top: 30%; }
+  .lightbox .viewer .full figcaption {
     position: fixed;
     z-index: 3;
     top: 110%;
@@ -169,11 +142,8 @@ ul.images a:visited .highlight {
     font-size: 1.5em;
     transform: translate(-50%, -100%);
     text-shadow: 1px 1px 0 black;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.lightbox a.prev,
-.lightbox a.next {
+    background: rgba(0, 0, 0, 0.2); }
+  .lightbox a.prev, .lightbox a.next {
     z-index: 3;
     position: fixed;
     text-decoration: none;
@@ -183,123 +153,57 @@ ul.images a:visited .highlight {
     opacity: 0;
     top: 50%;
     transform: translate(0%, -50%);
-    transition: 0.4s ease-in-out;
-}
-
-.lightbox a.prev {
-    left: -10%;
-}
-
-.lightbox a.prev:before {
-    content: "<";
-}
-
-.lightbox a.next {
-    right: -10%;
-}
-
-.lightbox a.next:after {
-    content: ">";
-}
-
-.lightbox a.prev:hover,
-.lightbox a.next:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.lightbox a.close {
+    transition: 0.4s ease-in-out; }
+  .lightbox a.prev {
+    left: -10%; }
+    .lightbox a.prev:before {
+      content: "<"; }
+  .lightbox a.next {
+    right: -10%; }
+    .lightbox a.next:after {
+      content: ">"; }
+  .lightbox a.prev:hover, .lightbox a.next:hover {
+    background: rgba(255, 255, 255, 0.2); }
+  .lightbox a.close {
     z-index: 1;
     position: fixed;
     width: 100%;
     height: 100%;
     top: 0px;
     left: 0px;
-    cursor: zoom-out;
-}
-
-.lightbox .preview:target~.full {
-    visibility: visible;
-}
-
-/* hidden lightbox style */
-.lightbox.hidden{
+    cursor: zoom-out; }
+  .lightbox .preview:target ~ .full {
+    visibility: visible; }
+  .lightbox.hidden {
     width: 10px;
     overflow: hidden;
     height: 200px;
-    background: linear-gradient(black,grey 33%,black);
-}
-.lightbox.hidden .small{
-    width: 10px;
-    height: 200px;
-}
-.lightbox.hidden .small :not(a)
-{
-    display: none;
-}
-/* full view final style */
-
-.lightbox:target>.viewer {
+    background: linear-gradient(black, grey 33%, black); }
+    .lightbox.hidden .small {
+      width: 10px;
+      height: 200px; }
+      .lightbox.hidden .small :not(a) {
+        display: none; }
+  .lightbox:target > .viewer {
     visibility: visible;
-    transform: none;
-}
-
-.lightbox:target>.viewer .full {
-    opacity: 1;
-    height: 90%;
-}
-
-.lightbox:target>.viewer .full img {
-    top: 50%;
-    max-height: 90%;
-}
-
-.lightbox:target>.viewer figcaption {
-    top: 99%;
-}
-
-.lightbox:target>.viewer a.prev,
-.lightbox:target>.viewer a.next {
-    opacity: 1;
-}
-
-.lightbox:target>.viewer a.prev {
-    left: 1%;
-}
-
-.lightbox:target>.viewer a.next {
-    right: 1%;
-}
+    transform: none; }
+    .lightbox:target > .viewer .full {
+      opacity: 1;
+      height: 90%; }
+      .lightbox:target > .viewer .full img {
+        top: 50%;
+        max-height: 90%; }
+    .lightbox:target > .viewer figcaption {
+      top: 99%; }
+    .lightbox:target > .viewer a.prev, .lightbox:target > .viewer a.next {
+      opacity: 1; }
+    .lightbox:target > .viewer a.prev {
+      left: 1%; }
+    .lightbox:target > .viewer a.next {
+      right: 1%; }
 
 /* Indicate invaid anchor */
-a[href=\#undefined]{
-    opacity: 0.2!important;
-}
+a[href=\#undefined] {
+  opacity: 0.2 !important; }
 
-/* loading indicator*/
-
-.lightbox .mark.container{
-    position:absolute;
-    padding: 10px;
-    z-index: 1;
-}
-
-.lightbox span{
-    padding: 5px;
-}
-.lightbox span.mark:after{
-    content: "读取中...";
-    font-size: 50%;
-    opacity: 0.5;
-}
-
-.lightbox .mark[for="thumb"]:before{
-    content: "缩略图";
-}
-
-.lightbox .mark[for="preview"]:before{
-    content: "动图";
-}
-
-.lightbox .mark[for="full"]:before{
-    content: "大图";
-}
+/*# sourceMappingURL=csheet.css.map */

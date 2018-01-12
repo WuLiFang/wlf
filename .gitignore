@@ -14,3 +14,6 @@ build/
 # UML
 packages.png
 classes.png
+
+# SASS
+.sass-cache/
