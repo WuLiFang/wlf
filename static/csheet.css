@@ -50,20 +50,20 @@ ul.images {
     background: #050505;
     border-left: 1px dotted rgba(255, 255, 255, 0.3);
     border-right: 1px dotted rgba(255, 255, 255, 0.3); }
-    ul.images:hover .image:not(:hover):not(:target) {
+    ul.images:hover .lightbox:not(:hover):not(:target) .small {
       opacity: 0.4; }
+  ul.images .highlight {
+    color: black;
+    background: grey; }
   ul.images a {
     text-decoration: none; }
     ul.images a:link {
       color: inherit; }
-  ul.images .highlight {
-    color: black;
-    background: grey; }
-  ul.images a:visited {
-    color: burlywood; }
-    ul.images a:visited .highlight {
-      color: black;
-      background: burlywood; }
+    ul.images a:visited {
+      color: burlywood; }
+      ul.images a:visited .highlight {
+        color: black;
+        background: burlywood; }
 
 .lightbox {
   display: inline-block;
@@ -111,69 +111,67 @@ ul.images {
     left: 0;
     /* for animation */
     transform: translate(0, -100%); }
-  .lightbox .full {
-    z-index: 2;
-    position: fixed;
-    top: 0%;
-    left: 0%;
-    width: 100%;
-    top: 5%;
-    height: 70%;
-    opacity: 0;
-    pointer-events: none;
-    outline: none;
-    /* for animation */
-    transition: inherit;
-    opacity: 0; }
-    .lightbox .full img {
+    .lightbox .viewer .full {
+      z-index: 2;
       position: fixed;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      max-height: 70%;
-      max-width: 90%;
-      pointer-events: auto;
-      /* For animation */
-      top: 30%; }
-  .lightbox .viewer .full figcaption {
-    position: fixed;
-    z-index: 3;
-    top: 110%;
-    left: 50%;
-    font-size: 1.5em;
-    transform: translate(-50%, -100%);
-    text-shadow: 1px 1px 0 black;
-    background: rgba(0, 0, 0, 0.2); }
-  .lightbox a.prev, .lightbox a.next {
-    z-index: 3;
-    position: fixed;
-    text-decoration: none;
-    font-size: 3em;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 5% 2%;
-    opacity: 0;
-    top: 50%;
-    transform: translate(0%, -50%);
-    transition: 0.4s ease-in-out; }
-  .lightbox a.prev {
-    left: -10%; }
-    .lightbox a.prev:before {
-      content: "<"; }
-  .lightbox a.next {
-    right: -10%; }
-    .lightbox a.next:after {
-      content: ">"; }
-  .lightbox a.prev:hover, .lightbox a.next:hover {
-    background: rgba(255, 255, 255, 0.2); }
-  .lightbox a.close {
-    z-index: 1;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    top: 0px;
-    left: 0px;
-    cursor: zoom-out; }
-  .lightbox .preview:target ~ .full {
-    visibility: visible; }
+      top: 0%;
+      left: 0%;
+      width: 100%;
+      top: 5%;
+      height: 70%;
+      opacity: 0;
+      pointer-events: none;
+      outline: none;
+      /* for animation */
+      transition: inherit;
+      opacity: 0; }
+      .lightbox .viewer .full img {
+        position: fixed;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-height: 70%;
+        max-width: 90%;
+        pointer-events: auto;
+        /* For animation */
+        top: 30%; }
+      .lightbox .viewer .full figcaption {
+        position: fixed;
+        z-index: 3;
+        top: 110%;
+        left: 50%;
+        font-size: 1.5em;
+        transform: translate(-50%, -100%);
+        text-shadow: 1px 1px 0 black;
+        background: rgba(0, 0, 0, 0.2); }
+    .lightbox .viewer a.prev, .lightbox .viewer a.next {
+      z-index: 3;
+      position: fixed;
+      text-decoration: none;
+      font-size: 3em;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 5% 2%;
+      opacity: 0;
+      top: 50%;
+      transform: translate(0%, -50%);
+      transition: 0.4s ease-in-out; }
+      .lightbox .viewer a.prev:hover, .lightbox .viewer a.next:hover {
+        background: rgba(255, 255, 255, 0.2); }
+    .lightbox .viewer a.prev {
+      left: -10%; }
+      .lightbox .viewer a.prev:before {
+        content: "<"; }
+    .lightbox .viewer a.next {
+      right: -10%; }
+      .lightbox .viewer a.next:after {
+        content: ">"; }
+    .lightbox .viewer a.close {
+      z-index: 1;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0px;
+      left: 0px;
+      cursor: zoom-out; }
   .lightbox.hidden {
     width: 10px;
     overflow: hidden;

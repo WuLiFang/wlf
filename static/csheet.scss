@@ -66,25 +66,25 @@ ul.images {
         background: #050505;
         border-left: 1px dotted rgba(255, 255, 255, 0.3);
         border-right: 1px dotted rgba(255, 255, 255, 0.3);
-        .image:not(:hover):not(:target) {
+        .lightbox:not(:hover):not(:target) .small {
             opacity: 0.4;
-        }
-    }
-    a {
-        text-decoration: none;
-        &:link {
-            color: inherit;
         }
     }
     .highlight {
         color: black;
         background: grey;
     }
-    a:visited {
-        color: burlywood;
-        .highlight {
-            color: black;
-            background: burlywood;
+    a {
+        text-decoration: none;
+        &:link {
+            color: inherit;
+        }
+        &:visited {
+            color: burlywood;
+            .highlight {
+                color: black;
+                background: burlywood;
+            }
         }
     }
 }
@@ -146,84 +146,80 @@ ul.images {
         left: 0;
         /* for animation */
         transform: translate(0, -100%);
-    }
-    .full {
-        z-index: 2;
-        position: fixed;
-        top: 0%;
-        left: 0%;
-        width: 100%;
-        top: 5%;
-        height: 70%;
-        opacity: 0;
-        pointer-events: none;
-        outline: none;
-        /* for animation */
-        transition: inherit;
-        opacity: 0;
-        img {
+        .full {
+            z-index: 2;
             position: fixed;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-height: 70%;
-            max-width: 90%;
-            pointer-events: auto;
-            /* For animation */
-            top: 30%;
-        }
-    }
-    .viewer .full figcaption {
-        position: fixed;
-        z-index: 3;
-        top: 110%;
-        left: 50%;
-        font-size: 1.5em;
-        transform: translate(-50%, -100%);
-        text-shadow: 1px 1px 0 black;
-        background: rgba(0, 0, 0, 0.2);
-    }
-    a {
-        &.prev,
-        &.next {
-            z-index: 3;
-            position: fixed;
-            text-decoration: none;
-            font-size: 3em;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 5% 2%;
-            opacity: 0;
-            top: 50%;
-            transform: translate(0%, -50%);
-            transition: 0.4s ease-in-out;
-        }
-        &.prev {
-            left: -10%;
-            &:before {
-                content: "<";
-            }
-        }
-        &.next {
-            right: -10%;
-            &:after {
-                content: ">";
-            }
-        }
-        &.prev:hover,
-        &.next:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        &.close {
-            z-index: 1;
-            position: fixed;
+            top: 0%;
+            left: 0%;
             width: 100%;
-            height: 100%;
-            top: 0px;
-            left: 0px;
-            cursor: zoom-out;
+            top: 5%;
+            height: 70%;
+            opacity: 0;
+            pointer-events: none;
+            outline: none;
+            /* for animation */
+            transition: inherit;
+            opacity: 0;
+            img {
+                position: fixed;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                max-height: 70%;
+                max-width: 90%;
+                pointer-events: auto;
+                /* For animation */
+                top: 30%;
+            }
+            figcaption {
+                position: fixed;
+                z-index: 3;
+                top: 110%;
+                left: 50%;
+                font-size: 1.5em;
+                transform: translate(-50%, -100%);
+                text-shadow: 1px 1px 0 black;
+                background: rgba(0, 0, 0, 0.2);
+            }
         }
-    }
-    .preview:target~.full {
-        visibility: visible;
+        a {
+            &.prev,
+            &.next {
+                z-index: 3;
+                position: fixed;
+                text-decoration: none;
+                font-size: 3em;
+                background: rgba(255, 255, 255, 0.1);
+                padding: 5% 2%;
+                opacity: 0;
+                top: 50%;
+                transform: translate(0%, -50%);
+                transition: 0.4s ease-in-out;
+                &:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                }
+            }
+            &.prev {
+                left: -10%;
+                &:before {
+                    content: "<";
+                }
+            }
+            &.next {
+                right: -10%;
+                &:after {
+                    content: ">";
+                }
+            }
+            &.close {
+                z-index: 1;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                top: 0px;
+                left: 0px;
+                cursor: zoom-out;
+            }
+        }
     }
     &.hidden {
         width: 10px;
