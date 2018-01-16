@@ -18,7 +18,7 @@ from gevent.queue import Queue
 
 from . import __version__
 from ..cgtwq import MODULE_ENABLE, Project, Shots
-from .html import HTMLImage, updated_config, from_dir,get_images_from_dir
+from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
 
 
@@ -49,7 +49,7 @@ def nocache(func):
 def render_main():
     """main page.  """
 
-    if APP.config['local_dir']:
+    if APP.config.get('local_dir'):
         return redirect('/local')
 
     if not MODULE_ENABLE:
@@ -78,9 +78,8 @@ def render_main():
 
         return resp
 
-
-    
     return render_template('index.html', projects=PROJECT.names())
+
 
 @APP.route('/local')
 def render_local_dir():
@@ -93,7 +92,8 @@ def render_local_dir():
     if request.args.get('pack'):
         return packed_page(images=get_images_from_dir(local_dir))
 
-    return  from_dir(local_dir, is_local=True, relative_to=local_dir)
+    return from_dir(local_dir, is_local=True, relative_to=local_dir)
+
 
 @APP.route('/local/<path:filename>')
 @nocache
@@ -101,6 +101,7 @@ def get_local(filename):
     """get file in local_dir.  """
 
     return send_from_directory(APP.config['local_dir'], filename)
+
 
 def get_images(shots):
     """Get all images relate @shots.  """

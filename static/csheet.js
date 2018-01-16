@@ -78,9 +78,9 @@ $(document).ready(
             }
         );
         $('.lightbox img').on('dragstart', function(ev) {
-                ev.originalEvent.dataTransfer
-                    .setData('text', $(getLightbox(this)).data('drag'));
-            }
+            ev.originalEvent.dataTransfer
+                .setData('text', $(getLightbox(this)).data('drag'));
+        }
 
         );
 
@@ -107,7 +107,7 @@ $(document).ready(
                 let isStarted = false;
                 progressBar.removeClass('hidden');
                 $(this).addClass('hidden');
-                if (false) {
+                if (typeof (EventSource) != 'undefined') {
                     let source = new EventSource('/pack_progress');
                     source.onmessage = function(event) {
                         if (event.data > 0) {
@@ -120,34 +120,31 @@ $(document).ready(
                         }
                     };
                 } else {
-                    alert('由于当前浏览器不支持SSE, 不能显示进度');
-                    // updateProgressBar(progressBar);
+                    let isStarted = false;
+                    /**
+                     * Update progress bar value without sse.
+                     * @argument {element} progressBar progressbar to update.
+                     */
+                    function updateProgressBar(progressBar) {
+                        $.get('/pack_progress', function(progress) {
+                            progressBar.val(progress);
+                            if (isStarted && progress < 0) {
+                                progressBar.addClass('hidden');
+                                return;
+                            } else if (progress > 0) {
+                                isStarted = true;
+                            }
+                            setTimeout(function() {
+                                updateProgressBar(progressBar);
+                            }, 100);
+                        });
+                    }
+                    updateProgressBar(progressBar);
                 };
             }
         );
     }
 );
-let getCount = 0;
-/**
- * Update progress bar value without sse.
- * @argument {element} progressBar progressbar to update.
- */
-function updateProgressBar(progressBar) {
-    $.get('/pack_progress', function(progress) {
-        console.log(progress);
-        progressBar.val(progress);
-        if (progress < 0) {
-            progressBar.addClass('hidden');
-            return;
-        }
-        getCount += 1;
-        if (getCount < 100) {
-            setInterval(function() {
-                updateProgressBar(progressBar);
-            }, 100);
-        }
-    });
-}
 
 /**
  * get a light box from element parent.
