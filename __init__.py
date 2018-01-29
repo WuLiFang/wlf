@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 
 BIN_FOLDER = 'bin'
 
@@ -32,8 +32,7 @@ def _init():
     import scandir
 
     from .path import PurePath
-    from .env import set_default_encoding
-    from . import notify
+    from .env import set_default_encoding, has_gui
 
     set_default_encoding('UTF-8')
 
@@ -42,17 +41,19 @@ def _init():
 
     # Remap deprecated module.
     # TODO: Remove at next major version.
-    sys.modules['{}.progress'.format(__name__)] = notify
-    _set_attr('progress', notify)
-    sys.modules['{}.message'.format(__name__)] = notify
-    _set_attr('message', notify)
+    if has_gui():
+        from . import notify
+        sys.modules['{}.progress'.format(__name__)] = notify
+        _set_attr('progress', notify)
+        sys.modules['{}.message'.format(__name__)] = notify
+        _set_attr('message', notify)
+        from .csheet import __main__ as csheet_tool
+        _set_attr('csheet_tool', csheet_tool)
+        sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
     sys.modules['{}.Qt'.format(__name__)] = Qt
     _set_attr('Qt', Qt)
     for i in Qt.__all__:
         sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
-    from .csheet import __main__ as csheet_tool
-    _set_attr('csheet_tool', csheet_tool)
-    sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
 
     sys.path.append(str(PurePath(__file__).parent / '_dep'))
 

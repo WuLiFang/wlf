@@ -8,73 +8,81 @@ import multiprocessing
 import threading
 import logging
 
-from Qt import QtCompat, QtWidgets
-from Qt.QtCore import Signal
 
-from .tray import Tray
+from .env import has_nuke, has_gui
 from .decorators import run_in_main_thread
 
-HAS_NUKE = bool(sys.modules.get('nuke'))
+HAS_NUKE = has_nuke()
+HAS_GUI = has_gui()
 LOGGER = logging.getLogger('com.wlf.notify')
 
 if HAS_NUKE:
     import nuke
 
-__version__ = '0.6.1'
+if HAS_GUI:
+    from Qt import QtCompat, QtWidgets
+    from Qt.QtCore import Signal
 
+    class ProgressBar(QtWidgets.QDialog):
+        """Qt progressbar dialog."""
 
-class ProgressBar(QtWidgets.QDialog):
-    """Qt progressbar dialog."""
+        progress_changed = Signal(int)
+        message_changed = Signal(str)
 
-    progress_changed = Signal(int)
-    message_changed = Signal(str)
+        @run_in_main_thread
+        def __init__(self, name, parent=None):
+            self._cancelled = False
+            self.name = name
 
-    @run_in_main_thread
-    def __init__(self, name, parent=None):
-        self._cancelled = False
-        self.name = name
+            app = QtWidgets.QApplication.instance()
+            if not app:
+                app = QtWidgets.QApplication(sys.argv)
+            super(ProgressBar, self).__init__(parent)
+            QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
+            if parent:
+                geo = self.geometry()
+                geo.moveCenter(parent.geometry().center())
+                self.setGeometry(geo)
+            self.show()
 
-        app = QtWidgets.QApplication.instance()
-        if not app:
-            app = QtWidgets.QApplication(sys.argv)
-        super(ProgressBar, self).__init__(parent)
-        QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
-        if parent:
-            geo = self.geometry()
-            geo.moveCenter(parent.geometry().center())
-            self.setGeometry(geo)
-        self.show()
+            self.progress_changed.connect(self.set_progress)
+            self.message_changed.connect(self.set_message)
 
-        self.progress_changed.connect(self.set_progress)
-        self.message_changed.connect(self.set_message)
+            setattr(self, 'setProgress', self.progress_changed.emit)
+            setattr(self, 'setMessage', self.message_changed.emit)
 
-        setattr(self, 'setProgress', self.progress_changed.emit)
-        setattr(self, 'setMessage', self.message_changed.emit)
+        def set_progress(self, value):
+            """Set progress value.  """
 
-    def set_progress(self, value):
-        """Set progress value.  """
+            self.progressBar.setValue(value)
+            QtWidgets.QApplication.processEvents()
 
-        self.progressBar.setValue(value)
-        QtWidgets.QApplication.processEvents()
+        def set_message(self, message):
+            """Set progress message.  """
 
-    def set_message(self, message):
-        """Set progress message.  """
+            self.setWindowTitle(
+                u':'.join(i for i in [self.name, message] if i))
+            QtWidgets.QApplication.processEvents()
 
-        self.setWindowTitle(u':'.join(i for i in [self.name, message] if i))
-        QtWidgets.QApplication.processEvents()
+        def isCancelled(self):
+            """Return if cancel button been pressed.  """
+            return self._cancelled
 
-    def isCancelled(self):
-        """Return if cancel button been pressed.  """
-        return self._cancelled
+        def reject(self):
+            """Override QDiloag.reject()"""
+            self._cancelled = True
 
-    def reject(self):
-        """Override QDiloag.reject()"""
-        self._cancelled = True
+        def closeEvent(self, event):
+            """Override QWidget.closeEvent()"""
+            dummy = self
+            event.ignore()
 
-    def closeEvent(self, event):
-        """Override QWidget.closeEvent()"""
-        dummy = self
-        event.ignore()
+else:
+    def do_nothing(*args, **kwargs):
+        pass
+
+    class ProgressBar(object):
+        setProgress = setMessage = do_nothing
 
 
 class Progress(object):
@@ -245,6 +253,8 @@ def traytip(title, text, seconds=3, icon='Information', **kwargs):
         Warning,
         Critical
     """
+
+    from .tray import Tray
 
     if kwargs:
         LOGGER.warning('Unused kwargs: %s', kwargs)

@@ -12,8 +12,6 @@ import types
 from functools import wraps
 from multiprocessing.dummy import Queue
 
-from Qt.QtCore import QObject, Signal, Slot
-from Qt.QtWidgets import QApplication
 
 from .env import has_nuke
 
@@ -22,8 +20,6 @@ assert isinstance(LOGGER, logging.Logger)
 
 if has_nuke():
     import nuke
-
-__version__ = '0.2.3'
 
 
 def run_async(func):
@@ -64,26 +60,28 @@ def run_with_clock(name=None):
     return _wrap
 
 
-class Runner(QObject):
-    """Runner for run in main thread.  """
-
-    execute = Signal(types.FunctionType, tuple, dict)
-    result = Queue(1)
-
-    def __init__(self):
-
-        super(Runner, self).__init__()
-        self.execute.connect(self.run)
-
-    @Slot(types.FunctionType, tuple, dict)
-    def run(self, func, args, kwargs):
-        """Run a function.  """
-
-        self.result.put(func(*args, **kwargs))
-
-
 def run_in_main_thread(func):
     """(Decorator)Run @func in nuke main_thread.   """
+
+    from Qt.QtWidgets import QApplication
+    from Qt.QtCore import QObject, Signal, Slot
+
+    class Runner(QObject):
+        """Runner for run in main thread.  """
+
+        execute = Signal(types.FunctionType, tuple, dict)
+        result = Queue(1)
+
+        def __init__(self):
+
+            super(Runner, self).__init__()
+            self.execute.connect(self.run)
+
+        @Slot(types.FunctionType, tuple, dict)
+        def run(self, func, args, kwargs):
+            """Run a function.  """
+
+            self.result.put(func(*args, **kwargs))
 
     if has_nuke():
         @wraps(func)

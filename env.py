@@ -4,15 +4,17 @@
 import sys
 import logging
 
-from Qt.QtWidgets import QApplication
-
-__version__ = '0.2.0'
 
 LOGGER = logging.getLogger('com.wlf.env')
 
 
 def has_gui():
     """Return if running in gui envrionment.  """
+
+    try:
+        from Qt.QtWidgets import QApplication
+    except ImportError:
+        return False
 
     return isinstance(QApplication.instance(), QApplication)
 
