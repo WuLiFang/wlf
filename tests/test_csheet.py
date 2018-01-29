@@ -64,7 +64,7 @@ class WSGICsheetTestCase(TestCase):
         recieve = self.app.get('/')
         self.assertEqual(recieve.status_code, 200)
         for i in self.dummy_projects:
-            self.assertIn(i, recieve.data)
+            self.assertIn(i, recieve.data.decode('utf8'))
 
     def tearDown(self):
         pass

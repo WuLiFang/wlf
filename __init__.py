@@ -32,23 +32,26 @@ def _init():
     import scandir
 
     from .path import PurePath
-    from .env import has_gui
 
     def _set_attr(name, value):
         setattr(sys.modules[__name__], name, value)
+        sys.modules['{}.{}'.format(__name__, name)] = value
 
     # Remap deprecated module.
     # TODO: Remove at next major version.
-    if has_gui():
-        from . import notify
-        sys.modules['{}.progress'.format(__name__)] = notify
-        _set_attr('progress', notify)
-        sys.modules['{}.message'.format(__name__)] = notify
-        _set_attr('message', notify)
+    try:
         from .csheet import __main__ as csheet_tool
         _set_attr('csheet_tool', csheet_tool)
-        sys.modules['{}.csheet_tool'.format(__name__)] = csheet_tool
-    sys.modules['{}.Qt'.format(__name__)] = Qt
+    except ImportError:
+        pass
+
+    try:
+        from . import notify
+        _set_attr('progress', notify)
+        _set_attr('message', notify)
+    except ImportError:
+        pass
+
     _set_attr('Qt', Qt)
     for i in Qt.__all__:
         sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)

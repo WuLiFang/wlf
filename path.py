@@ -14,8 +14,6 @@ import logging
 
 import pathlib2
 
-__version__ = '0.2.6'
-
 with pathlib2.Path(pathlib2.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
@@ -34,7 +32,7 @@ def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
         return unicode(input_str)
     except UnicodeDecodeError:
         input_str = str(input_str)
-        for i in tuple(codecs) + tuple(locale.getdefaultlocale()[1]):
+        for i in tuple(codecs) + (sys.getfilesystemencoding(), locale.getdefaultlocale()[1]):
             try:
                 return unicode(input_str, i)
             except UnicodeDecodeError:
@@ -44,10 +42,7 @@ def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
 def get_encoded(input_str, encoding=None):
     """Return unicode by try decode @string with @encodeing.  """
 
-    if encoding is None:
-        encoding = locale.getdefaultlocale()[1]
-
-    return get_unicode(input_str).encode(encoding)
+    return get_unicode(input_str).encode(encoding or sys.getfilesystemencoding())
 
 
 def is_ascii(text):
@@ -95,6 +90,13 @@ def escape_batch(text):
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
 
 
+def _py2_encode(parts):
+    return [get_encoded(part) for part in parts]
+
+
+setattr(pathlib2, '_py2_fsencode', _py2_encode)
+
+
 class PurePath(pathlib2.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
@@ -140,6 +142,10 @@ class PurePath(pathlib2.PurePath):
 
     def __str__(self):
         return get_encoded(self.__unicode__())
+
+    @property
+    def name(self):
+        return get_unicode(super(PurePath, self).name)
 
     @property
     def layer(self):
