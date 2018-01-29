@@ -32,9 +32,7 @@ def _init():
     import scandir
 
     from .path import PurePath
-    from .env import set_default_encoding, has_gui
-
-    set_default_encoding('UTF-8')
+    from .env import has_gui
 
     def _set_attr(name, value):
         setattr(sys.modules[__name__], name, value)

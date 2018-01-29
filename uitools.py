@@ -11,8 +11,6 @@ from .config import Config
 from .mp_logging import set_basic_logger
 from .path import Path
 
-__version__ = '0.2.2'
-
 
 class DialogWithDir(QDialog):
     """Dialog with a lineEdit dir input, can restore from config.  """
@@ -155,10 +153,6 @@ class Menu(QMenu):
 
 def main_show_dialog(dialog):
     """Show dialog, standalone.  """
-
-    if sys.getdefaultencoding() != 'UTF-8':
-        reload(sys)
-        sys.setdefaultencoding('UTF-8')
 
     set_basic_logger()
     QApplication(sys.argv)
