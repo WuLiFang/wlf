@@ -1,6 +1,5 @@
 """Test wlf.table module."""
 from unittest import TestCase
-from pprint import pprint
 
 from wlf.table import NestedData
 
@@ -14,25 +13,42 @@ class TableTestCase(TestCase):
                        'D1', ('E1', ('E2', ('E3', ))), ('E1', ('E2', ('F3',)))]
 
     def test_list(self):
-        print('testing list data')
         data = NestedData(self.test_list_data)
-        print(data.to_columns())
-        pprint(data.to_rows())
-        print(data.to_tuple())
-        print(data.to_dict())
+        self.assertEqual(data.to_columns(), [['A1'], ['B1', 'C1'], ['B1', 'C2'],
+                                             ['D1'], ['E1', 'E2', 'E3', 1], ['E1', 'E2', 'F3', 2]])
+        self.assertEqual(data.to_rows(), [['A1', 'B1', 'B1', 'D1', 'E1', 'E1'],
+                                          [None, 'C1', 'C2', None, 'E2', 'E2'],
+                                          [None, None, None, None, 'E3', 'F3'],
+                                          [None, None, None, None, 1, 2]])
+        self.assertEqual(data.to_tuple(), (('B1', ('C1',)), ('B1', ('C2',)),
+                                           ('E1', ('E2', ('E3', (1,)))),
+                                           ('E1', ('E2', ('F3', (2,))))))
+        self.assertEqual(data.to_dict(),
+                         {('B1',): 'C2',
+                          ('E1', ('E2', ('E3',))): 1,
+                          ('E1', ('E2', ('F3',))): 2})
 
     def test_tuple(self):
         print('testing tuple data')
         data = NestedData(self.test_tuple_data)
-        print(data.to_columns())
-        pprint(data.to_rows())
-        print(data.to_tuple())
-        print(data.to_dict())
+        self.assertEqual(data.to_columns(), [['A1'], ['B1', 'C1'], ['B1', 'C2'],
+                                             ['D1'], ['E1', 'E2', 'E3'], ['E1', 'E2', 'F3']])
+        self.assertEqual(data.to_rows(), [['A1', 'B1', 'B1', 'D1', 'E1', 'E1'],
+                                          [None, 'C1', 'C2', None, 'E2', 'E2'],
+                                          [None, None, None, None, 'E3', 'F3']])
+        self.assertEqual(data.to_tuple(), (('B1', ('C1',)), ('B1', ('C2',)),
+                                           ('E1', ('E2', ('E3',))), ('E1', ('E2', ('F3',)))))
+        self.assertEqual(data.to_dict(), {
+                         ('B1',): 'C2', ('E1', ('E2',)): 'F3'})
 
     def test_mixed(self):
-        print('testing mixed data')
         data = NestedData(self.test_mixed_data)
-        print(data.to_columns())
-        pprint(data.to_rows())
-        print(data.to_tuple())
-        print(data.to_dict())
+        self.assertEqual(data.to_columns(), [['A1'], ['B1', 'C1'], ['B1', 'C2'],
+                                             ['D1'], ['E1', 'E2', 'E3'], ['E1', 'E2', 'F3']])
+        self.assertEqual(data.to_rows(), [['A1', 'B1', 'B1', 'D1', 'E1', 'E1'],
+                                          [None, 'C1', 'C2', None, 'E2', 'E2'],
+                                          [None, None, None, None, 'E3', 'F3']])
+        self.assertEqual(data.to_tuple(), (('B1', ('C1',)), ('B1', ('C2',)),
+                                           ('E1', ('E2', ('E3',))), ('E1', ('E2', ('F3',)))))
+        self.assertEqual(data.to_dict(), {('B1',): 'C2',
+                                          ('E1', ('E2',)): 'F3'})
