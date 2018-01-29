@@ -102,7 +102,7 @@ class Progress(object):
         self.total = total or self.total
 
         if HAS_NUKE:
-            self._task = nuke.ProgressTask(get_encoded( name))
+            self._task = nuke.ProgressTask(get_encoded(name, 'utf-8'))
         else:
             self._task = ProgressBar(name, parent)
 
@@ -148,6 +148,8 @@ class Progress(object):
     def set_message(self, message):
         """Set progress message.  """
 
+        if HAS_NUKE:
+            message = get_encoded(message, 'utf-8')
         self._task.setMessage(message)
         QtWidgets.QApplication.processEvents()
 
