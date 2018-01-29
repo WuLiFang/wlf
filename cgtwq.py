@@ -11,11 +11,11 @@ import logging
 import os
 import re
 import sys
-from subprocess import PIPE, Popen
 from functools import wraps
+from subprocess import PIPE, Popen
 
 from .notify import Progress
-from .path import get_encoded, PurePath, Path
+from .path import Path, PurePath, get_unicode
 
 __version__ = '0.6.12'
 
@@ -156,7 +156,7 @@ class CGTeamWork(object):
         ret = True
         if sys.platform == 'win32':
             tasklist = Popen('TASKLIST', stdout=PIPE).communicate()[0]
-            if '\nCgTeamWork.exe ' not in get_encoded(tasklist, 'UTF8'):
+            if '\nCgTeamWork.exe ' not in get_unicode(tasklist):
                 ret = False
                 LOGGER.debug('未运行 CGTeamWork.exe 。')
         return ret

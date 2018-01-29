@@ -11,6 +11,7 @@ import logging
 
 from .env import has_nuke, has_gui
 from .decorators import run_in_main_thread
+from .path import get_encoded
 
 HAS_NUKE = has_nuke()
 HAS_GUI = has_gui()
@@ -101,7 +102,7 @@ class Progress(object):
         self.total = total or self.total
 
         if HAS_NUKE:
-            self._task = nuke.ProgressTask(name)
+            self._task = nuke.ProgressTask(get_encoded( name))
         else:
             self._task = ProgressBar(name, parent)
 

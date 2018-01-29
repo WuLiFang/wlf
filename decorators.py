@@ -12,6 +12,7 @@ import types
 from functools import wraps
 from multiprocessing.dummy import Queue
 
+from .path import get_encoded
 
 from .env import has_nuke
 
@@ -55,7 +56,7 @@ def run_with_clock(name=None):
                 LOGGER.debug('%s: cost %.2f seconds',
                              func_desc, cost_time)
                 if name is not None:
-                    LOGGER.info('%s 耗时 %.2f 秒', name, cost_time)
+                    LOGGER.info(get_encoded('%s 耗时 %.2f 秒'), get_encoded(name), cost_time)
         return _func
     return _wrap
 

@@ -91,12 +91,12 @@ def set_basic_logger(logger=None):
     handler = Handler(logging.StreamHandler)
     if logger.getEffectiveLevel() == logging.DEBUG:
         formatter = logging.Formatter(
-            '%(levelname)-6s[%(asctime)s]:%(filename)s:'
-            '%(lineno)d:%(funcName)s: %(message)s', '%H:%M:%S')
+            str('%(levelname)-6s[%(asctime)s]:%(filename)s:'
+                '%(lineno)d:%(funcName)s: %(message)s'), str('%H:%M:%S'))
     else:
         formatter = logging.Formatter(
-            '%(levelname)-6s[%(asctime)s]:'
-            '%(name)s: %(message)s', '%H:%M:%S')
+            str('%(levelname)-6s[%(asctime)s]:'
+                '%(name)s: %(message)s'), str('%H:%M:%S'))
 
     handler.setFormatter(formatter)
     logger.addHandler(handler)
