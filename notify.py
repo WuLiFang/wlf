@@ -188,7 +188,9 @@ class NukeProgressHandler(BaseProgressHandler):
     progress_bar = None
 
     def is_busy(self):
-        return self.last_step_time is not None and time.time() - self.last_step_time < 0.1
+        return (self.start_time != self.last_step_time
+                and self.last_step_time is not None
+                and time.time() - self.last_step_time < 0.1)
 
     def on_started(self):
         super(NukeProgressHandler, self).on_started()
