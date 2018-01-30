@@ -100,10 +100,13 @@ def run_in_main_thread(func):
                 return func(*args, **kwargs)
 
             runner = Runner()
-            runner.moveToThread(app.thread())
-            QCoreApplication.postEvent(runner, Event(func, args, kwargs))
-            QCoreApplication.processEvents()
-            return runner.result.get()
+            try:
+                runner.moveToThread(app.thread())
+                QCoreApplication.postEvent(runner, Event(func, args, kwargs))
+                QCoreApplication.processEvents()
+                return runner.result.get()
+            finally:
+                runner.deleteLater()
 
     else:
         _func = func
