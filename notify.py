@@ -240,6 +240,93 @@ def progress(iterable, name=None, handler=None, **handler_kwargs):
     handler.on_finished()
 
 
+class CancelledError(Exception):
+    """Indicate user pressed CancelButton.  """
+
+    def __str__(self):
+        return 'Cancelled.'
+
+    def __unicode__(self):
+        return '用户取消.'
+
+
+def _error_process(message, error_type=''):
+    app = QtWidgets.QApplication(sys.argv)
+    dummy_var = _error_message(message, error_type)
+    sys.exit(app.exec_())
+
+
+def _error_message(message, error_type=''):
+    frame = QtWidgets.QErrorMessage()
+    frame.showMessage(message, error_type)
+    frame.show()
+    return frame
+
+
+def error(message, error_type=''):
+    """Show error message. """
+
+    def _run():
+        proc = multiprocessing.Process(
+            target=_error_process, args=(message, error_type))
+        proc.start()
+        proc.join()
+    if not QtWidgets.QApplication.instance():
+        threading.Thread(target=_run, name='ErrorDialog').start()
+    else:
+        _error_message(message, error_type)
+
+
+def _message_process(message, detail):
+    QtWidgets.QApplication(sys.argv)
+    dummy_var = _message(message, detail)
+
+
+def _message(message, detail):
+    msgbox = QtWidgets.QMessageBox()
+    msgbox.setText(message)
+    if detail:
+        msgbox.setDetailedText(detail)
+    return msgbox.exec_()
+
+
+def message_box(message, detail=None):
+    """Show a message.  """
+    def _run():
+        proc = multiprocessing.Process(
+            target=_message_process, args=(message, detail))
+        proc.start()
+        proc.join()
+    if not QtWidgets.QApplication.instance():
+        threading.Thread(target=_run, name='MessageBox').start()
+    else:
+        _message(message, detail)
+
+
+def traytip(title, text, seconds=3, icon='Information', **kwargs):
+    """Show a traytip.
+
+    @icon enum:
+        NoIcon,
+        Information,
+        Warning,
+        Critical
+    """
+
+    from .tray import Tray
+
+    if kwargs:
+        LOGGER.warning('Unused kwargs: %s', kwargs)
+    icon = getattr(QtWidgets.QSystemTrayIcon, icon)
+
+    tray = Tray()
+    tray.show()
+
+    tray.showMessage(title, text, icon=icon, msecs=seconds * 1000)
+
+
+# TODO: deprecated api, remove at next major version.
+
 if HAS_QT:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
@@ -387,88 +474,3 @@ class _Progress(object):
 
 
 setattr(sys.modules[__name__], 'Progress', _Progress)
-
-
-class CancelledError(Exception):
-    """Indicate user pressed CancelButton.  """
-
-    def __str__(self):
-        return 'Cancelled.'
-
-    def __unicode__(self):
-        return '用户取消.'
-
-
-def _error_process(message, error_type=''):
-    app = QtWidgets.QApplication(sys.argv)
-    dummy_var = _error_message(message, error_type)
-    sys.exit(app.exec_())
-
-
-def _error_message(message, error_type=''):
-    frame = QtWidgets.QErrorMessage()
-    frame.showMessage(message, error_type)
-    frame.show()
-    return frame
-
-
-def error(message, error_type=''):
-    """Show error message. """
-
-    def _run():
-        proc = multiprocessing.Process(
-            target=_error_process, args=(message, error_type))
-        proc.start()
-        proc.join()
-    if not QtWidgets.QApplication.instance():
-        threading.Thread(target=_run, name='ErrorDialog').start()
-    else:
-        _error_message(message, error_type)
-
-
-def _message_process(message, detail):
-    QtWidgets.QApplication(sys.argv)
-    dummy_var = _message(message, detail)
-
-
-def _message(message, detail):
-    msgbox = QtWidgets.QMessageBox()
-    msgbox.setText(message)
-    if detail:
-        msgbox.setDetailedText(detail)
-    return msgbox.exec_()
-
-
-def message_box(message, detail=None):
-    """Show a message.  """
-    def _run():
-        proc = multiprocessing.Process(
-            target=_message_process, args=(message, detail))
-        proc.start()
-        proc.join()
-    if not QtWidgets.QApplication.instance():
-        threading.Thread(target=_run, name='MessageBox').start()
-    else:
-        _message(message, detail)
-
-
-def traytip(title, text, seconds=3, icon='Information', **kwargs):
-    """Show a traytip.
-
-    @icon enum:
-        NoIcon,
-        Information,
-        Warning,
-        Critical
-    """
-
-    from .tray import Tray
-
-    if kwargs:
-        LOGGER.warning('Unused kwargs: %s', kwargs)
-    icon = getattr(QtWidgets.QSystemTrayIcon, icon)
-
-    tray = Tray()
-    tray.show()
-
-    tray.showMessage(title, text, icon=icon, msecs=seconds * 1000)
