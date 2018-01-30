@@ -4,6 +4,7 @@
 from __future__ import absolute_import
 from unittest import TestCase, main
 import time
+import sys
 
 
 class ProgressTestCase(TestCase):

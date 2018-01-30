@@ -11,11 +11,10 @@ import time
 from datetime import timedelta
 
 from .decorators import run_in_main_thread
-from .env import has_gui, has_nuke, has_qt
+from .env import has_gui, has_nuke, HAS_QT
 from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
-HAS_GUI = has_gui()
 LOGGER = logging.getLogger('com.wlf.notify')
 
 
@@ -96,20 +95,22 @@ class CLIProgressHandler(BaseProgressHandler):
         return '[{}/{}]{}%{}'.format(self.count, self.total, self.count * 100 / self.total, item)
 
 
-if has_qt():
+if HAS_QT:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
 
     class QtProgressBar(QtWidgets.QDialog):
         """Qt progressbar dialog."""
 
-        progress_changed = Signal(int)
+        value_changed = Signal(int)
         message_changed = Signal(str)
 
         @run_in_main_thread
         def __init__(self, parent=None):
             self._cancelled = False
-
+            app = QtWidgets.QApplication.instance()
+            if not app:
+                app = QtWidgets.QApplication(sys.argv)
             super(QtProgressBar, self).__init__(parent)
             QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
             if parent:
@@ -117,20 +118,14 @@ if has_qt():
                 geo.moveCenter(parent.geometry().center())
                 self.setGeometry(geo)
 
-            self.progress_changed.connect(self.set_progress)
-            self.message_changed.connect(self.set_message)
+            self.value_changed.connect(self.on_value_changed)
+            self.message_changed.connect(self.on_message_changed)
 
-        def set_progress(self, value):
-            """Set progress value.  """
-
+        def on_value_changed(self, value):
             self.progressBar.setValue(value)
-            QtWidgets.QApplication.processEvents()
 
-        def set_message(self, message):
-            """Set progress message.  """
-
+        def on_message_changed(self, message):
             self.setWindowTitle(message)
-            QtWidgets.QApplication.processEvents()
 
         def isCancelled(self):
             """Return if cancel button been pressed.  """
@@ -142,7 +137,6 @@ if has_qt():
 
         def closeEvent(self, event):
             """Override QWidget.closeEvent()"""
-            dummy = self
             event.ignore()
 
     class QtProgressHandler(BaseProgressHandler):
@@ -155,18 +149,16 @@ if has_qt():
         def is_busy(self):
             return False
 
+        @run_in_main_thread
         def on_started(self):
             super(QtProgressHandler, self).on_started()
-            app = QtWidgets.QApplication.instance()
-            if not app:
-                app = QtWidgets.QApplication(sys.argv)
             self.progress_bar.show()
 
         def set_message(self, message):
             self.progress_bar.message_changed.emit(message)
 
         def set_value(self, value):
-            self.progress_bar.progress_changed.emit(value)
+            self.progress_bar.value_changed.emit(value)
 
         def is_cancelled(self):
             return self.progress_bar.isCancelled()
@@ -175,13 +167,15 @@ if has_qt():
             if self.is_cancelled():
                 raise CancelledError()
             super(QtProgressHandler, self).step(item)
+            QtWidgets.QApplication.processEvents()
 
         def message_factory(self, item):
             ret = '[{}/{}]{}'.format(self.count, self.total, item)
             if self.task_name:
-                ret = self.task_name + ':' + ret
+                ret = self.task_name + ': ' + ret
             return ret
 
+        @run_in_main_thread
         def on_finished(self):
             super(QtProgressHandler, self).on_finished()
             self.progress_bar.hide()
@@ -197,10 +191,9 @@ class NukeProgressHandler(BaseProgressHandler):
         return self.last_step_time is not None and time.time() - self.last_step_time < 0.1
 
     def on_started(self):
-        import nuke
         super(NukeProgressHandler, self).on_started()
-        self.progress_bar = nuke.ProgressTask(
-            get_encoded(self.task_name, 'utf-8') or '')
+        self.progress_bar = __import__('nuke').ProgressTask(
+            get_encoded(self.task_name, 'utf-8') if self.task_name else '')
 
     def set_message(self, message):
         self.progress_bar.setMessage(get_encoded(message, 'utf-8'))
@@ -212,9 +205,9 @@ class NukeProgressHandler(BaseProgressHandler):
 def get_default_progress_handler(**handler_kwargs):
     """Get default progress handler depends on current environment.  """
 
-    if HAS_NUKE:
+    if has_nuke() and __import__('nuke').GUI:
         return NukeProgressHandler(**handler_kwargs)
-    elif HAS_GUI:
+    elif has_gui():
         return QtProgressHandler(**handler_kwargs)
     return CLIProgressHandler(**handler_kwargs)
 
@@ -227,7 +220,12 @@ def progress(iterable, name=None, handler=None, **handler_kwargs):
 
     if handler is None:
         handler = get_default_progress_handler(**handler_kwargs)
-    handler.task_name = get_unicode(name)
+    else:
+        if handler_kwargs:
+            LOGGER.warning(
+                '@handler already given, ignore @handler_kwargs: %s', handler_kwargs)
+    if name is not None:
+        handler.task_name = get_unicode(name)
 
     if handler.total is None:
         try:
@@ -242,7 +240,7 @@ def progress(iterable, name=None, handler=None, **handler_kwargs):
     handler.on_finished()
 
 
-if HAS_GUI:
+if HAS_QT:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
 
@@ -320,8 +318,8 @@ class _Progress(object):
         self.total = total or self.total
 
         if HAS_NUKE:
-            import nuke
-            self._task = nuke.ProgressTask(get_encoded(name, 'utf-8'))
+            self._task = __import__('nuke').ProgressTask(
+                get_encoded(name, 'utf-8'))
         else:
             self._task = ProgressBar(name, parent)
 

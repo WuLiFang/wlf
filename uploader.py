@@ -7,19 +7,17 @@ import logging
 import os
 import webbrowser
 
-from Qt.QtCore import QObject, Signal, Slot, QTimer, Qt
+from Qt.QtCore import QObject, Qt, QTimer, Signal, Slot
 from Qt.QtGui import QBrush, QColor
-from Qt.QtWidgets import QFileDialog, QStyle, QListWidgetItem
+from Qt.QtWidgets import QFileDialog, QListWidgetItem, QStyle
 
-from . import cgtwq
+from . import __version__, cgtwq
 from .config import Config as _Config
 from .decorators import run_async
 from .files import copy, is_same, version_filter
-from .notify import HAS_NUKE, CancelledError, Progress
-from .path import get_unicode, PurePath, Path
+from .notify import HAS_NUKE, CancelledError, progress
+from .path import Path, PurePath, get_unicode
 from .uitools import DialogWithDir, main_show_dialog
-
-__version__ = '0.10.4'
 
 LOGGER = logging.getLogger('com.wlf.uploader')
 
@@ -136,13 +134,10 @@ class Dialog(DialogWithDir):
         files = list(self.checked_files)
         directory = self.file_list_widget.directory
 
-        task = Progress(total=len(files), parent=self)
-
         @run_async
         def _run():
             try:
-                for i in files:
-                    task.step(i)
+                for i in progress(files, '上传', parent=self):
                     src = os.path.join(self.directory, i)
                     dst = directory.get_dest(i)
                     shot_name = PurePath(dst).shot
@@ -520,18 +515,13 @@ class ShotsFileDirectory(QObject):
                 return
 
             shots = [i for i in all_shots if _get_database(i) == database]
-            task = Progress('获取镜头信息',
-                            total=len(shots) + 1,
-                            parent=self.parent)
 
-            task.step('连接数据库: {}'.format(database))
             try:
                 cgtw_shots = cgtwq.Shots(database, pipeline=self.pipeline)
             except cgtwq.CGTeamWorkException:
                 self.dest = cgtwq.LoginError()
                 return
-            for shot in shots:
-                task.step(shot)
+            for shot in progress(shots, '获取镜头信息', parent=self.parent):
                 try:
                     cgtw_shots.check_account(shot)
                     dest = cgtw_shots.get_shot_submit(shot)
@@ -543,7 +533,7 @@ class ShotsFileDirectory(QObject):
 
         if not dest:
             all_database = set(_get_database(i) for i in self.files)
-            for database in all_database:
+            for database in progress(all_database, '连接数据库', parent=self.parent):
                 _get_from_database(database)
 
         return dest_dict

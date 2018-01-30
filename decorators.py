@@ -5,22 +5,16 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import inspect
 import logging
-import sys
 import threading
 import time
-import types
 from functools import wraps
 from multiprocessing.dummy import Queue
 
+from .env import HAS_QT, has_nuke
 from .path import get_encoded
-
-from .env import has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
-
-if has_nuke():
-    import nuke
 
 
 def run_async(func):
@@ -56,7 +50,8 @@ def run_with_clock(name=None):
                 LOGGER.debug('%s: cost %.2f seconds',
                              func_desc, cost_time)
                 if name is not None:
-                    LOGGER.info(get_encoded('%s 耗时 %.2f 秒'), get_encoded(name), cost_time)
+                    LOGGER.info(get_encoded('%s 耗时 %.2f 秒'),
+                                get_encoded(name), cost_time)
         return _func
     return _wrap
 
@@ -64,43 +59,54 @@ def run_with_clock(name=None):
 def run_in_main_thread(func):
     """(Decorator)Run @func in nuke main_thread.   """
 
-    from Qt.QtWidgets import QApplication
-    from Qt.QtCore import QObject, Signal, Slot
-
-    class Runner(QObject):
-        """Runner for run in main thread.  """
-
-        execute = Signal(types.FunctionType, tuple, dict)
-        result = Queue(1)
-
-        def __init__(self):
-
-            super(Runner, self).__init__()
-            self.execute.connect(self.run)
-
-        @Slot(types.FunctionType, tuple, dict)
-        def run(self, func, args, kwargs):
-            """Run a function.  """
-
-            self.result.put(func(*args, **kwargs))
-
     if has_nuke():
+        import nuke
+
         @wraps(func)
         def _func(*args, **kwargs):
             if nuke.GUI and threading.current_thread().name != 'MainThread':
                 return nuke.executeInMainThreadWithResult(func, args, kwargs)
 
             return func(*args, **kwargs)
-    else:
+
+    elif HAS_QT:
+        from Qt.QtWidgets import QApplication
+        from Qt.QtCore import QObject, QEvent, QCoreApplication
+
+        class Event(QEvent):
+
+            def __init__(self, func, args, kwargs):
+                super(Event, self).__init__(QEvent.Type.User)
+                self.func = func
+                self.args = args
+                self.kwargs = kwargs
+
+        class Runner(QObject):
+            """Runner for run in main thread.  """
+
+            result = Queue(1)
+
+            def event(self, event):
+                try:
+                    self.result.put(event.func(*event.args, **event.kwargs))
+                    return True
+                except AttributeError:
+                    return False
+
         @wraps(func)
         def _func(*args, **kwargs):
             app = QApplication.instance()
             if app is None:
-                app = QApplication(sys.argv)
+                return func(*args, **kwargs)
+
             runner = Runner()
             runner.moveToThread(app.thread())
-            runner.execute.emit(func, args, kwargs)
+            QCoreApplication.postEvent(runner, Event(func, args, kwargs))
+            QCoreApplication.processEvents()
             return runner.result.get()
+
+    else:
+        _func = func
 
     return _func
 
