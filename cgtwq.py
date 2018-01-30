@@ -14,10 +14,7 @@ import sys
 from functools import wraps
 from subprocess import PIPE, Popen
 
-from .notify import Progress
 from .path import Path, PurePath, get_unicode
-
-__version__ = '0.6.12'
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
 CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
@@ -164,9 +161,8 @@ class CGTeamWork(object):
     @staticmethod
     def update_status():
         """Return and set if cls.is_logged_in."""
+
         LOGGER.debug('更新CGTeamWork状态')
-        task = Progress('尝试连接CGTeamWork')
-        task.set(50)
         if not CGTeamWork.is_running() and os.path.exists(CGTW_EXECUTABLE):
             ret = False
             Popen(CGTW_EXECUTABLE, cwd=os.path.dirname(CGTW_EXECUTABLE))
