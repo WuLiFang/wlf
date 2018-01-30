@@ -121,20 +121,18 @@ class HTMLImage(Image):
 
         path = PurePath(dest)
         for attr in ('path', 'thumb', 'preview'):
-            old_value = getattr(self, attr)
-            if not old_value:
+            src_value = getattr(self, attr)
+            if not src_value:
                 continue
-            old_path = Path(old_value)
+            src_path = Path(src_value)
 
-            dirpath = PurePath('')
-            if attr != 'path':
-                dirpath /= attr
-            if old_path.exists():
-                new_path = (path / dirpath /
-                            self.name).with_suffix(old_path.suffix)
-                new_value = copy(old_path, new_path)
-                if new_value:
-                    setattr(self, attr, new_value)
+            dirpath = PurePath({'path': 'images',
+                                'thumb': 'thumbs',
+                                'preview': 'previews'}.get(attr, ''))
+            if src_path.exists():
+                dst_path = (path / dirpath /
+                            self.name).with_suffix(src_path.suffix)
+                copy(src_path, dst_path)
 
 
 def from_dir(images_folder, **config):
@@ -145,6 +143,7 @@ def from_dir(images_folder, **config):
     config.setdefault('title', path.name)
 
     return from_list(images, **updated_config(config))
+
 
 def get_images_from_dir(images_folder):
     """Get HTMLImage for @images_folder.  """

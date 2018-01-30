@@ -165,12 +165,17 @@ if HAS_QT:
 
         def step(self, item=None):
             if self.is_cancelled():
+                self.on_finished()
                 raise CancelledError()
             super(QtProgressHandler, self).step(item)
             QtWidgets.QApplication.processEvents()
 
         def message_factory(self, item):
-            ret = '[{}/{}]{}'.format(self.count, self.total, item)
+
+            ret = '[{}/{}]'.format(self.count, self.total)
+            if item is not None:
+                ret += get_unicode(item)
+
             if self.task_name:
                 ret = self.task_name + ': ' + ret
             return ret

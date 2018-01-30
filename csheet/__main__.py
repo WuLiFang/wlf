@@ -9,7 +9,6 @@ import webbrowser
 from multiprocessing.dummy import Pool, cpu_count
 
 from Qt import QtCore, QtWidgets
-
 from Qt.QtWidgets import QMessageBox
 
 from . import __version__
@@ -17,10 +16,11 @@ from .. import cgtwq
 from ..config import Config as BaseConfig
 from ..decorators import run_with_memory_require
 from ..ffmpeg import GenerateError
-from ..notify import CancelledError, Progress
-from ..path import PurePath, get_encoded, Path
+from ..files import copy
+from ..notify import CancelledError, progress
+from ..path import Path, PurePath, get_encoded
 from ..uitools import DialogWithDir, main_show_dialog
-from .html import HTMLImage, from_list, RESOURCES_DIR
+from .html import RESOURCES_DIR, HTMLImage, from_list, updated_config
 
 LOGGER = logging.getLogger('com.wlf.csheet')
 
@@ -173,13 +173,11 @@ class Dialog(DialogWithDir):
 
         related_pipeline = {'灯光':  '渲染'}
         try:
-            task = Progress('访问数据库', parent=self)
-            task.step(self.database)
-            shots = cgtwq.Shots(
-                self.database,
-                pipeline=self.pipeline,
-                prefix=self.prefix)
-            task.total = len(shots.shots) + 1
+            for _ in progress((self.database,), '访问数据库', parent=self):
+                shots = cgtwq.Shots(
+                    self.database,
+                    pipeline=self.pipeline,
+                    prefix=self.prefix)
 
             # For pipelines thas has a another video related pipeline.
             if self.pipeline in related_pipeline:
@@ -193,8 +191,7 @@ class Dialog(DialogWithDir):
                 video_shots = None
 
             images = []
-            for shot in shots.shots:
-                task.step(shot)
+            for shot in progress(shots.shots, '分析信息', parent=self):
                 image = HTMLImage(shots.get_shot_image(shot))
                 if image:
                     image.name = shot
@@ -215,75 +212,80 @@ class Dialog(DialogWithDir):
 '''.format(self.project_name, self.pipeline, ex.prefix))
             raise
 
-    def contactsheet(self):
+    def generate_index(self, images):
         """ Construct contactsheet.  """
 
-        images = self.get_images()
         sheet = from_list(
             images,
             title=self.csheet_name,
-            static_folder=RESOURCES_DIR
+            static_folder='static' if self.is_pack else RESOURCES_DIR,
+            is_pack=self.is_pack
         )
 
-        # Generate preview.
-        if self.is_generate_preview:
-            height = {
-                '动画': 180,
-                '灯光': 200,
-                '合成': 300,
-            }.get(self.pipeline, None)
+        html_path = self.save_dir / '{}.html'.format(self.csheet_name)
+        with Path(html_path).open('w', encoding='UTF-8') as f:
+            f.write(sheet)
+        webbrowser.open(get_encoded(html_path))
 
-            errors = set()
+    def generate_previews(self, images):
+        """Generate previews for images.  """
 
-            @run_with_memory_require(1)
-            def _run(image):
-                try:
-                    image.generate_preview(height=height)
-                except GenerateError:
-                    LOGGER.error(
-                        '%s: Cannot generate preview.', image, exc_info=True)
-                    errors.add(image)
-                except:
-                    LOGGER.error(
-                        'Unexcept error during generate preview.', exc_info=True)
-                    raise
+        height = {
+            '动画': 180,
+            '灯光': 200,
+            '合成': 300,
+        }.get(self.pipeline, None)
 
-            task = Progress('生成预览', total=len(images), parent=self)
-            thread_count = cpu_count()
-            pool = Pool(thread_count)
-            task.set(message='正在使用 {} 线程进行……'.format(thread_count))
-            for _ in pool.imap_unordered(_run, images):
-                task.step()
-            pool.close()
-            pool.join()
-            if errors:
-                QMessageBox.warning(self, '以下预览生成失败', '\n'.join(
-                    unicode(i) for i in sorted(errors)))
+        errors = set()
 
-        # Download resouces to local.
-        if self.is_pack:
-            dest = PurePath(self.save_dir)
-            sheet.pack(dest)
-            task = Progress('下载图像到本地', total=len(images), parent=self)
-            dest = PurePath(self.save_dir) / 'images'
-            for i in images:
-                task.step(i.name)
-                i.download(dest)
+        @run_with_memory_require(1)
+        def _run(image):
+            try:
+                image.generate_preview(height=height)
+            except GenerateError:
+                LOGGER.error(
+                    '%s: Cannot generate preview.', image, exc_info=True)
+                errors.add(image)
+            except:
+                LOGGER.error(
+                    'Unexcept error during generate preview.', exc_info=True)
+                raise
 
-        return sheet
+        thread_count = cpu_count()
+        pool = Pool(thread_count)
+        for _ in progress(pool.imap_unordered(_run, images), '生成预览', total=len(images), parent=self):
+            pass
+        pool.close()
+        pool.join()
+        if errors:
+            QMessageBox.warning(self, '以下预览生成失败', '\n'.join(
+                unicode(i) for i in sorted(errors)))
+
+    def pack_images(self, images):
+        """Pack images to self.save_dir.  """
+        for i in progress(images, '打包图像', parent=self):
+            assert isinstance(i, HTMLImage)
+            i.download(self.save_dir)
+
+    def pack_statics(self):
+        """Pack static files to self.save_dir.  """
+
+        for i in progress(updated_config()['static'], parent=self):
+            copy(RESOURCES_DIR / i, unicode(self.save_dir / 'static') + '/')
 
     def accept(self):
         """Override QDialog.accept .  """
 
-        outdir = self.directory
-        save_path = self.save_dir / '{}.html'.format(self.csheet_name)
         try:
-            sheet = self.contactsheet()
-            with Path(save_path).open('w', encoding='UTF-8') as f:
-                f.write(sheet)
+            images = self.get_images()
+            if self.is_generate_preview:
+                self.generate_previews(images)
+            if self.is_pack:
+                self.pack_images(images)
+                self.pack_statics()
+            self.generate_index(images)
 
-            webbrowser.open(get_encoded(outdir))
-            webbrowser.open(get_encoded(save_path))
+            webbrowser.open(get_encoded(self.save_dir))
 
             super(Dialog, self).accept()
         except cgtwq.CGTeamWorkException:
