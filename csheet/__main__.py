@@ -253,7 +253,8 @@ class Dialog(DialogWithDir):
 
         thread_count = cpu_count()
         pool = Pool(thread_count)
-        for _ in progress(pool.imap_unordered(_run, images), '生成预览', total=len(images), parent=self):
+        for _ in progress(pool.imap_unordered(_run, images),
+                          '生成预览', total=len(images), parent=self):
             pass
         pool.close()
         pool.join()
