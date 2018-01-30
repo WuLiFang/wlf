@@ -1,24 +1,246 @@
 # -*- coding=UTF-8 -*-
 """Show notify to user.  """
-from __future__ import print_function, unicode_literals, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
+import logging
+import multiprocessing
 import os
 import sys
-import multiprocessing
 import threading
-import logging
+import time
+from datetime import timedelta
 
-
-from .env import has_nuke, has_gui
 from .decorators import run_in_main_thread
-from .path import get_encoded
+from .env import has_gui, has_nuke, has_qt
+from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
 HAS_GUI = has_gui()
 LOGGER = logging.getLogger('com.wlf.notify')
 
-if HAS_NUKE:
-    import nuke
+
+class BaseProgressHandler(object):
+    """Base class for progress handler."""
+
+    task_name = None
+    start_time = None
+    last_step_time = None
+
+    def __init__(self, **handler_kwargs):
+        self.count = 0
+        self.total = handler_kwargs.get('total')
+
+    def is_busy(self):
+        """Return if ok to progress.  """
+
+        return self.last_step_time is not None and time.time() - self.last_step_time < 0.2
+
+    def is_cancelled(self):
+        """"Return if progress is cancelled.  """
+
+        return False
+
+    def on_started(self):
+        self.start_time = self.last_step_time = time.time()
+
+    def step(self, item=None):
+        """Progress one step forward.  """
+
+        if not self.is_busy():
+            self.set_value(self.count * 100 / self.total)
+            self.set_message(self.message_factory(item))
+            self.last_step_time = time.time()
+        self.count += 1
+
+    def set_value(self, value):
+        """Set progress value.  """
+
+        pass
+
+    def set_message(self, message):
+        """Set progress message.  """
+
+        print(message)
+
+    def message_factory(self, item):
+        """Get message from item.  """
+
+        return unicode(item)
+
+    def on_finished(self):
+        cost_time = time.time() - self.start_time
+        msg = 'Cost {}'.format(timedelta(seconds=cost_time))
+        if self.task_name:
+            msg = self.task_name + ': ' + msg
+        self.set_message(msg)
+
+
+class CLIProgressHandler(BaseProgressHandler):
+    """Command line progress bar.
+
+    reference with: https://github.com/noamraph/tqdm
+    """
+
+    def __init__(self, **handler_kwargs):
+        super(CLIProgressHandler, self).__init__(**handler_kwargs)
+        self.file = handler_kwargs.get('file', sys.stdout)
+        self.last_printed_len = 0
+
+    def set_message(self, message):
+        self.file.write('\r' + message + ' ' *
+                        max(self.last_printed_len - len(message), 0))
+        self.file.flush()
+        self.last_printed_len = len(message)
+
+    def message_factory(self, item):
+        return '[{}/{}]{}%{}'.format(self.count, self.total, self.count * 100 / self.total, item)
+
+
+if has_qt():
+    from Qt import QtCompat, QtWidgets
+    from Qt.QtCore import Signal
+
+    class QtProgressBar(QtWidgets.QDialog):
+        """Qt progressbar dialog."""
+
+        progress_changed = Signal(int)
+        message_changed = Signal(str)
+
+        @run_in_main_thread
+        def __init__(self, parent=None):
+            self._cancelled = False
+
+            super(QtProgressBar, self).__init__(parent)
+            QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
+            if parent:
+                geo = self.geometry()
+                geo.moveCenter(parent.geometry().center())
+                self.setGeometry(geo)
+
+            self.progress_changed.connect(self.set_progress)
+            self.message_changed.connect(self.set_message)
+
+        def set_progress(self, value):
+            """Set progress value.  """
+
+            self.progressBar.setValue(value)
+            QtWidgets.QApplication.processEvents()
+
+        def set_message(self, message):
+            """Set progress message.  """
+
+            self.setWindowTitle(message)
+            QtWidgets.QApplication.processEvents()
+
+        def isCancelled(self):
+            """Return if cancel button been pressed.  """
+            return self._cancelled
+
+        def reject(self):
+            """Override QDiloag.reject()"""
+            self._cancelled = True
+
+        def closeEvent(self, event):
+            """Override QWidget.closeEvent()"""
+            dummy = self
+            event.ignore()
+
+    class QtProgressHandler(BaseProgressHandler):
+        """Qt progress handler."""
+
+        def __init__(self, **handler_kwargs):
+            super(QtProgressHandler, self).__init__(**handler_kwargs)
+            self.progress_bar = QtProgressBar(handler_kwargs.get('parent'))
+
+        def is_busy(self):
+            return False
+
+        def on_started(self):
+            super(QtProgressHandler, self).on_started()
+            app = QtWidgets.QApplication.instance()
+            if not app:
+                app = QtWidgets.QApplication(sys.argv)
+            self.progress_bar.show()
+
+        def set_message(self, message):
+            self.progress_bar.message_changed.emit(message)
+
+        def set_value(self, value):
+            self.progress_bar.progress_changed.emit(value)
+
+        def is_cancelled(self):
+            return self.progress_bar.isCancelled()
+
+        def step(self, item=None):
+            if self.is_cancelled():
+                raise CancelledError()
+            super(QtProgressHandler, self).step(item)
+
+        def message_factory(self, item):
+            ret = '[{}/{}]{}'.format(self.count, self.total, item)
+            if self.task_name:
+                ret = self.task_name + ':' + ret
+            return ret
+
+        def on_finished(self):
+            super(QtProgressHandler, self).on_finished()
+            self.progress_bar.hide()
+            self.progress_bar.deleteLater()
+
+
+class NukeProgressHandler(BaseProgressHandler):
+    """Handle progress with nuke built-in func.  """
+
+    progress_bar = None
+
+    def is_busy(self):
+        return self.last_step_time is not None and time.time() - self.last_step_time < 0.1
+
+    def on_started(self):
+        import nuke
+        super(NukeProgressHandler, self).on_started()
+        self.progress_bar = nuke.ProgressTask(
+            get_encoded(self.task_name, 'utf-8') or '')
+
+    def set_message(self, message):
+        self.progress_bar.setMessage(get_encoded(message, 'utf-8'))
+
+    def set_value(self, value):
+        self.progress_bar.setProgress(value)
+
+
+def get_default_progress_handler(**handler_kwargs):
+    """Get default progress handler depends on current environment.  """
+
+    if HAS_NUKE:
+        return NukeProgressHandler(**handler_kwargs)
+    elif HAS_GUI:
+        return QtProgressHandler(**handler_kwargs)
+    return CLIProgressHandler(**handler_kwargs)
+
+
+def progress(iterable, name=None, handler=None, **handler_kwargs):
+    """Progress with iterator. """
+
+    assert handler is None or isinstance(
+        handler, BaseProgressHandler), 'Got wrong handler class: {}'.format(handler.__class__)
+
+    if handler is None:
+        handler = get_default_progress_handler(**handler_kwargs)
+    handler.task_name = get_unicode(name)
+
+    if handler.total is None:
+        try:
+            handler.total = len(iterable)
+        except TypeError:
+            pass
+
+    handler.on_started()
+    for i in iterable:
+        handler.step(i)
+        yield i
+    handler.on_finished()
+
 
 if HAS_GUI:
     from Qt import QtCompat, QtWidgets
@@ -86,30 +308,22 @@ else:
         setProgress = setMessage = do_nothing
 
 
-class Progress(object):
+class _Progress(object):
     """A progressbar compatible with or without nuke imported."""
 
     count = -1
     total = 100
-    # stepped = Signal()
-    # stepped_with_message = Signal(str)
-    # progress_changed = Signal(int)
-    # message_changed = Signal(str)
 
     def __init__(self, name='', total=None, parent=None):
-        super(Progress, self).__init__()
+        super(_Progress, self).__init__()
 
         self.total = total or self.total
 
         if HAS_NUKE:
+            import nuke
             self._task = nuke.ProgressTask(get_encoded(name, 'utf-8'))
         else:
             self._task = ProgressBar(name, parent)
-
-        # self.stepped.connect(self.on_step)
-        # self.stepped_with_message.connect(self.on_step)
-        # self.progress_changed.connect(self.set_progress)
-        # self.message_changed.connect(self.set_message)
 
     def __del__(self):
         if not HAS_NUKE:
@@ -129,13 +343,10 @@ class Progress(object):
             raise CancelledError
 
         if progress is not None:
-            # self.progress_changed.emit(progress)
             self.set_progress(progress)
         if message is not None:
-            # self.message_changed.emit(message)
             self.set_message(message)
 
-    # @Slot(int)
     def set_progress(self, value):
         """Set progress value.  """
 
@@ -144,7 +355,6 @@ class Progress(object):
         self._task.setProgress(value)
         QtWidgets.QApplication.processEvents()
 
-    # @Slot(str)
     def set_message(self, message):
         """Set progress message.  """
 
@@ -156,15 +366,9 @@ class Progress(object):
     def step(self, message=None):
         """Signal wrapper.  """
 
-        # if message is None:
-        #     self.stepped.emit()
-        # else:
-        #     self.stepped_with_message.emit(message)
         self.on_step(message)
         QtWidgets.QApplication.processEvents()
 
-    # @Slot()
-    # @Slot(str)
     def on_step(self, message=None):
         """One step forward.  """
 
@@ -182,6 +386,9 @@ class Progress(object):
 
         if self.is_cancelled():
             raise CancelledError
+
+
+setattr(sys.modules[__name__], 'Progress', _Progress)
 
 
 class CancelledError(Exception):

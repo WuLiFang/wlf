@@ -7,12 +7,20 @@ import sys
 def has_gui():
     """Return if running in gui envrionment.  """
 
+    if not has_qt():
+        return False
+    from Qt.QtWidgets import QApplication
+    return isinstance(QApplication.instance(), QApplication)
+
+
+def has_qt():
+    """Return if qt availiable.  """
+
     try:
         from Qt.QtWidgets import QApplication
     except ImportError:
         return False
-
-    return isinstance(QApplication.instance(), QApplication)
+    return True
 
 
 def has_nuke():
