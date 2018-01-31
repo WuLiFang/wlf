@@ -49,5 +49,5 @@ class Config(dict):
         try:
             with path.open(encoding='utf-8') as f:
                 self.update(dict(json.load(f)))
-        except (ValueError, OSError):
+        except (ValueError, IOError):
             pass
