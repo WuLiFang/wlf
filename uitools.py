@@ -154,9 +154,12 @@ class Menu(QMenu):
 def main_show_dialog(dialog):
     """Show dialog, standalone.  """
 
+    from .notify import QtProgressBar
+
     set_basic_logger()
     QApplication(sys.argv)
     frame = dialog()
+    QtProgressBar.default_parent = frame
     sys.exit(frame.exec_())
 
 

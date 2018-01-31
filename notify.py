@@ -104,9 +104,12 @@ if HAS_QT:
 
         value_changed = Signal(int)
         message_changed = Signal(str)
+        default_parent = None
 
         @run_in_main_thread
         def __init__(self, parent=None):
+            if parent is None:
+                parent = self.default_parent
             self._cancelled = False
             app = QtWidgets.QApplication.instance()
             if not app:
