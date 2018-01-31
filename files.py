@@ -13,9 +13,8 @@ from subprocess import call, Popen
 import multiprocessing.dummy
 
 from .notify import Progress
-from .path import PurePath, Path
+from .path import PurePath, Path, get_encoded as e
 
-__version__ = '0.7.4'
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -161,7 +160,7 @@ def is_same(src, dst):
         return False
 
     try:
-        if abs(os.path.getmtime(src) - os.path.getmtime(dst)) < 1e-4:
+        if abs(os.path.getmtime(e(src)) - os.path.getmtime(e(dst))) < 1e-4:
             return True
     except OSError as ex:
         if ex.errno not in (errno.ENOENT,):
