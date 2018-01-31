@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-__version__ = '0.2.3'
+__version__ = '0.2.4'
 
 BIN_FOLDER = 'bin'
 
