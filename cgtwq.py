@@ -13,6 +13,7 @@ import re
 import sys
 from functools import wraps
 from subprocess import PIPE, Popen
+from collections import namedtuple
 
 from .path import Path, PurePath, get_unicode
 
@@ -52,6 +53,10 @@ def proj_info(shot_name=None, database=None):
     return ret
 
 
+Filebox = namedtuple('Filebox', ['id', 'title'])
+Pipeline = namedtuple('Pipeline', ['id', 'name'])
+
+
 class CGTeamWork(object):
     """Base class for cgtw action."""
 
@@ -62,6 +67,7 @@ class CGTeamWork(object):
     _sys_module = None
     _pipeline_module = None
     _history_module = None
+    _filebox_module = None
     database = None
     module = None
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -123,7 +129,7 @@ class CGTeamWork(object):
         """CGTeamWork pipeline for further use. """
 
         if not self._pipeline_module:
-            self._pipeline_module = self._tw.pipeline(self.module)
+            self._pipeline_module = self._tw.pipeline(self.database)
         return self._pipeline_module
 
     @property
@@ -135,6 +141,34 @@ class CGTeamWork(object):
         return self._history_module
 
     @property
+    def filebox_module(self):
+        """CGTeamWork filebox for further use. """
+
+        if not self._filebox_module:
+            self._filebox_module = self._tw.filebox(self.database)
+        return self._filebox_module
+
+    def get_filebox(self, pipeline):
+        """Get filebox list for @pipeline.  """
+
+        pipeline = self.get_pipeline(pipeline)
+        all_data = (self.filebox_module
+                    .get_with_pipeline_id(pipeline.id, self.module))
+        ret = []
+        for data in all_data:
+            filebox = Filebox(title=data['title'], id=data['id'])
+            ret.append(filebox)
+        return ret
+
+    def get_pipeline(self, id_or_name):
+        """Get pipeline id for @pipeline.  """
+
+        for i in self.all_pipeline:
+            assert isinstance(i, Pipeline)
+            if id_or_name in i._asdict().values():
+                return i
+
+    @property
     def server_ip(self):
         """Current server ip.  """
         return self.sys_module.get_server_ip()
@@ -142,9 +176,8 @@ class CGTeamWork(object):
     @property
     def all_pipeline(self):
         """All pipeline name for this module. """
-
-        sign = 'name'
-        return [i[sign] for i in self.pipeline_module.get_with_module(self.module, [sign])]
+            
+        return [Pipeline(id = i['id'],name=i['name']) for i in self.pipeline_module.get_with_module(self.module, ['name'])]
 
     @staticmethod
     def is_running():
@@ -184,11 +217,13 @@ class CGTeamWork(object):
             signs = {
                 'name': 'shot.shot',
                 'artist': 'shot_task.artist',
+                'submit_file_path': 'shot_task.submit_file_path',
             }
         else:
             signs = {
                 'name': 'asset.cn_name',
                 'artist': 'asset_task.artist',
+                'submit_file_path': 'asset_task.submit_file_path',
             }
         ret.update(signs)
         return ret
