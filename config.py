@@ -1,10 +1,12 @@
 # -*-coding=UTF-8-*-
 """Config file on disk.  """
 
-import os
-import json
+from __future__ import absolute_import, print_function, unicode_literals
 
-__version__ = '0.2.1'
+import json
+import os
+
+from .path import Path, get_unicode as u
 
 
 class Config(dict):
@@ -34,12 +36,18 @@ class Config(dict):
     def write(self):
         """Write config to disk.  """
 
-        with open(self.path, 'w') as f:
-            json.dump(self, f, indent=4, sort_keys=True)
+        path = Path(self.path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open('w', encoding='utf-8') as f:
+            data = json.dumps(self, indent=4, sort_keys=True)
+            f.write(u(data))
 
     def read(self):
         """Read config from disk.  """
 
-        if os.path.isfile(self.path):
-            with open(self.path) as f:
+        path = Path(self.path)
+        try:
+            with path.open(encoding='utf-8') as f:
                 self.update(dict(json.load(f)))
+        except (ValueError, OSError):
+            pass
