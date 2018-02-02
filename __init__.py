@@ -56,8 +56,6 @@ def _init():
     for i in Qt.__all__:
         sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
 
-    sys.path.append(str(PurePath(__file__).parent / '_dep'))
-
     # Add scandir
     if 'scandir' not in os.__all__:
         os.__all__.append('scandir')
