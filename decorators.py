@@ -11,7 +11,6 @@ from functools import wraps
 from multiprocessing.dummy import Queue
 
 from .env import HAS_QT, has_nuke
-from .path import get_encoded
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
@@ -50,8 +49,7 @@ def run_with_clock(name=None):
                 LOGGER.debug('%s: cost %.2f seconds',
                              func_desc, cost_time)
                 if name is not None:
-                    LOGGER.info(get_encoded('%s 耗时 %.2f 秒'),
-                                get_encoded(name), cost_time)
+                    LOGGER.info('%s 耗时 %.2f 秒', name, cost_time)
         return _func
     return _wrap
 
