@@ -86,13 +86,17 @@ class CLIProgressHandler(BaseProgressHandler):
         self.last_printed_len = 0
 
     def set_message(self, message):
-        msg = '\r' + message + ' ' * max(self.last_printed_len - len(message), 0)
+        message = get_unicode(message)
+        encoding = sys.getfilesystemencoding()
+        msg_len = len(message.encode(encoding))
+        msg = ('\r' + message
+               + ' ' * max(self.last_printed_len - msg_len, 0))
         try:
+            self.file.write(msg.encode(encoding))
+        except UnicodeDecodeError:
             self.file.write(msg)
-        except (IOError, UnicodeEncodeError):
-            self.file.write(msg.encode(sys.getfilesystemencoding()))
         self.file.flush()
-        self.last_printed_len = len(message)
+        self.last_printed_len = msg_len
 
     def message_factory(self, item):
         return '[{}/{}]{}%{}'.format(self.count, self.total, self.count * 100 / self.total, item)
