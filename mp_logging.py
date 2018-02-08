@@ -20,6 +20,14 @@ class Handler(multiprocessing.dummy.Process):
 
         kwargs = kwargs or {}
         self._handler = handler(*args, **kwargs)
+        # Patch for use non default encoding.
+        if issubclass(handler, logging.StreamHandler):
+            def _format(record):
+                ret = handler.format(self._handler, record)
+                if isinstance(ret, unicode):
+                    ret = ret.encode(sys.getfilesystemencoding())
+                return ret
+            self._handler.format = _format
         self.queue = multiprocessing.Queue(-1)
 
         super(Handler, self).__init__(name=handler.get_name(self._handler))
