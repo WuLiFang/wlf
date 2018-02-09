@@ -152,7 +152,7 @@ class CGTeamWorkClient(object):
 
         ret = cls.send_main_widget(method_name="get_token")
         if ret is True:
-            return
+            return None
         return ret
 
     @classmethod
@@ -161,7 +161,7 @@ class CGTeamWorkClient(object):
 
         ret = cls.send_main_widget(method_name="get_server_ip")
         if ret is True:
-            return
+            return None
         return ret
 
     @classmethod
@@ -170,7 +170,7 @@ class CGTeamWorkClient(object):
 
         ret = cls.send_main_widget(method_name="get_server_http")
         if ret is True:
-            return
+            return None
         return ret
 
     @classmethod
