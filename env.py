@@ -20,3 +20,16 @@ def has_nuke():
     """Return if in nuke enviornment.  """
 
     return bool(sys.modules.get('nuke'))
+
+
+def has_cgtw():
+    """Return if module cgtw importable.  """
+
+    try:
+        import cgtw
+        if 'tw' in dir(cgtw):
+            return True
+    except ImportError:
+        pass
+
+    return False
