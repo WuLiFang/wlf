@@ -3,11 +3,12 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from tempfile import mktemp
-from unittest import TestCase, main
+from unittest import TestCase, main, skipUnless
 import pickle
 
 from wlf.csheet.html import HTMLImage
 from wlf.path import PurePath
+from wlf.cgtwq import CGTeamWorkClient
 
 
 class CSheetTestCase(TestCase):
@@ -42,7 +43,8 @@ class CSheetTestCase(TestCase):
         self.assertIsInstance(image_a, HTMLImage)
         self.assertEqual(image_a, image_b)
 
-
+# TODO: Remove cgtw require.
+@skipUnless(CGTeamWorkClient.is_logged_in(), 'CGTeamWork not logged in.')
 class WSGICsheetTestCase(TestCase):
     def setUp(self):
         from wlf.csheet.views import APP

@@ -5,7 +5,7 @@ from __future__ import absolute_import
 
 import time
 from threading import Thread
-from unittest import TestCase, main
+from unittest import TestCase, main, skip
 
 
 class ProgressTestCase(TestCase):
@@ -31,6 +31,7 @@ class ProgressTestCase(TestCase):
         for _ in progress(xrange(200), 'qt测试', handler=QtProgressHandler()):
             time.sleep(0.01)
 
+    @skip('TODO')
     def test_async(self):
         threads = []
         threads.append(Thread(target=self.test_base_handler))

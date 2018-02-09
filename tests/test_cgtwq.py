@@ -31,17 +31,16 @@ class CGTWTestCase(TestCase):
         print(self.cgtw.get_filebox('合成'))
 
 
+@skip_if_no_cgtw
 class CGTeamWorkClientTestCase(TestCase):
     def test_status(self):
         from wlf.cgtwq import CGTeamWorkClient
         print(CGTeamWorkClient().status)
 
-    @skip_if_no_cgtw
     def test_refresh(self):
         from wlf.cgtwq import CGTeamWorkClient
         CGTeamWorkClient.refresh('proj_big', 'shot_task')
 
-    @skip_if_no_cgtw
     def test_refresh_selected(self):
         from wlf.cgtwq import CGTeamWorkClient
         CGTeamWorkClient.refresh_select('proj_big', 'shot_task')
