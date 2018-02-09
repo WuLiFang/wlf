@@ -355,14 +355,14 @@ class Shots(ShotTask):
                 return
 
         field_sign = self.signs['image']
-        filed_info = self._infos[shot][field_sign]
+        field_info = self._infos[shot][field_sign]
         key = self.image_path_key
 
-        # Try use filed info first
-        if filed_info:
-            filed_info = json.loads(filed_info)
-            if key in filed_info:
-                return filed_info[key]
+        # Try use field info first
+        if field_info:
+            field_info = json.loads(field_info)
+            if key in field_info:
+                return field_info[key]
 
         image = PurePath(shot).with_suffix('.jpg')
 
@@ -376,9 +376,9 @@ class Shots(ShotTask):
         image = unicode(image)
 
         # Record result for accelerate next run.
-        filed_info = filed_info or {}
-        filed_info[key] = image
-        self.task_module.set({field_sign: json.dumps(filed_info)})
+        field_info = field_info or {}
+        field_info[key] = image
+        self.task_module.set({field_sign: json.dumps(field_info)})
 
         return image
 
