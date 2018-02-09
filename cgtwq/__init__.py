@@ -6,13 +6,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 from ..env import has_cgtw
 from .exceptions import (AccountError, CGTeamWorkException, IDError,
                          PrefixError, SignError)
+from .client import CGTeamWorkClient
 
 MODULE_ENABLE = has_cgtw()
 
 if MODULE_ENABLE:
     from . import patches
     from .base import CGTeamWork, Filebox, Pipeline
-    from .client import CGTeamWorkClient
     from .public import Account, Project, Public
     from .shottask import Shot, Shots, ShotTask
 
