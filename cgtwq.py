@@ -1,25 +1,24 @@
 # -*- coding=UTF-8 -*-
-"""Query info from cgteamwork.
+"""Query info from cgteamwork.  """
 
-should compatible by any cgteamwork bounded python executable.
-"""
 from __future__ import print_function, unicode_literals
 
 import datetime
+import socket
 import json
 import logging
 import os
 import re
 import sys
+import traceback
+from collections import namedtuple
 from functools import wraps
 from subprocess import PIPE, Popen
-from collections import namedtuple
 
 from .path import Path, PurePath, get_unicode
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
-CGTW_EXECUTABLE = r"C:\cgteamwork\bin\cgtw\CgTeamWork.exe"
-
+logging.basicConfig()
 
 # Test if module should be enabled
 MODULE_ENABLE = True
@@ -60,7 +59,6 @@ Pipeline = namedtuple('Pipeline', ['id', 'name'])
 class CGTeamWork(object):
     """Base class for cgtw action."""
 
-    initiated_class = None
     is_logged_in = False
     __tw = None
     _task_module = None
@@ -169,43 +167,18 @@ class CGTeamWork(object):
                 return i
 
     @property
-    def server_ip(self):
-        """Current server ip.  """
-        return self.sys_module.get_server_ip()
-
-    @property
     def all_pipeline(self):
         """All pipeline name for this module. """
-            
-        return [Pipeline(id = i['id'],name=i['name']) for i in self.pipeline_module.get_with_module(self.module, ['name'])]
 
-    @staticmethod
-    def is_running():
-        """Return is CgTeamWork.exe is running.  """
-
-        ret = True
-        if sys.platform == 'win32':
-            tasklist = Popen('TASKLIST', stdout=PIPE).communicate()[0]
-            if '\nCgTeamWork.exe ' not in get_unicode(tasklist):
-                ret = False
-                LOGGER.debug('未运行 CGTeamWork.exe 。')
-        return ret
+        return [Pipeline(id=i['id'], name=i['name'])
+                for i in self.pipeline_module.get_with_module(self.module, ['name'])]
 
     @staticmethod
     def update_status():
         """Return and set if cls.is_logged_in."""
 
-        LOGGER.debug('更新CGTeamWork状态')
-        if not CGTeamWork.is_running() and os.path.exists(CGTW_EXECUTABLE):
-            ret = False
-            Popen(CGTW_EXECUTABLE, cwd=os.path.dirname(CGTW_EXECUTABLE))
-        else:
-            ret = cgtw.tw().sys().get_socket_status()
+        ret = CGTeamWorkClient().is_logged_in()
         CGTeamWork.is_logged_in = ret
-        if ret:
-            LOGGER.debug('CGTeamWork连接正常')
-        else:
-            LOGGER.warning('CGTeamWork未连接')
         return ret
 
     @property
@@ -271,6 +244,38 @@ class CGTeamWork(object):
     def parse_datetime(self, text):
         """Parse teamwork time."""
         return datetime.datetime.strptime(text, self.DATETIME_FORMAT)
+
+    # Code below is for backward campatibility.
+    # TODO: delete at next major version.
+
+    @property
+    def _server_ip(self):
+        """Current server ip.  """
+        return self.sys_module.get_server_ip()
+
+    @staticmethod
+    def _is_running():
+        """Return is CgTeamWork.exe is running.  """
+
+        ret = True
+        if sys.platform == 'win32':
+            tasklist = Popen('TASKLIST', stdout=PIPE).communicate()[0]
+            if '\nCgTeamWork.exe ' not in get_unicode(tasklist):
+                ret = False
+                LOGGER.debug('未运行 CGTeamWork.exe 。')
+
+        return ret
+
+
+# pylint: disable=protected-access
+setattr(CGTeamWork, 'server_ip',
+        CGTeamWork._server_ip)
+
+setattr(CGTeamWork, 'is_running',
+        CGTeamWork._is_running)
+# pylint: enable=protected-access
+
+# Code above is for backward compatibility.
 
 
 class ShotTask(CGTeamWork):
@@ -451,8 +456,6 @@ class Shot(ShotTask):
             raise IDError(self.database, self.module,
                           self.pipeline, self.name)
         elif len(id_list) != 1:
-            if ''.join(i['id'] for i in id_list) == 'please login!!!':
-                raise LoginError
             raise IDError('Multiple match', id_list)
         self._id = id_list[0]['id']
 
@@ -650,6 +653,217 @@ class Project(Public):
                 return i
 
 
+CGTeamWorkClientStatus = namedtuple(
+    'CGTeamWorkClientStatus',
+    ['server_ip', 'server_http', 'token', 'executable'])
+
+
+class CGTeamWorkClient(object):
+    """Query from CGTeamWork gui clients.  """
+
+    url = "ws://127.0.0.1:64999"
+    time_out = 1
+
+    def __init__(self):
+        # Get client executable.
+        if MODULE_ENABLE:
+            executable = os.path.abspath(os.path.join(
+                cgtw.__file__, '../../cgtw/CgTeamWork.exe'))
+        else:
+            # Try use default when sys.path not been set correctly.
+            executable = "C:/cgteamwork/bin/cgtw/CgTeamWork.exe"
+
+        if not os.path.exists(executable):
+            executable = None
+
+        # Start client if not running.
+        if executable and not self.is_running():
+            Popen(executable,
+                  cwd=os.path.dirname(executable),
+                  close_fds=True)
+
+        self.status = CGTeamWorkClientStatus(
+            server_ip=self.server_ip(),
+            server_http=self.server_http(),
+            token=self.token(),
+            executable=executable
+        )
+
+    @classmethod
+    def is_running(cls):
+        """Check if client is running.
+
+        Returns:
+            bool: Ture if client is running.
+        """
+
+        try:
+            cls.token()
+            return True
+        except socket.error:
+            pass
+
+        return False
+
+    @classmethod
+    def is_logged_in(cls):
+        """Check if client is logged in.
+
+        Returns:
+            bool: True if client is logged in.
+        """
+
+        try:
+            if cls.token():
+                return True
+        except socket.error:
+            pass
+
+        return False
+
+    @classmethod
+    def get_plugin_data(cls, uuid):
+        """Get plugin data for uuid.
+
+        Args:
+            uuid (unicode): Plugin uuid.
+        """
+
+        return cls.send_main_widget(method_name="get_plugin_data", plugin_uuid=uuid)
+
+    @classmethod
+    def send_plugin_result(cls, uuid, result=False):
+        """
+        Tell client plugin execution result.
+        if result is `False`, following operation will been abort.
+
+        Args:
+            uuid (unicode): Plugin uuid.
+            result (bool, optional): Defaults to False. Plugin execution result.
+        """
+
+        cls.send_main_widget(method_name="exec_plugin_result",
+                             uuid=uuid,
+                             result=result,
+                             type='send')
+
+    @classmethod
+    def refresh(cls, database, module):
+        """
+        Refresh specified view in client
+        if matched view is opened.
+
+        Args:
+            database (unicode): Database of view.
+            module (unicode): Module of view.
+        """
+
+        cls.send(
+            module=module,
+            database=database,
+            class_name='view_control',
+            method_name='refresh',
+            type='send',
+        )
+
+    @classmethod
+    def refresh_select(cls, database, module):
+        """
+        Refresh selected part of specified view in client
+        if matched view is opened.
+
+        Args:
+            database (unicode): Database of view.
+            module (unicode): Module of view.
+        """
+
+        cls.send(
+            module=module,
+            database=database,
+            class_name='view_control',
+            method_name='refresh_select',
+            type='send',
+        )
+
+    @classmethod
+    def token(cls):
+        """Client token.  """
+
+        ret = cls.send_main_widget(method_name="get_token")
+        if ret is True:
+            return
+        return ret
+
+    @classmethod
+    def server_ip(cls):
+        """Server ip current using by client.  """
+
+        ret = cls.send_main_widget(method_name="get_server_ip")
+        if ret is True:
+            return
+        return ret
+
+    @classmethod
+    def server_http(cls):
+        """Server http current using by client.  """
+
+        ret = cls.send_main_widget(method_name="get_server_http")
+        if ret is True:
+            return
+        return ret
+
+    @classmethod
+    def send_main_widget(cls, **data):
+        """Send data to main widget.
+
+        Args:
+            **data (dict): Data to send.
+
+        Returns:
+            dict or unicode: Recived data.
+        """
+
+        return cls.send(
+            module="main_widget",
+            database="main_widget",
+            class_name="main_widget",
+            **data)
+
+    @classmethod
+    def send(cls, **data):
+        """Send data to gui progress.
+
+        Args:
+            **data (dict): Data to send.
+
+        Returns:
+            dict or unicode: Recived data.
+        """
+
+        from websocket import create_connection
+
+        default = {
+            'type': 'get'
+        }
+        default.update(data)
+        data = default
+
+        conn = create_connection(cls.url, cls.time_out)
+
+        try:
+            conn.send(json.dumps(data))
+            recv = conn.recv()
+            ret = json.loads(recv)
+            ret = ret['data']
+            try:
+                ret = json.loads(ret)
+            except (TypeError, ValueError):
+                pass
+            return ret
+        finally:
+            conn.close()
+
+
 class Account(Public):
     """The account database.  """
     module = 'project'
@@ -730,3 +944,62 @@ class AccountError(CGTeamWorkException):
 
     def __unicode__(self):
         return '用户不匹配\n\t已分配给:\t{}\n\t当前用户:\t{}'.format(self.owner or '<未分配>', self.current)
+
+# Patch for cgtw module.
+
+
+def patch_tw_message():
+    """Change tw message format.  """
+
+    func = cgtw.tw.sys.message_error
+
+    @wraps(func)
+    def _func(self, msg, title='Error'):  # pylint: disable=unused-argument
+        stack = b'\n'.join(traceback.format_stack()[:-1])
+        stack = get_unicode(stack)
+        LOGGER.error('[%s]%s\n%s', title, msg, stack)
+
+    cgtw.tw.sys.message_error = _func
+
+
+def patch_tw_lib():
+    """Raise LoginError if not loged in.  """
+
+    func = cgtw.tw.lib.format_data
+
+    @wraps(func)
+    def _func(data, sign):
+        if data == 'please login!!!':
+            raise LoginError(data, sign)
+        return func(data, sign)
+
+    cgtw.tw.lib.format_data = staticmethod(_func)
+
+
+def patch_tw_local_con():
+    """Reimplement websocket send.  """
+
+    # pylint: disable=protected-access
+    @staticmethod
+    def _send(T_module, T_database, T_class_name, T_method_name, T_data, T_type="get"):
+        """Wrapped function for cgtw path.  """
+        # pylint: disable=invalid-name, too-many-arguments, bare-except
+        try:
+            return CGTeamWorkClient.send(
+                module=T_module,
+                database=T_database,
+                class_name=T_class_name,
+                method_name=T_method_name,
+                type=T_type,
+                **T_data
+            )
+        except:
+            return False
+
+    cgtw.tw.local_con._send = _send
+
+
+if MODULE_ENABLE:
+    patch_tw_message()
+    patch_tw_lib()
+    patch_tw_local_con()
