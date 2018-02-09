@@ -11,27 +11,25 @@ from .path import Path, get_unicode as u
 
 class Config(dict):
     """Comp config.  """
+
     default = {}
     path = os.path.expanduser(u'~/wlf.config.json')
-    instance = None
-
-    def __new__(cls):
-        if not cls.instance:
-            cls.instance = super(Config, cls).__new__(cls)
-        return cls.instance
 
     def __init__(self):
-        super(Config, self).__init__()
-        self.update(dict(self.default))
-        self.read()
+        super(Config, self).__init__(self.default)
 
     def __str__(self):
+        self.read()
         return json.dumps(self)
 
     def __setitem__(self, key, value):
         self.read()
         dict.__setitem__(self, key, value)
         self.write()
+
+    def __getitem__(self, key):
+        self.read()
+        return dict.__getitem__(self, key)
 
     def write(self):
         """Write config to disk.  """
