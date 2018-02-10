@@ -104,7 +104,7 @@ class CLIProgressHandler(BaseProgressHandler):
 
 if HAS_QT:
     from Qt import QtCompat, QtWidgets
-    from Qt.QtCore import Signal
+    from Qt.QtCore import Signal, Qt
 
     class QtProgressBar(QtWidgets.QDialog):
         """Qt progressbar dialog."""
@@ -118,9 +118,11 @@ if HAS_QT:
             if parent is None:
                 parent = self.default_parent
             self._cancelled = False
+
             app = QtWidgets.QApplication.instance()
             if not app:
                 app = QtWidgets.QApplication(sys.argv)
+
             super(QtProgressBar, self).__init__(parent)
             QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
             if parent:
@@ -128,6 +130,7 @@ if HAS_QT:
                 geo.moveCenter(parent.geometry().center())
                 self.setGeometry(geo)
 
+            self.setAttribute(Qt.WA_QuitOnClose)
             self.value_changed.connect(self.on_value_changed)
             self.message_changed.connect(self.on_message_changed)
 
@@ -143,10 +146,12 @@ if HAS_QT:
 
         def reject(self):
             """Override QDiloag.reject()"""
+
             self._cancelled = True
 
         def closeEvent(self, event):
             """Override QWidget.closeEvent()"""
+
             event.ignore()
 
     class QtProgressHandler(BaseProgressHandler):
@@ -176,7 +181,7 @@ if HAS_QT:
         def step(self, item=None):
             if self.is_cancelled():
                 self.on_finished()
-                raise CancelledError()
+                raise CancelledError
             super(QtProgressHandler, self).step(item)
             QtWidgets.QApplication.processEvents()
 

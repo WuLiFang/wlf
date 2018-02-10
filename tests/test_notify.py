@@ -10,8 +10,10 @@ from unittest import TestCase, main, skip
 
 class ProgressTestCase(TestCase):
     @classmethod
-    def async_test(cls, func):
-        """Run test async.  """
+    def setUpClass(cls):
+        from Qt.QtWidgets import QApplication
+        import sys
+        cls.app = QApplication(sys.argv)
 
     def test_base_handler(self):
         from wlf.notify import progress, BaseProgressHandler
@@ -31,7 +33,6 @@ class ProgressTestCase(TestCase):
         for _ in progress(xrange(200), 'qt测试', handler=QtProgressHandler()):
             time.sleep(0.01)
 
-    @skip('TODO')
     def test_async(self):
         threads = []
         threads.append(Thread(target=self.test_base_handler))

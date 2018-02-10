@@ -58,7 +58,7 @@ def run_in_main_thread(func):
     """(Decorator)Run @func in nuke main_thread.   """
 
     if has_nuke():
-        import nuke
+        import nuke  # pylint: disable=import-error
 
         @wraps(func)
         def _func(*args, **kwargs):
@@ -68,7 +68,6 @@ def run_in_main_thread(func):
             return func(*args, **kwargs)
 
     elif HAS_QT:
-        from Qt.QtWidgets import QApplication
         from Qt.QtCore import QObject, QEvent, QCoreApplication
 
         class Event(QEvent):
@@ -85,23 +84,25 @@ def run_in_main_thread(func):
             result = Queue(1)
 
             def event(self, event):
-                try:
-                    self.result.put(event.func(*event.args, **event.kwargs))
-                    return True
-                except AttributeError:
-                    return False
+                if event.type() == QEvent.Type.User:
+                    try:
+                        self.result.put(event.func(
+                            *event.args, **event.kwargs))
+                        return True
+                    except AttributeError:
+                        return False
+                return super(Runner, self).event(event)
 
         @wraps(func)
         def _func(*args, **kwargs):
-            app = QApplication.instance()
+            app = QCoreApplication.instance()
             if app is None:
                 return func(*args, **kwargs)
 
             runner = Runner()
             try:
                 runner.moveToThread(app.thread())
-                QCoreApplication.postEvent(runner, Event(func, args, kwargs))
-                QCoreApplication.processEvents()
+                app.notify(runner, Event(func, args, kwargs))
                 return runner.result.get()
             finally:
                 runner.deleteLater()
