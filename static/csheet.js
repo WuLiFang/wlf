@@ -98,14 +98,15 @@ $(document).ready(
             }
         );
         // Switch controls.
-        $('.lightbox .full video').each(
+        $('.lightbox .full video').on('canplaythrough',
             function() {
-                let video = this;
+                // let video = this;
                 /** Hide controls for single frame.  */
-                function setControls() {
-                    video.controls = video.duration > 1;
-                };
-                this.onload = setControls;
+                this.controls = this.duration > 1;
+                // function setControls() {
+                //     video.controls = video.duration > 1;
+                // };
+                // this.oncanplaythrough = setControls;
                 // setControls();
             }
         );
