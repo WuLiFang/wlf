@@ -3,12 +3,9 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import mimetypes
 import uuid
 from os import strerror
-try:
-    from gevent.lock import Semaphore
-except ImportError:
-    from threading import Semaphore
 
 from jinja2 import Environment, PackageLoader
 
@@ -16,6 +13,12 @@ from ..ffmpeg import generate_mp4
 from ..files import copy, version_filter
 from ..path import Path, PurePath, get_encoded
 from .base import Image
+
+try:
+    from gevent.lock import Semaphore
+except ImportError:
+    from threading import Semaphore
+
 
 logging.basicConfig()
 LOGGER = logging.getLogger('wlf.chseet.html')
@@ -49,7 +52,7 @@ class HTMLImage(Image):
     def __new__(cls, path):
         if isinstance(path, HTMLImage):
             return path
-            
+
         uuid_ = unicode(uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex)
         try:
             return cls.from_uuid(uuid_)
@@ -181,7 +184,8 @@ def get_images_from_dir(images_folder):
         raise ValueError('Not a dir : {}'.format(images_folder))
     images = version_filter(i for i in path.iterdir()
                             if i.is_file()
-                            and i.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.mov', '.mp4'))
+                            and (unicode(mimetypes.guess_type(unicode(i))[0])
+                                 .startswith(('video/', 'image/'))))
     return [HTMLImage(i) for i in images]
 
 
