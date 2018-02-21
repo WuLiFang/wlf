@@ -2,7 +2,13 @@
 * {
   transition: 0.5s ease-in-out; }
 
+html {
+  height: 100%;
+  margin: auto; }
+
 body {
+  height: 100%;
+  margin: auto;
   background: black;
   font-family: "Microsoft YaHei", SimHei, sans-serif; }
 
@@ -65,6 +71,10 @@ ul.images {
         color: black;
         background: burlywood; }
 
+video {
+  max-width: 100%;
+  max-height: 100%; }
+
 .lightbox {
   display: inline-block;
   *max-width: 400px;
@@ -93,13 +103,13 @@ ul.images {
         font-size: 50%;
         opacity: 0.5; }
   .lightbox .small {
+    height: 200px !important;
     display: block;
     text-align: center;
-    margin: 0; }
+    margin: 0;
+    cursor: zoom-in; }
     .lightbox .small img {
-      height: 200px !important;
-      border: 1px solid grey;
-      cursor: zoom-in; }
+      border: 1px solid grey; }
   .lightbox .viewer {
     visibility: hidden;
     z-index: 100;
@@ -120,11 +130,16 @@ ul.images {
       top: 5%;
       height: 70%;
       opacity: 0;
-      pointer-events: none;
       outline: none;
+      pointer-events: none;
       /* for animation */
       transition: inherit;
       opacity: 0; }
+      .lightbox .viewer .full video {
+        display: block;
+        pointer-events: visible;
+        margin: auto;
+        height: 90%; }
       .lightbox .viewer .full img {
         position: fixed;
         left: 50%;

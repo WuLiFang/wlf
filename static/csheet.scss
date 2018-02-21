@@ -3,7 +3,14 @@
     transition: 0.5s ease-in-out;
 }
 
+html {
+    height: 100%;
+    margin: auto;
+}
+
 body {
+    height: 100%;
+    margin: auto;
     background: black;
     font-family: "Microsoft YaHei", SimHei, sans-serif;
 }
@@ -89,6 +96,11 @@ ul.images {
     }
 }
 
+video {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 .lightbox {
     display: inline-block;
     *max-width: 400px;
@@ -126,13 +138,13 @@ ul.images {
         }
     }
     .small {
+        height: 200px !important;
         display: block;
         text-align: center;
         margin: 0;
+        cursor: zoom-in;
         img {
-            height: 200px !important;
             border: 1px solid grey;
-            cursor: zoom-in;
         }
     }
     .viewer {
@@ -155,8 +167,14 @@ ul.images {
             top: 5%;
             height: 70%;
             opacity: 0;
-            pointer-events: none;
             outline: none;
+            pointer-events: none;
+            video {
+                display: block;
+                pointer-events: visible;
+                margin: auto;
+                height: 90%;
+            }
             /* for animation */
             transition: inherit;
             opacity: 0;
@@ -229,7 +247,7 @@ ul.images {
         .small {
             width: 10px;
             height: 200px;
-             :not(a) {
+            :not(a) {
                 display: none;
             }
         }
@@ -262,7 +280,6 @@ ul.images {
         }
     }
 }
-
 
 /* Indicate invaid anchor */
 

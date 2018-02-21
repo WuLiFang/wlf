@@ -12,10 +12,13 @@ from ..files import copy
 class Image(object):
     """Image item for contactsheet.  """
 
-    def __new__(cls, path=None):
+    def __new__(cls, path):
         if isinstance(path, Image):
             return path
         return super(Image, cls).__new__(cls, path)
+
+    def __getnewargs__(self):
+        return (self.path,)
 
     def __init__(self, path):
         # Ignore initiated.

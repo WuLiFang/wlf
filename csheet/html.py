@@ -2,17 +2,23 @@
 """HTML csheet page.  """
 from __future__ import absolute_import, print_function, unicode_literals
 
-from logging import getLogger
+import logging
+import uuid
 from os import strerror
+try:
+    from gevent.lock import Semaphore
+except ImportError:
+    from threading import Semaphore
 
 from jinja2 import Environment, PackageLoader
 
-from ..ffmpeg import generate_gif
+from ..ffmpeg import generate_mp4
 from ..files import copy, version_filter
 from ..path import Path, PurePath, get_encoded
 from .base import Image
 
-LOGGER = getLogger('wlf.chseet.html')
+logging.basicConfig()
+LOGGER = logging.getLogger('wlf.chseet.html')
 RESOURCES_DIR = Path(Path(__file__).parent.parent / 'static')
 RESOURCES_DIR.resolve()
 
@@ -38,7 +44,29 @@ class HTMLImage(Image):
 
     thumb = None
     _preview = None
-    related_video = None
+    cache = {}
+
+    def __new__(cls, path):
+        uuid_ = uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex
+        if uuid_ in cls.cache:
+            return cls.cache[uuid_]
+
+        ret = super(HTMLImage, cls).__new__(cls, path)
+        ret.uuid = uuid_
+
+        return ret
+
+    def __init__(self, path):
+        # Ignore initiated.
+        if (isinstance(path, HTMLImage)
+                or self.uuid in HTMLImage.cache):
+            return
+
+        super(HTMLImage, self).__init__(path)
+        self.preview_source = path
+        self._preview_lock = Semaphore()
+
+        HTMLImage.cache[self.uuid] = self
 
     def get_drag(self, **config):
         """get path used on drag.  """
@@ -46,43 +74,35 @@ class HTMLImage(Image):
         if config.get('is_pack'):
             return 'images/{}'.format(self.path.name)
 
-        return self.path.html_relative_to(config.get('relative_to'))
+        return self.path
 
     def get_full(self, **config):
         """get full image path.  """
 
         if config.get('is_pack'):
             return 'images/{}'.format(self.path.name)
-        elif config.get('is_web'):
-            return ('/images/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
-                    .format(config, self.path.name))
-        elif config.get('is_local'):
-            return '/local/{}'.format(self.path.relative_to(config['relative_to']))
-        return self.path.html_relative_to(config.get('relative_to'))
+
+        return ('/images/{}/full'.format(self.uuid))
 
     def get_preview(self, **config):
-        """get preview image path.  """
+        """get preview video path.  """
 
         if config.get('is_pack'):
             return 'previews/{}'.format(self.preview.name)
-        elif config.get('is_web'):
-            return ('/previews/{0[database]}/{0[pipeline]}/{0[prefix]}/{1}'
-                    .format(config, self.preview.name))
-        elif config.get('is_local'):
-            return 'null'
-        return self.preview.html_relative_to(config.get('relative_to'))
+
+        return ('/images/{}/preview'.format(self.uuid))
 
     @property
     def preview_default(self):
         """Preview path default.  """
 
-        filename = PurePath(self.path).with_suffix('.gif').name
-        for i in (self.path, self.related_video):
+        filename = PurePath(self.path).with_suffix('.mp4').name
+        for i in (self.path, self.preview_source):
             if i is None:
                 continue
             path = PurePath(i)
             if path.is_absolute():
-                return (path.with_name('preview') / filename)
+                return (path.with_name('previews') / filename)
         return Path.home() / '.wlf.csheet.preview' / filename
 
     @property
@@ -98,23 +118,22 @@ class HTMLImage(Image):
     def generate_preview(self, **kwargs):
         """Generate gif preview with @source.  """
 
-        if self.related_video is None:
-            # LOGGER.info('没有关联视频: %s', self)
-            return
+        if unicode(self.preview_source).endswith('.mp4'):
+            return Path(self.preview_source)
 
-        source = Path(self.related_video)
-        output = Path(get_encoded(self.preview))
+        with self._preview_lock:
+            source = Path(self.preview_source)
+            output = Path(get_encoded(self.preview))
 
-        try:
-            output.parent.mkdir(exist_ok=True)
-            if source.match('*.mov'):
-                self._preview = generate_gif(source, output, **kwargs)
-            return self._preview
-        except OSError as ex:
-            LOGGER.error(strerror(ex.errno), exc_info=True)
-        except:
-            LOGGER.error('Error during generate preview.', exc_info=True)
-            raise
+            try:
+                output.parent.mkdir(exist_ok=True)
+                self._preview = generate_mp4(source, output, **kwargs)
+                return self._preview
+            except OSError as ex:
+                LOGGER.error(strerror(ex.errno), exc_info=True)
+            except:
+                LOGGER.error('Error during generate preview.', exc_info=True)
+                raise
 
     def download(self, dest):
         """Download this image to dest.  """
@@ -153,7 +172,7 @@ def get_images_from_dir(images_folder):
         raise ValueError('Not a dir : {}'.format(images_folder))
     images = version_filter(i for i in path.iterdir()
                             if i.is_file()
-                            and i.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.mov'))
+                            and i.suffix.lower() in ('.jpg', '.jpeg', '.png', '.gif', '.mov', '.mp4'))
     return [HTMLImage(i) for i in images]
 
 

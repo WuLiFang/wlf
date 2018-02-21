@@ -104,6 +104,61 @@ def get_local(filename):
     return send_from_directory(APP.config['local_dir'], filename)
 
 
+@APP.route('/images/<uuid>/preview')
+@nocache
+def image_preview(uuid):
+    """Response preview video for uuid.
+
+    Decorators:
+        APP
+
+    Args:
+        uuid (str): Image uuid.
+
+    Returns:
+        flask.Response: Response for client.
+    """
+
+    try:
+        image = HTMLImage.cache[uuid]
+    except KeyError:
+        abort(404)
+    assert isinstance(image, HTMLImage)
+
+    job = spawn(image.generate_preview)
+    while not job.ready():
+        sleep(0.1)
+    preview = job.get()
+    if preview is None:
+        return image_full(uuid)
+    APP.logger.error(preview)
+    return send_file(unicode(image.preview))
+
+
+@APP.route('/images/<uuid>/full')
+@nocache
+def image_full(uuid):
+    """Response full image for uuid.
+
+    Decorators:
+        APP
+
+    Args:
+        uuid (str): Image uuid.
+
+    Returns:
+        flask.Response: Response for client.
+    """
+
+    try:
+        image = HTMLImage.cache[uuid]
+    except KeyError:
+        abort(404)
+    assert isinstance(image, HTMLImage)
+
+    return send_file(unicode(image.path))
+
+
 def get_images(shots):
     """Get all images relate @shots.  """
 
@@ -255,49 +310,49 @@ def get_html_image(database, pipeline, prefix, name):
     if path is None:
         raise ValueError
     image = HTMLImage(path)
-    image.related_video = (video_shots or shots).get_shot_submit_path(name)
+    image.preview_source = (video_shots or shots).get_shot_submit_path(name)
     return image
 
 
-@APP.route('/images/<database>/<pipeline>/<prefix>/<name>')
-@nocache
-def get_image(database, pipeline, prefix, name):
-    """Respon image request.  """
-    name = name.split('.')[0]
-    try:
-        image = get_html_image(database, pipeline, prefix, name)
-        return send_file(unicode(image.path))
-    except (IOError, ValueError) as ex:
-        APP.logger.error(ex)
-        abort(404)
+# @APP.route('/images/<database>/<pipeline>/<prefix>/<name>')
+# @nocache
+# def get_image(database, pipeline, prefix, name):
+#     """Respon image request.  """
+#     name = name.split('.')[0]
+#     try:
+#         image = get_html_image(database, pipeline, prefix, name)
+#         return send_file(unicode(image.path))
+#     except (IOError, ValueError) as ex:
+#         APP.logger.error(ex)
+#         abort(404)
 
 
-@APP.route('/previews/<database>/<pipeline>/<prefix>/<name>')
-@nocache
-def get_preview(database, pipeline, prefix, name):
-    """Respon preview request.  """
+# @APP.route('/previews/<database>/<pipeline>/<prefix>/<name>')
+# @nocache
+# def get_preview(database, pipeline, prefix, name):
+#     """Respon preview request.  """
 
-    name = name.split('.')[0]
-    height = {
-        '动画': 180,
-        '灯光': 200,
-        '合成': 300,
-    }.get(pipeline, None)
+#     name = name.split('.')[0]
+#     height = {
+#         '动画': 180,
+#         '灯光': 200,
+#         '合成': 300,
+#     }.get(pipeline, None)
 
-    try:
-        image = get_html_image(database, pipeline, prefix, name)
-        job = spawn(image.generate_preview, height=height)
-        while not job.ready():
-            sleep(0.1)
-        preview = job.get()
-        if preview is None:
-            return get_image(database, pipeline, prefix, name)
-        APP.logger.debug(u'获取动图: %s', preview)
-    except ValueError:
-        APP.logger.error(image)
-        abort(404)
+#     try:
+#         image = get_html_image(database, pipeline, prefix, name)
+#         job = spawn(image.generate_preview, height=height)
+#         while not job.ready():
+#             sleep(0.1)
+#         preview = job.get()
+#         if preview is None:
+#             return get_image(database, pipeline, prefix, name)
+#         APP.logger.debug(u'获取动图: %s', preview)
+#     except ValueError:
+#         APP.logger.error(image)
+#         abort(404)
 
-    return send_file(unicode(preview))
+#     return send_file(unicode(preview))
 
 
 @APP.route('/project_code/<project>')

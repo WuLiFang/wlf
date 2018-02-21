@@ -196,7 +196,7 @@ class Dialog(DialogWithDir):
                 if image:
                     image.name = shot
                     _shots = video_shots if self.pipeline in related_pipeline else shots
-                    image.related_video = _shots.get_shot_submit_path(shot)
+                    image.preview_source = _shots.get_shot_submit_path(shot)
                     images.append(image)
             images.sort(key=lambda x: x.name)
             return images

@@ -56,11 +56,14 @@ is_local, 'relative_to' : relative_to} %}
         {% for image in images %}
         <li class="lightbox" data-full="{{ image.get_full(**config) }}" data-preview="{{ image.get_preview(**config) }}" data-thumb="null"
             id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
-            <a href="#image{{ loop.index }}">
+            <a href="#image{{ loop.index }}" class="zoom">
                 <figure class="small">
-                    <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
+                    <video poster="{{ image.get_full(**config) }}" muted draggable="true">
+                        <source src="{{ image.get_preview(**config) }}">
+                        <img alt="no image" src="{{ image.get_full(**config) }}" />
+                    </video>
                     <figcaption>
-                        {{image.name}}
+                        {{ image.name | e }}
                         <!-- SNJYW_EP26_01_
                         <span class="highlight">
                             sc001
@@ -69,17 +72,20 @@ is_local, 'relative_to' : relative_to} %}
                 </figure>
             </a>
             <div class="viewer">
-                <a class="close" href="#void">
-                </a>
                 <div class="detail">
 
                 </div>
+                <a class="close" href="#void">
+                </a>
                 <figure class="full">
-                    <a href="{{ image.get_full(**config) }}" target="_blank">
-                        <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
-                    </a>
+                    <video poster="{{ image.get_full(**config) }}" controls>
+                        <source src="{{ image.get_preview(**config) }}">
+                        <a href="{{ image.get_full(**config) }}" target="_blank">
+                            <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
+                        </a>
+                    </video>
                     <figcaption>
-                        {{image}}
+                        {{ image | e}}
                     </figcaption>
                 </figure>
                 <a class="prev" href="#image{{ loop.index - 1 }}">

@@ -2,52 +2,60 @@
 let count = 0;
 $(document).ready(
     function() {
-        $('.lightbox .small').mouseenter(
-            function() {
-                useData(this, 'preview');
-            }
-        );
         $('body').dblclick(
             function() {
-                $('.lightbox .small:appeared').each(
+                $('.lightbox .small video:appeared').each(
                     function() {
-                        useData(this, 'preview');
+                        this.play();
+                        // useData(this, 'preview');
                     }
                 );
             }
         );
-        $('.lightbox .small').mouseout(
+        $('.lightbox video small').mouseenter(
             function() {
-                useMinimal(this);
+                this.load();
+                this.play();
             }
         );
-        $('.lightbox .small').click(
+        $('.lightbox video').mouseout(
             function() {
-                let lightbox = getLightbox(this);
-                $(lightbox).find('img').each(
-                    function() {
-                        let element = this;
-                        useData(element, 'full',
-                            function() {
-                                useData(element, 'preview');
-                            }
-                        );
-                    }
-                );
+                this.pause();
             }
         );
-        $('.lightbox figure').each(function() {
-            let $this = $(this);
-            $this.appear();
-            $this.on('appear',
-                function(e, $affected) {
-                    $affected.each(function() {
-                        useMinimal(this);
-                        // console.log(this);
-                    });
-                }
-            );
-        });
+        // $('.lightbox .small').click(
+        //     function() {
+        //         let lightbox = getLightbox(this);
+        //         $(lightbox).find('img').each(
+        //             function() {
+        //                 let element = this;
+        //                 useData(element, 'full',
+        //                     function() {
+        //                         useData(element, 'preview');
+        //                     }
+        //                 );
+        //             }
+        //         );
+        //     }
+        // );
+        // $('.lightbox figure video').each(function() {
+        //     let $this = $(this);
+        //     $this.appear();
+        //     $this.on('disappear',
+        //         function(e, $affected) {
+        //             $affected.each(function() {
+        //                 $(this).find('video').each(
+        //                     function() {
+        //                         this.pause();
+        //                     }
+        //                 );
+        //                 // useMinimal(this);
+        //                 // console.log(this);
+        //             });
+        //         }
+        //     );
+        // });
+        // Disable next/prev button when not avalieble.
         $('.lightbox .viewer a').click(
             function() {
                 let $this = $(this);
@@ -60,6 +68,7 @@ $(document).ready(
                             prev = prev.prev();
                         }
                         href = '#' + prev.attr('id');
+                        reload(prev);
                         break;
                     case 'next':
                         let next = $lightbox.next();
@@ -67,6 +76,7 @@ $(document).ready(
                             next = next.next();
                         }
                         href = '#' + next.attr('id');
+                        reload(next);
                         break;
                     default:
                         href = $this.attr('href');
@@ -77,20 +87,39 @@ $(document).ready(
                 }
             }
         );
-        $('.lightbox img').on('dragstart', function(ev) {
-            ev.originalEvent.dataTransfer
-                .setData('text', $(getLightbox(this)).data('drag'));
-        }
-
-        );
-
-        $('.lightbox img').each(
+        $('.lightbox a.zoom').click(
             function() {
-                $(this).attr('src', null);
-                hide(this);
-                useMinimal(this);
+                reload(this);
             }
         );
+        // Switch controls.
+        $('.lightbox .full video').each(
+            function() {
+                let video = this;
+                /** Hide controls for single frame.  */
+                function setControls() {
+                    video.controls = video.duration > 1;
+                };
+                this.onload = setControls;
+                // setControls();
+            }
+        );
+
+        // Set drag data.
+        $('.lightbox img').on('dragstart', function(ev) {
+                ev.originalEvent.dataTransfer
+                    .setData('text', $(getLightbox(this)).data('drag'));
+            }
+
+        );
+
+        // $('.lightbox img').each(
+        //     function() {
+        //         $(this).attr('src', null);
+        //         hide(this);
+        //         useMinimal(this);
+        //     }
+        // );
         // simlpe help
         $('nav').append(
             $('<button/>', {
@@ -160,34 +189,47 @@ function getLightbox(element) {
 }
 
 /**
- * Hide lightbox  element then set count.
- * @param {element} lightbox lightbox to hide.
+ * Reload related video.
+ * @param {element} element lightbox related element.
  */
-function hide(lightbox) {
-    lightbox = getLightbox(lightbox);
-    let $lightbox = $(lightbox);
-    if ($lightbox.is('.hidden')) {
-        return;
-    }
-    $lightbox.addClass('hidden');
-
-    count += 1;
-    updateCount();
+function reload(element) {
+    let lightbox = getLightbox(element);
+    $(lightbox).find('video').each(
+        function() {
+            this.load();
+        }
+    );
 }
 
-/**
- * Show element related lightbox.
- * @param {element} element The root element.
- */
-function show(element) {
-    let lightbox = $(getLightbox(element));
-    if (!lightbox.is('.hidden')) {
-        return;
-    }
-    lightbox.removeClass('hidden');
-    count -= 1;
-    updateCount();
-}
+// /**
+//  * Hide lightbox  element then set count.
+//  * @param {element} lightbox lightbox to hide.
+//  */
+// function hide(lightbox) {
+//     lightbox = getLightbox(lightbox);
+//     let $lightbox = $(lightbox);
+//     if ($lightbox.is('.hidden')) {
+//         return;
+//     }
+//     $lightbox.addClass('hidden');
+
+//     count += 1;
+//     updateCount();
+// }
+
+// /**
+//  * Show element related lightbox.
+//  * @param {element} element The root element.
+//  */
+// function show(element) {
+//     let lightbox = $(getLightbox(element));
+//     if (!lightbox.is('.hidden')) {
+//         return;
+//     }
+//     lightbox.removeClass('hidden');
+//     count -= 1;
+//     updateCount();
+// }
 
 /**
  * Update count display.
@@ -200,93 +242,93 @@ function updateCount() {
         (total - count).toString() + '/' + total.toString()
     );
 }
-/**
- * use minimal images for this element.
- * @param {element} element root element.
- */
-function useMinimal(element) {
-    // Use minaimal image to save memory.
-    useData(element, 'thumb',
-        function() {
-            useData(element, 'full',
-                function() {
-                    useData(element, 'preview',
-                        function() {
-                            hide(element);
-                        }
-                    );
-                }
-            );
-        }
-    );
-}
+// /**
+//  * use minimal images for this element.
+//  * @param {element} element root element.
+//  */
+// function useMinimal(element) {
+//     // Use minaimal image to save memory.
+//     useData(element, 'thumb',
+//         function() {
+//             useData(element, 'full',
+//                 function() {
+//                     useData(element, 'preview',
+//                         function() {
+//                             hide(element);
+//                         }
+//                     );
+//                 }
+//             );
+//         }
+//     );
+// }
 
-/**
- * Choose data to use on image.
- * @param {element} element root element.
- * @param {string} data data name.
- * @param {function} onerror callback
- * @return {string} Used data
- */
-function useData(element, data, onerror) {
-    let lightbox = getLightbox(element);
-    let path = lightbox.getAttribute('data-' + data);
-    let $element = $(element);
-    if ($element.has('span.mark[for="' + data + '"]').length > 0) {
-        return;
-    }
-    // get container.
-    let container = $element.children('.container.mark');
-    if (container.length <= 0) {
-        container = $('<div/>', {
-            'class': 'mark container',
-        });
-        $element.prepend(container);
-    }
-    let mark = $('<span/>', {
-        'class': 'mark',
-        'for': data,
-    });
-    container.append(mark);
-    imageAvailable(
-        path,
-        function(temp) {
-            if (!$element.is('img')) {
-                $element = $element.find('img');
-            }
-            $element.attr('src', temp.src);
-            $('span.mark[for="' + data + '"]', container).remove();
-            show(element);
+// /**
+//  * Choose data to use on image.
+//  * @param {element} element root element.
+//  * @param {string} data data name.
+//  * @param {function} onerror callback
+//  * @return {string} Used data
+//  */
+// function useData(element, data, onerror) {
+//     let lightbox = getLightbox(element);
+//     let path = lightbox.getAttribute('data-' + data);
+//     let $element = $(element);
+//     if ($element.has('span.mark[for="' + data + '"]').length > 0) {
+//         return;
+//     }
+//     // get container.
+//     let container = $element.children('.container.mark');
+//     if (container.length <= 0) {
+//         container = $('<div/>', {
+//             'class': 'mark container',
+//         });
+//         $element.prepend(container);
+//     }
+//     let mark = $('<span/>', {
+//         'class': 'mark',
+//         'for': data,
+//     });
+//     container.append(mark);
+//     imageAvailable(
+//         path,
+//         function(temp) {
+//             if (!$element.is('img')) {
+//                 $element = $element.find('img');
+//             }
+//             $element.attr('src', temp.src);
+//             $('span.mark[for="' + data + '"]', container).remove();
+//             show(element);
 
-            mark.remove();
-        },
-        function() {
-            $('span.mark[for="' + data + '"]', container).remove();
-            if (onerror) {
-                onerror();
-            }
-        }
-    );
-    return path;
-}
+//             mark.remove();
+//         },
+//         function() {
+//             $('span.mark[for="' + data + '"]', container).remove();
+//             if (onerror) {
+//                 onerror();
+//             }
+//         }
+//     );
+//     return path;
+// }
 
-/**
- * Load image in background.
- * @param {string} path image path.
- * @param {function} onload callback.
- * @param {function} onerror callback.
- */
-function imageAvailable(path, onload, onerror) {
-    if (path == null | path == 'null') {
-        if (typeof (onerror) != 'undefined') {
-            onerror();
-        }
-        return;
-    }
-    let temp = new Image;
-    temp.onload = function() {
-        onload(temp);
-    };
-    temp.onerror = onerror;
-    temp.src = path + '?timestamp=' + new Date().getTime().toPrecision(9);
-}
+// /**
+//  * Load image in background.
+//  * @param {string} path image path.
+//  * @param {function} onload callback.
+//  * @param {function} onerror callback.
+//  */
+// function imageAvailable(path, onload, onerror) {
+//     if (path == null | path == 'null') {
+//         if (typeof (onerror) != 'undefined') {
+//             onerror();
+//         }
+//         return;
+//     }
+//     let temp = new Image;
+//     temp.onload = function() {
+//         onload(temp);
+//     };
+//     temp.onerror = onerror;
+//     temp.src = path + '?timestamp=' + new Date().getTime().toPrecision(9);
+// }

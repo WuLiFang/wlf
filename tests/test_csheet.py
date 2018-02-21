@@ -23,7 +23,7 @@ class CSheetTestCase(TestCase):
 
     def test_preview_default(self):
         image = HTMLImage('c:/test/case1.jpg')
-        self.assertEqual(image.preview, PurePath('c:/test/preview/case1.gif'))
+        self.assertEqual(image.preview, PurePath('c:/test/previews/case1.mp4'))
 
     def test_pickle_image(self):
         from wlf.csheet.base import Image
@@ -37,13 +37,15 @@ class CSheetTestCase(TestCase):
     def test_pickle_htmlimage(self):
 
         image_b = HTMLImage('temp')
-        image_b.related_video = 'hahaha'
+        image_b.preview_source = 'hahaha'
         data = pickle.dumps(image_b, pickle.HIGHEST_PROTOCOL)
         image_a = pickle.loads(data)
         self.assertIsInstance(image_a, HTMLImage)
         self.assertEqual(image_a, image_b)
 
 # TODO: Remove cgtw require.
+
+
 @skipUnless(CGTeamWorkClient.is_logged_in(), 'CGTeamWork not logged in.')
 class WSGICsheetTestCase(TestCase):
     def setUp(self):
