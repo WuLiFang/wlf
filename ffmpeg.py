@@ -5,10 +5,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 # Use gevent
 try:
     from gevent import monkey
-    from gevent.lock import Semaphore
     monkey.patch_subprocess()
 except ImportError:
-    from threading import Semaphore
+    pass
+
 
 import os
 import time
@@ -20,7 +20,6 @@ from .path import Path, get_encoded
 
 
 LOGGER = getLogger('com.wlf.ffmpeg')
-LOCK = Semaphore(4)
 
 
 def generate_gif(filename, output=None, width=None, height=300):
@@ -96,12 +95,11 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
     }
     kwargs.update(popen_kwargs)
 
-    with LOCK:
-        proc = Popen(get_encoded(cmd), **kwargs)
-        stderr = proc.communicate()[1]
-        if proc.wait():
-            raise GenerateError(
-                '%s:\n\t %s\n\t%s' % (error_msg, cmd, stderr))
+    proc = Popen(get_encoded(cmd), **kwargs)
+    stderr = proc.communicate()[1]
+    if proc.wait():
+        raise GenerateError(
+            '%s:\n\t %s\n\t%s' % (error_msg, cmd, stderr))
 
 
 class GenerateError(RuntimeError):
