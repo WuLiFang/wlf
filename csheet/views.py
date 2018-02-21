@@ -17,7 +17,7 @@ from gevent import sleep, spawn, monkey
 from gevent.queue import Queue
 
 from . import __version__
-from ..cgtwq import MODULE_ENABLE, Project, Shots
+from .. import cgtwq
 from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
 
@@ -28,7 +28,8 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
-PROJECT = Project()
+if cgtwq.MODULE_ENABLE:
+    PROJECT = cgtwq.Project()
 STATUS = {}
 SHOTS_CACHE = {}
 PROGRESS_EVENT_LISTENER = []
@@ -52,7 +53,7 @@ def render_main():
     if APP.config.get('local_dir'):
         return redirect('/local')
 
-    if not MODULE_ENABLE:
+    if not cgtwq.MODULE_ENABLE:
         return '服务器无法连接CGTeamWork', 503
 
     if request.query_string:
@@ -106,7 +107,7 @@ def get_local(filename):
 def get_images(shots):
     """Get all images relate @shots.  """
 
-    assert isinstance(shots, Shots)
+    assert isinstance(shots, cgtwq.Shots)
     images = shots.shots
     images = [get_html_image(shots.database, shots.pipeline, shots.prefix, i)
               for i in images]
@@ -232,7 +233,8 @@ def get_shots(database, pipeline, prefix):
 
     key = (database, pipeline, prefix)
     if not SHOTS_CACHE.has_key(key):
-        SHOTS_CACHE[key] = Shots(database, prefix=prefix, pipeline=pipeline)
+        SHOTS_CACHE[key] = cgtwq.Shots(
+            database, prefix=prefix, pipeline=pipeline)
     return SHOTS_CACHE[key]
 
 
