@@ -5,9 +5,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 # Use gevent
 try:
     from gevent import monkey
+    from gevent.lock import Semaphore
     monkey.patch_subprocess()
 except ImportError:
-    pass
+    from threading import Semaphore
 
 import os
 import time
@@ -19,6 +20,7 @@ from .path import Path, get_encoded
 
 
 LOGGER = getLogger('com.wlf.ffmpeg')
+LOCK = Semaphore(4)
 
 
 def generate_gif(filename, output=None, width=None, height=300):
@@ -53,7 +55,7 @@ def generate_gif(filename, output=None, width=None, height=300):
     return ret
 
 
-def generate_mp4(filename, output=None):
+def generate_mp4(filename, output=None, width=None, height=None):
     """Convert a video file to mp4 format.
 
     Args:
@@ -66,13 +68,17 @@ def generate_mp4(filename, output=None):
 
     path = Path(filename)
     ret = Path(output or path).with_suffix('.mp4')
+    _filters = 'scale="trunc({}/2)*2:trunc({}/2)*2:flags=lanczos"'.format(
+        'iw' if width is None else width,
+        r'min(ih\, 1080)' if height is None else height)
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
     # Generate.
-    cmd = 'ffmpeg -y -i "{}" -f mp4 "{}"'.format(filename, ret)
+    cmd = 'ffmpeg -y -i "{}" -movflags faststart -vf {} -vcodec libx264 -pix_fmt yuv420p -f mp4 "{}"'.format(
+        filename, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
     LOGGER.info('生成mp4: %s', ret)
 
@@ -89,11 +95,13 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
         'env': os.environ
     }
     kwargs.update(popen_kwargs)
-    proc = Popen(get_encoded(cmd), **kwargs)
-    stderr = proc.communicate()[1]
-    if proc.wait():
-        raise GenerateError(
-            '%s:\n\t %s\n\t%s' % (error_msg, cmd, stderr))
+
+    with LOCK:
+        proc = Popen(get_encoded(cmd), **kwargs)
+        stderr = proc.communicate()[1]
+        if proc.wait():
+            raise GenerateError(
+                '%s:\n\t %s\n\t%s' % (error_msg, cmd, stderr))
 
 
 class GenerateError(RuntimeError):
