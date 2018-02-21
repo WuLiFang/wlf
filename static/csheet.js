@@ -1,5 +1,5 @@
 // TODO: button image loop
-let count = 0;
+// let count = 0;
 $(document).ready(
     function() {
         $('body').dblclick(
@@ -12,13 +12,13 @@ $(document).ready(
                 );
             }
         );
-        $('.lightbox video small').mouseenter(
+        $('.lightbox .small video').mouseenter(
             function() {
                 this.load();
                 this.play();
             }
         );
-        $('.lightbox video').mouseout(
+        $('.lightbox .small video').mouseout(
             function() {
                 this.pause();
             }
@@ -81,6 +81,11 @@ $(document).ready(
                     default:
                         href = $this.attr('href');
                 }
+                $('.lightbox video').each(
+                    function() {
+                        this.pause();
+                    }
+                );
                 $this.attr('href', href);
                 if (href == '#undefined') {
                     return false;
@@ -106,9 +111,10 @@ $(document).ready(
         );
 
         // Set drag data.
-        $('.lightbox img').on('dragstart', function(ev) {
+        $('.lightbox a.zoom').on('dragstart', function(ev) {
+                ev.originalEvent.dataTransfer.clearData();
                 ev.originalEvent.dataTransfer
-                    .setData('text', $(getLightbox(this)).data('drag'));
+                    .setData('text/plain', $(getLightbox(this)).data('drag'));
             }
 
         );
@@ -188,6 +194,7 @@ function getLightbox(element) {
     return $element.parents('.lightbox')[0];
 }
 
+
 /**
  * Reload related video.
  * @param {element} element lightbox related element.
@@ -196,6 +203,8 @@ function reload(element) {
     let lightbox = getLightbox(element);
     $(lightbox).find('video').each(
         function() {
+            // this.src = $(lightbox).data('preview') +
+            //     '?timestamp=' + new Date().getTime().toPrecision(9);
             this.load();
         }
     );
@@ -231,17 +240,17 @@ function reload(element) {
 //     updateCount();
 // }
 
-/**
- * Update count display.
- */
-function updateCount() {
-    let header = document.getElementsByTagName('header')[0];
-    let lightboxes = document.getElementsByClassName('lightbox');
-    let total = lightboxes.length;
-    header.children[0].innerText = (
-        (total - count).toString() + '/' + total.toString()
-    );
-}
+// /**
+//  * Update count display.
+//  */
+// function updateCount() {
+//     let header = document.getElementsByTagName('header')[0];
+//     let lightboxes = document.getElementsByClassName('lightbox');
+//     let total = lightboxes.length;
+//     header.children[0].innerText = (
+//         (total - count).toString() + '/' + total.toString()
+//     );
+// }
 // /**
 //  * use minimal images for this element.
 //  * @param {element} element root element.

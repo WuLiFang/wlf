@@ -44,29 +44,38 @@ class HTMLImage(Image):
 
     thumb = None
     _preview = None
-    cache = {}
+    _cache = {}
 
     def __new__(cls, path):
-        uuid_ = uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex
-        if uuid_ in cls.cache:
-            return cls.cache[uuid_]
+        if isinstance(path, HTMLImage):
+            return path
+            
+        uuid_ = unicode(uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex)
+        try:
+            return cls.from_uuid(uuid_)
+        except KeyError:
+            pass
 
         ret = super(HTMLImage, cls).__new__(cls, path)
         ret.uuid = uuid_
+        ret._preview_lock = Semaphore()  # pylint: disable=protected-access
+        ret.preview_source = path
+        cls._cache[uuid_] = ret
 
         return ret
 
-    def __init__(self, path):
-        # Ignore initiated.
-        if (isinstance(path, HTMLImage)
-                or self.uuid in HTMLImage.cache):
-            return
+    @classmethod
+    def from_uuid(cls, uuid_):
+        """Get image from uuid.
 
-        super(HTMLImage, self).__init__(path)
-        self.preview_source = path
-        self._preview_lock = Semaphore()
+        Args:
+            uuid_ (str): uuid of image.
 
-        HTMLImage.cache[self.uuid] = self
+        Returns:
+            HTMLImage: image with that uuid.
+        """
+
+        return cls._cache[uuid_]
 
     def get_drag(self, **config):
         """get path used on drag.  """
@@ -74,7 +83,7 @@ class HTMLImage(Image):
         if config.get('is_pack'):
             return 'images/{}'.format(self.path.name)
 
-        return self.path
+        return self.path.as_uri()
 
     def get_full(self, **config):
         """get full image path.  """

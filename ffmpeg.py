@@ -68,9 +68,9 @@ def generate_mp4(filename, output=None, width=None, height=None):
 
     path = Path(filename)
     ret = Path(output or path).with_suffix('.mp4')
-    _filters = 'scale="trunc({}/2)*2:trunc({}/2)*2:flags=lanczos"'.format(
-        'iw' if width is None else width,
-        r'min(ih\, 1080)' if height is None else height)
+    _filters = 'scale="{}:{}:flags=lanczos"'.format(
+        '-2' if width is None else int(width) // 2 * 2,
+        r'min(ih\, 1080)' if height is None else int(height) // 2 * 2)
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:

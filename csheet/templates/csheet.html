@@ -23,7 +23,7 @@ is_local, 'relative_to' : relative_to} %}
 </head>
 
 <body>
-    <header href="/">
+    <header>
         <div class="count">
             {{ images.__len__() }}
         </div>
@@ -56,9 +56,9 @@ is_local, 'relative_to' : relative_to} %}
         {% for image in images %}
         <li class="lightbox" data-full="{{ image.get_full(**config) }}" data-preview="{{ image.get_preview(**config) }}" data-thumb="null"
             id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
-            <a href="#image{{ loop.index }}" class="zoom">
+            <a href="#image{{ loop.index }}" class="zoom" draggable="true">
                 <figure class="small">
-                    <video poster="{{ image.get_full(**config) }}" muted draggable="true">
+                    <video poster="{{ image.get_full(**config) }}" muted>
                         <source src="{{ image.get_preview(**config) }}">
                         <img alt="no image" src="{{ image.get_full(**config) }}" />
                     </video>
@@ -77,8 +77,8 @@ is_local, 'relative_to' : relative_to} %}
                 </div>
                 <a class="close" href="#void">
                 </a>
-                <figure class="full">
-                    <video poster="{{ image.get_full(**config) }}" controls>
+                <figure class="full" draggable="true">
+                    <video poster="{{ image.get_full(**config) }}" controls draggable="true">
                         <source src="{{ image.get_preview(**config) }}">
                         <a href="{{ image.get_full(**config) }}" target="_blank">
                             <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />

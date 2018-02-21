@@ -12,7 +12,7 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, render_template,
-                   request, send_file, redirect, send_from_directory)
+                   request, send_file, redirect, send_from_directory, escape)
 from gevent import sleep, spawn, monkey
 from gevent.queue import Queue
 
@@ -22,7 +22,8 @@ from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
 
 
-monkey.patch_all()
+# monkey.patch_all()
+
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
@@ -47,6 +48,7 @@ def nocache(func):
 
 
 @APP.route('/', methods=('GET',))
+@nocache
 def render_main():
     """main page.  """
 
@@ -120,7 +122,7 @@ def image_preview(uuid):
     """
 
     try:
-        image = HTMLImage.cache[uuid]
+        image = HTMLImage.from_uuid(uuid)
     except KeyError:
         abort(404)
     assert isinstance(image, HTMLImage)
@@ -131,7 +133,6 @@ def image_preview(uuid):
     preview = job.get()
     if preview is None:
         return image_full(uuid)
-    APP.logger.error(preview)
     return send_file(unicode(image.preview))
 
 
@@ -151,7 +152,7 @@ def image_full(uuid):
     """
 
     try:
-        image = HTMLImage.cache[uuid]
+        image = HTMLImage.from_uuid(uuid)
     except KeyError:
         abort(404)
     assert isinstance(image, HTMLImage)
