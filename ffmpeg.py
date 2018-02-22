@@ -11,13 +11,13 @@ except ImportError:
 
 
 import os
+import json
 import time
 from logging import getLogger
 from subprocess import PIPE, Popen
 from tempfile import mktemp
 
-from .path import Path, get_encoded
-
+from .path import Path, get_encoded as e, get_unicode as u
 
 LOGGER = getLogger('com.wlf.ffmpeg')
 
@@ -48,7 +48,7 @@ def generate_gif(filename, output=None, width=None, height=300):
     _try_run_cmd(cmd, 'Error during generate gif', cwd=str(ret.parent))
 
     # Copy mtime for skip generated.
-    os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
+    os.utime(e(ret), (time.time(), path.stat().st_mtime))
 
     LOGGER.info('生成GIF: %s', ret)
     return ret
@@ -83,7 +83,7 @@ def generate_mp4(filename, output=None, width=None, height=None):
     LOGGER.info('生成mp4: %s', ret)
 
     # Copy mtime for skip generated.
-    os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
+    os.utime(e(ret), (time.time(), path.stat().st_mtime))
 
     return ret
 
@@ -116,9 +116,82 @@ def generate_jpg(filename, output=None, width=None, height=None):
     LOGGER.info('生成jpg: %s', ret)
 
     # Copy mtime for skip generated.
-    os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
+    os.utime(e(ret), (time.time(), path.stat().st_mtime))
 
     return ret
+
+
+class ProbeResult(dict):
+    """Optimized dict for probe result.  """
+
+    def fps(self):
+        """FPS for the file.
+
+        Raises:
+            ValueError: FPS unknown.
+
+        Returns:
+            float: FPS value.
+        """
+
+        video_streams = [i for i in self['streams']
+                         if i['codec_type'] == 'video']
+        for i in video_streams:
+            value = self.parse_div(i['r_frame_rate'])
+            if value:
+                return value
+
+        raise ValueError('Can not determinate fps')
+
+    def duration(self):
+        """File duration in secondes.
+        
+        Returns:
+            float: media duration.
+        """
+
+        return float(self['format']['duration'])
+
+    def frames(self):
+        """Frames in this file.
+        
+        Returns:
+            int: frame count.
+        """
+
+        return int(round(self.duration() * self.fps()))
+
+    @classmethod
+    def parse_div(cls, exp):
+        """Parse divsion expression to float.
+
+        Args:
+            exp (unicode): expression given by ffprobe
+
+        Returns:
+            float: caculate result.
+        """
+
+        assert isinstance(exp, (unicode, str))
+        return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
+
+
+def probe(filename):
+    """Probe for media file info.
+
+    Args:
+        filename (pathLike object): file path. 
+
+    Returns:
+        ProbeResult: Optimized dict to save result.
+    """
+
+    cmd = ('ffprobe -show_entries format:streams '
+           '-of json -hide_banner "{}"').format(u(filename))
+    proc = Popen(e(cmd), stdout=PIPE, stderr=PIPE, env=os.environ)
+    stdout, _ = proc.communicate()
+    ret = json.loads(stdout)
+    return ProbeResult(ret)
 
 
 def _try_run_cmd(cmd, error_msg, **popen_kwargs):
@@ -129,7 +202,7 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
     }
     kwargs.update(popen_kwargs)
 
-    proc = Popen(get_encoded(cmd), **kwargs)
+    proc = Popen(e(cmd), **kwargs)
     stderr = proc.communicate()[1]
     if proc.wait():
         raise GenerateError(
