@@ -7,9 +7,7 @@ $(document).ready(
                 $('.lightbox .small video:appeared').each(
                     function() {
                         reload(this, '.small');
-                        if (this.readyState > 1) {
-                            this.play();
-                        }
+                        // this.play();
                     }
                 );
             }
@@ -19,12 +17,20 @@ $(document).ready(
         $smallVideos.mouseenter(
             function() {
                 reload(this, '.small');
-                if (this.readyState > 1) {
-                    this.play();
-                }
+                // this.play();
             }
         );
         $smallVideos.mouseout(
+            function() {
+                this.pause();
+            }
+        );
+        $smallVideos.on('durationchange',
+            function() {
+                this.play();
+            }
+        );
+        $smallVideos.on('disappear',
             function() {
                 unload(this, '.small');
             }
@@ -179,8 +185,11 @@ function reload(element, selector = '*') {
     $lightbox.find(selector).find('video').each(
         function() {
             updatePoster(this);
-            this.src = $(this).data('src');
-            this.load();
+            let src = $(this).data('src');
+            if (this.src != src) {
+                this.src = src;
+                this.load();
+            }
         }
     );
     $lightbox.find(selector).find('img').each(

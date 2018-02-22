@@ -57,12 +57,13 @@ is_local, 'relative_to' : relative_to} %}
         <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
             <a href="#image{{ loop.index }}" class="zoom" draggable="true">
                 <figure class="small">
-                    <video class='hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}" muted>
+                    <video class='hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}" muted
+                        loop>
                         <img alt="no image" data-src="{{ image.get('thumb', **config) }}" />
                     </video>
                     <div class="noscript">
                         <noscript>
-                            <video poster="{{ image.get('thumb', **config) }}" src="{{ image.get('preview', **config) }}" muted>
+                            <video poster="{{ image.get('thumb', **config) }}" src="{{ image.get('preview', **config) }}" muted loop>
                                 <img alt="no image" src="{{ image.get('thumb', **config) }}" />
                             </video>
                         </noscript>

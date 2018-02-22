@@ -25,7 +25,7 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
-APP.config['preview_duration'] = 10
+APP.config['preview_duration'] = 60
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
@@ -130,21 +130,21 @@ def response_image(uuid, role):
 
     generated = image.genearated.get(role)
     if generated is None:
+
         lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
         is_idle = lock.acquire(False)
-        try:
-            if is_strict and not is_idle:
-                return make_response('Generating.', 503, {'Retry-After': 10})
-            
-            job = spawn(image.generate,
-                        role,
-                        is_strict=is_strict,
-                        duration=APP.config['preview_duration'])
-            while not job.ready():
-                sleep(0.1)
-            generated = job.get()
-        finally:
-            lock.release()
+        lock.release()
+
+        if is_strict and not is_idle:
+            return make_response('Generating.', 503, {'Retry-After': 10})
+
+        job = spawn(image.generate,
+                    role,
+                    is_strict=is_strict,
+                    duration=APP.config['preview_duration'])
+        while not job.ready():
+            sleep(0.1)
+        generated = job.get()
 
     if not Path(generated).exists():
         del image.genearated[role]
