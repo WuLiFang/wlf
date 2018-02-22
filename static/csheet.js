@@ -73,11 +73,9 @@ $(document).ready(
             }
         );
         // Switch controls.
-        $('.lightbox .full video').on('readystatechange',
+        $('.lightbox .full video').on('durationchange',
             function() {
-                if (this.readyState > 0) {
-                    this.controls = this.duration > 1;
-                }
+                this.controls = this.duration > 1;
             }
         );
 
@@ -248,7 +246,9 @@ function updatePoster(video) {
                 video.removeAttribute('src');
             },
             function() {
-                video.removeAttribute('poster');
+                if (video.poster == url) {
+                    video.removeAttribute('poster');
+                }
             }
         );
     }
