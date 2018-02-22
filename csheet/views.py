@@ -133,7 +133,7 @@ def response_image(uuid, role):
         lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
         is_idle = lock.acquire(False)
         try:
-            if is_idle:
+            if is_idle or role == 'thumb':
                 try:
                     generated = image.generate(
                         role,
@@ -145,6 +145,10 @@ def response_image(uuid, role):
                 return make_response('Generating.', 503, {'Retry-After': 10})
         finally:
             lock.release()
+
+    if not Path(generated).exists():
+        del image.genearated[role]
+        return make_response('Generated file has been moved', 503, {'Retry-After': 1})
 
     return send_file(unicode(generated), conditional=True)
 

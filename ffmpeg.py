@@ -131,6 +131,9 @@ def generate_jpg(filename, output=None, **kwargs):
     except (ValueError, KeyError):
         seekstart = 0
 
+    if abs(seekstart) < 1:
+        seekstart = 0
+
     # Generate.
     cmd = ('ffmpeg -y -hide_banner '
            '-noaccurate_seek -i "{}" -vframes 1 -ss {} '
