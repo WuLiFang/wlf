@@ -20,6 +20,7 @@ from . import __version__
 from .. import cgtwq
 from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
+from .. import ffmpeg
 
 
 APP = Flask(__name__, static_folder='../static')
@@ -27,6 +28,7 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
+APP.config['duration_limit'] = 300
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
@@ -123,12 +125,25 @@ def response_image(uuid, role):
     try:
         image = HTMLImage.from_uuid(uuid)
         assert isinstance(image, HTMLImage)
-
-        is_strict = role not in ('thumb','full')
-        generated = image.generate(role, is_strict=is_strict)
-        return send_file(unicode(generated))
     except (KeyError, ValueError):
-        abort(404)
+        abort(404, 'Image not exists.')
+
+    is_strict = role not in ('thumb', 'full')
+    if is_strict:
+        source = image.source.get(role)
+        if not source:
+            abort(404, 'Role source not been set: {}'.format(role))
+
+        duration = ffmpeg.probe(source).duration()
+        limit = APP.config['duration_limit']
+        if duration > limit:
+            generated = image.genearated.get(role)
+            if not generated:
+                abort(403, ('Media duration exceed limit : {} > {}'
+                            .format(duration, limit)))
+
+    generated = image.generate(role, is_strict=is_strict)
+    return send_file(unicode(generated))
 
 
 def get_images(shots):

@@ -2,7 +2,6 @@
 // let count = 0;
 $(document).ready(
     function() {
-        // unloadAll();
         $('body').dblclick(
             function() {
                 $('.lightbox .small video:appeared').each(
@@ -33,23 +32,6 @@ $(document).ready(
         $smallVideos.on('appear',
             function() {
                 updatePoster(this);
-            }
-        );
-        $smallVideos.each(
-            function() {
-                updatePoster(this);
-            }
-        );
-        $('video').each(
-            function() {
-                recordAttr(this, ['poster', 'src']);
-                $(this).removeClass('hidden');
-            }
-        );
-        $('.noscript').addClass('hidden');
-        $('img').each(
-            function() {
-                recordAttr(this, ['src']);
             }
         );
         $('.lightbox a.zoom').click(
@@ -158,6 +140,14 @@ $(document).ready(
                     }
                     updateProgressBar(progressBar);
                 };
+            }
+        );
+        // Setup.
+        $('.noscript').addClass('hidden');
+        $('video').removeClass('hidden');
+        $smallVideos.each(
+            function() {
+                updatePoster(this);
             }
         );
     }
@@ -274,41 +264,6 @@ function stampedURL(url, precision = 9) {
     return url + '?timestamp=' + new Date().getTime().toPrecision(precision);
 }
 
-/**
- * Unload all lightbox video.
- */
-function unloadAll() {
-    $html = $($('#images').innerHTML);
-    window.stop();
-    $('.lightbox .viewer img').each(
-        function() {
-            this.removeAttribute('src');
-        }
-    );
-    $('.lightbox .viewer video').each(
-        function() {
-            this.removeAttribute('poster');
-            this.removeAttribute('src');
-            this.controls = false;
-        }
-    );
-}
-
-/**
- * Record attribute data on element.
- * @param {Element} element element to record.
- * @param {Array} attributes attribute names.
- */
-function recordAttr(element, attributes) {
-    let $element = $(element);
-    for (let i = 0; i < attributes.length; i++) {
-        let name = attributes[i];
-        let value = $element.attr(name);
-        if (value) {
-            $element.data(name, value);
-        }
-    }
-}
 // /**
 //  * Hide lightbox  element then set count.
 //  * @param {element} lightbox lightbox to hide.
