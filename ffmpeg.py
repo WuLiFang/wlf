@@ -102,7 +102,7 @@ def generate_mp4(filename, output=None, **kwargs):
     return ret
 
 
-@run_with_semaphore(2)
+@run_with_semaphore(8)
 def generate_jpg(filename, output=None, **kwargs):
     """Convert given file to jpg format.
 
@@ -126,19 +126,22 @@ def generate_jpg(filename, output=None, **kwargs):
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
-    try:
-        seekstart = probe(path).duration() / 2
-    except (ValueError, KeyError):
-        seekstart = 0
+    input_options = [
+        '-noaccurate_seek'
+    ]
 
-    if abs(seekstart) < 1:
-        seekstart = 0
+    try:
+        mediainfo = probe(path)
+        if mediainfo.frames() > 1:
+            input_options.append('-ss {}'.format(mediainfo.duration() / 2))
+    except (ValueError, KeyError):
+        pass
 
     # Generate.
     cmd = ('ffmpeg -y -hide_banner '
-           '-noaccurate_seek -i "{}" -vframes 1 -ss {} '
+           '{} -i "{}" -vframes 1 '
            '-vf {} "{}"').format(
-               filename, seekstart, _filters, ret)
+               ' '.join(input_options), filename, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
     LOGGER.info('生成jpg: %s', ret)
 
