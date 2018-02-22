@@ -25,7 +25,7 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
-APP.config['preview_duration'] = 60
+APP.config['preview_duration'] = 10
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
@@ -40,6 +40,7 @@ def nocache(func):
     def _func(*args, **kwargs):
         resp = make_response(func(*args, **kwargs))
         resp.cache_control.no_cache = True
+        resp.cache_control.max_age = 10
         return resp
     return update_wrapper(_func, func)
 
@@ -126,23 +127,24 @@ def response_image(uuid, role):
         abort(404, 'Image not exists.')
 
     is_strict = role not in ('thumb', 'full')
-    duration = APP.config['preview_duration']
 
     generated = image.genearated.get(role)
     if generated is None:
         lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
         is_idle = lock.acquire(False)
-        if is_idle:
-            try:
-                spawn(image.generate,
-                      role,
-                      is_strict=is_strict,
-                      duration=duration)
-            finally:
-                lock.release()
-
-        return make_response('Generating.', 503,
-                             {'Retry-After': 5 if is_idle else 120})
+        try:
+            if is_idle:
+                try:
+                    generated = image.generate(
+                        role,
+                        is_strict=is_strict,
+                        duration=APP.config['preview_duration'])
+                except KeyError:
+                    abort(404, 'Image hase no source for role: {}'.format(role))
+            else:
+                return make_response('Generating.', 503, {'Retry-After': 10})
+        finally:
+            lock.release()
 
     return send_file(unicode(generated), conditional=True)
 
