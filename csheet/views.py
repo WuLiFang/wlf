@@ -133,19 +133,16 @@ def response_image(uuid, role):
         lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
         is_idle = lock.acquire(False)
         try:
-            if is_idle or role == 'thumb':
-                try:
-                    job = spawn(image.generate,
-                                role,
-                                is_strict=is_strict,
-                                duration=APP.config['preview_duration'])
-                    while not job.ready():
-                        sleep(0.1)
-                    generated = job.get()
-                except KeyError:
-                    abort(404, 'Image hase no source for role: {}'.format(role))
-            else:
+            if is_strict and not is_idle:
                 return make_response('Generating.', 503, {'Retry-After': 10})
+            
+            job = spawn(image.generate,
+                        role,
+                        is_strict=is_strict,
+                        duration=APP.config['preview_duration'])
+            while not job.ready():
+                sleep(0.1)
+            generated = job.get()
         finally:
             lock.release()
 
