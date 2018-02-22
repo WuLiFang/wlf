@@ -23,8 +23,15 @@ header {
   text-align: right;
   opacity: 0.3; }
 
+div.noscript,
+div.noscript div {
+  display: inherit;
+  height: 100%;
+  margin: 0;
+  width: 100%; }
+
 .hidden {
-  display: none; }
+  display: none !important; }
 
 .help table td,
 .help table th {

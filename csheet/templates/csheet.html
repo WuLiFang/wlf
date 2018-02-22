@@ -27,11 +27,11 @@ is_local, 'relative_to' : relative_to} %}
         <div class="count">
             {{ images.__len__() }}
         </div>
-        <noscript>
-            <div class="noscript">
+        <div class="noscript">
+            <noscript>
                 需要浏览器启用javascript
-            </div>
-        </noscript>
+            </noscript>
+        </div>
         <nav>
             {% block nav %} {% endblock %}
         </nav>
@@ -54,14 +54,19 @@ is_local, 'relative_to' : relative_to} %}
     </header>
     <ul class="images">
         {% for image in images %}
-        <li class="lightbox" data-full="{{ image.get_full(**config) }}" data-preview="{{ image.get_preview(**config) }}" data-thumb="null"
-            id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
+        <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
             <a href="#image{{ loop.index }}" class="zoom" draggable="true">
                 <figure class="small">
-                    <video poster="{{ image.get_full(**config) }}" muted>
-                        <source src="{{ image.get_preview(**config) }}">
-                        <img alt="no image" src="{{ image.get_full(**config) }}" />
+                    <video class='hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}" muted>
+                        <img alt="no image" data-src="{{ image.get('thumb', **config) }}" />
                     </video>
+                    <div class="noscript">
+                        <noscript>
+                            <video poster="{{ image.get('thumb', **config) }}" src="{{ image.get('preview', **config) }}" muted>
+                                <img alt="no image" src="{{ image.get('thumb', **config) }}" />
+                            </video>
+                        </noscript>
+                    </div>
                     <figcaption>
                         {{ image.name | e }}
                         <!-- SNJYW_EP26_01_
@@ -78,14 +83,22 @@ is_local, 'relative_to' : relative_to} %}
                 <a class="close" href="#void">
                 </a>
                 <figure class="full" draggable="true">
-                    <video poster="{{ image.get_full(**config) }}" controls draggable="true">
-                        <source src="{{ image.get_preview(**config) }}">
-                        <a href="{{ image.get_full(**config) }}" target="_blank">
-                            <img alt="no image" src="{{ image.get_full(**config) }}" draggable="true" />
+                    <video class='hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}" draggable="true">
+                        <a href="{{ image.get('full', **config) }}" target="_blank">
+                            <img alt="no image" data-src="{{ image.get('full', **config) }}" draggable="true" />
                         </a>
                     </video>
+                    <div class="noscript">
+                        <noscript>
+                            <video poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}" draggable="true">
+                                <a href="{{ image.get('full', **config) }}" target="_blank">
+                                    <img alt="no image" src="{{ image.get('full', **config) }}" draggable="true" />
+                                </a>
+                            </video>
+                        </noscript>
+                    </div>
                     <figcaption>
-                        {{ image | e}}
+                        {{ image | e }}
                     </figcaption>
                 </figure>
                 <a class="prev" href="#image{{ loop.index - 1 }}">

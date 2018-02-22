@@ -5,11 +5,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import mimetypes
 import uuid
-from os import strerror
 
 from jinja2 import Environment, PackageLoader
 
-from ..ffmpeg import generate_mp4
+from .. import ffmpeg
 from ..files import copy, version_filter
 from ..path import Path, PurePath, get_encoded
 from .base import Image
@@ -45,27 +44,69 @@ def updated_config(config=None):
 class HTMLImage(Image):
     """A image in html contactsheet page.  """
 
-    thumb = None
-    _preview = None
     _cache = {}
+    _is_initiated = False
+    folder_names = {
+        'thumb': 'thumbs',
+        'preview': 'previews',
+        'full': 'images'
+    }
+    file_suffix = {
+        'thumb': '.jpg',
+        'preview': '.mp4',
+        'full': '.jpg'
+    }
+    generate_methods = {
+        'thumb': ffmpeg.generate_jpg,
+        'preview': ffmpeg.generate_mp4,
+        'full': ffmpeg.generate_jpg
+    }
 
     def __new__(cls, path):
         if isinstance(path, HTMLImage):
             return path
 
-        uuid_ = unicode(uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex)
         try:
-            return cls.from_uuid(uuid_)
+            return cls.from_uuid(cls.get_uuid(path))
         except KeyError:
             pass
 
         ret = super(HTMLImage, cls).__new__(cls, path)
-        ret.uuid = uuid_
-        ret._preview_lock = Semaphore()  # pylint: disable=protected-access
-        ret.preview_source = path
-        cls._cache[uuid_] = ret
 
         return ret
+
+    def __init__(self, path):
+        if (isinstance(path, HTMLImage)
+                or self._is_initiated):
+            return
+
+        super(HTMLImage, self).__init__(path)
+        self._locks = {i: Semaphore() for i in self.folder_names}
+        self.source = {}
+        self.genearated = {}
+        self.uuid = self.get_uuid(path)
+
+        type_ = unicode(mimetypes.guess_type(unicode(self.path))[0])
+        if type_.startswith('image/'):
+            self.source['full'] = self.source['thumb'] = self.path
+        elif type_.startswith('video/'):
+            self.source['preview'] = self.path
+
+        self._is_initiated = True
+        HTMLImage._cache[self.uuid] = self
+
+    @classmethod
+    def get_uuid(cls, path):
+        """Get uuid for path.
+
+        Args:
+            path (pathLike object): Image path.
+
+        Returns:
+            str: hex uuid.
+        """
+
+        return uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex
 
     @classmethod
     def from_uuid(cls, uuid_):
@@ -84,85 +125,119 @@ class HTMLImage(Image):
         """get path used on drag.  """
 
         if config.get('is_pack'):
-            return 'images/{}'.format(self.path.name)
+            return '{}/{}'.format(
+                self.folder_names['full'],
+                self.path.name)
 
         return self.path.as_uri()
 
-    def get_full(self, **config):
-        """get full image path.  """
+    def get(self, role, **config):
+        """Get url for given role.
 
+        Args:
+            role (str): role name, key of self.folder_names.
+            **config (dict): jinja config env
+
+        Returns:
+            str: url  for role name.
+        """
+
+        if config.get('is_web'):
+            return ('/images/{}.{}'.format(self.uuid, role))
+
+        path = self.genearated.get(role, self.source.get(role, self.path))
         if config.get('is_pack'):
-            return 'images/{}'.format(self.path.name)
+            folder_name = self.folder_names[role]
+            return '{}/{}'.format(
+                folder_name,
+                path.name)
 
-        return ('/images/{}/full'.format(self.uuid))
+        return PurePath(path).as_uri()
 
-    def get_preview(self, **config):
-        """get preview video path.  """
+    def get_default(self, role):
+        """Get default path.
 
-        if config.get('is_pack'):
-            return 'previews/{}'.format(self.preview.name)
+        Args:
+            role (str): role name, key of self.folder_names.
+            suffix (str): path suffix.
 
-        return ('/images/{}/preview'.format(self.uuid))
+        Returns:
+            path.PurePath: Default path.
+        """
 
-    @property
-    def preview_default(self):
-        """Preview path default.  """
+        path = self.path
+        folder_name = self.folder_names[role]
+        suffix = self.file_suffix[role]
+        filename = path.with_suffix(suffix).name
+        if path.is_absolute():
+            return (path.with_name(folder_name) / filename)
 
-        filename = PurePath(self.path).with_suffix('.mp4').name
-        for i in (self.path, self.preview_source):
-            if i is None:
-                continue
-            path = PurePath(i)
-            if path.is_absolute():
-                return (path.with_name('previews') / filename)
-        return Path.home() / '.wlf.csheet.preview' / filename
+        return Path.home() / '.wlf/csheet' / folder_name / filename
 
-    @property
-    def preview(self):
-        """Dynamic .gif preview.  """
+    def generate(self, role, source=None, output=None, is_strict=True, **kwargs):
+        """Generate file for role name.
 
-        return self._preview or self.preview_default
+        Args:
+            role (str): role name.
+            **kwargs : method kwargs
+            source (pathLike object, optional): Defaults to None. Source path
+            output (pathLike object, optional): Defaults to None. Output path.
+            is_strict (bool): Defaults to True,
+                if `is_strict` is True,
+                raises KeyError when self.source[role] not been set.
+                if `is_strict` is False,
+                will use self.path as source alternative.
 
-    @preview.setter
-    def preview(self, value):
-        self._preview = value
+        Returns:
+            path.Path: Generated file path.
+        """
 
-    def generate_preview(self, **kwargs):
-        """Generate gif preview with @source.  """
+        default_kwargs = {
+            'thumb': {'height': 200},
+        }
+        _kwargs = default_kwargs.get(role, {})
 
-        if unicode(self.preview_source).endswith('.mp4'):
-            return Path(self.preview_source)
-
-        with self._preview_lock:
-            source = Path(self.preview_source)
-            output = Path(get_encoded(self.preview))
-
-            try:
-                output.parent.mkdir(exist_ok=True)
-                self._preview = generate_mp4(source, output, **kwargs)
-                return self._preview
-            except OSError as ex:
-                LOGGER.error(strerror(ex.errno), exc_info=True)
-            except:
-                LOGGER.error('Error during generate preview.', exc_info=True)
+        try:
+            source = Path(source or self.source[role])
+        except KeyError:
+            if is_strict:
                 raise
+
+            source = Path(self.path)
+
+        if not source.exists():
+            raise ValueError('Source file not exists.', source)
+
+        if (output is None
+                and source.suffix == self.file_suffix[role]
+                and not _kwargs):
+            return source
+
+        _kwargs.update(kwargs)
+        output = Path(output or self.get_default(role))
+        method = self.generate_methods[role]
+
+        with self._locks[role]:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            ret = method(source, output, **_kwargs)
+            ret = Path(ret)
+            self.genearated[role] = ret
+            return ret
 
     def download(self, dest):
         """Download this image to dest.  """
 
         path = PurePath(dest)
-        for attr in ('path', 'thumb', 'preview'):
-            src_value = getattr(self, attr)
-            if not src_value:
+        for role in self.folder_names:
+            src_path = self.genearated.get(role, self.source.get(role))
+            if not src_path:
                 continue
-            src_path = Path(src_value)
 
-            dirpath = PurePath({'path': 'images',
-                                'thumb': 'thumbs',
-                                'preview': 'previews'}.get(attr, ''))
+            dirname = self.folder_names[role]
+            dst_path = (path / dirname /
+                        self.name).with_suffix(src_path.suffix)
+
             if src_path.exists():
-                dst_path = (path / dirpath /
-                            self.name).with_suffix(src_path.suffix)
                 copy(src_path, dst_path)
 
 

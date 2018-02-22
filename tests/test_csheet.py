@@ -23,7 +23,8 @@ class CSheetTestCase(TestCase):
 
     def test_preview_default(self):
         image = HTMLImage('c:/test/case1.jpg')
-        self.assertEqual(image.preview, PurePath('c:/test/previews/case1.mp4'))
+        self.assertEqual(image.get_default('preview'),
+                         PurePath('c:/test/previews/case1.mp4'))
 
     def test_pickle_image(self):
         from wlf.csheet.base import Image

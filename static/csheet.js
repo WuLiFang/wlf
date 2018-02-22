@@ -2,65 +2,68 @@
 // let count = 0;
 $(document).ready(
     function() {
+        // unloadAll();
         $('body').dblclick(
             function() {
                 $('.lightbox .small video:appeared').each(
                     function() {
-                        this.play();
-                        // useData(this, 'preview');
+                        reload(this, '.small');
+                        if (this.readyState > 1) {
+                            this.play();
+                        }
                     }
                 );
             }
         );
-        $('.lightbox .small video').mouseenter(
+        let $smallVideos = $('.lightbox .small video');
+        $smallVideos.appear();
+        $smallVideos.mouseenter(
             function() {
-                this.load();
-                this.play();
+                reload(this, '.small');
+                if (this.readyState > 1) {
+                    this.play();
+                }
             }
         );
-        $('.lightbox .small video').mouseout(
+        $smallVideos.mouseout(
             function() {
-                this.pause();
+                unload(this, '.small');
             }
         );
-        // $('.lightbox .small').click(
-        //     function() {
-        //         let lightbox = getLightbox(this);
-        //         $(lightbox).find('img').each(
-        //             function() {
-        //                 let element = this;
-        //                 useData(element, 'full',
-        //                     function() {
-        //                         useData(element, 'preview');
-        //                     }
-        //                 );
-        //             }
-        //         );
-        //     }
-        // );
-        // $('.lightbox figure video').each(function() {
-        //     let $this = $(this);
-        //     $this.appear();
-        //     $this.on('disappear',
-        //         function(e, $affected) {
-        //             $affected.each(function() {
-        //                 $(this).find('video').each(
-        //                     function() {
-        //                         this.pause();
-        //                     }
-        //                 );
-        //                 // useMinimal(this);
-        //                 // console.log(this);
-        //             });
-        //         }
-        //     );
-        // });
+        $smallVideos.on('appear',
+            function() {
+                updatePoster(this);
+            }
+        );
+        $smallVideos.each(
+            function() {
+                updatePoster(this);
+            }
+        );
+        $('video').each(
+            function() {
+                recordAttr(this, ['poster', 'src']);
+                $(this).removeClass('hidden');
+            }
+        );
+        $('.noscript').addClass('hidden');
+        $('img').each(
+            function() {
+                recordAttr(this, ['src']);
+            }
+        );
+        $('.lightbox a.zoom').click(
+            function() {
+                reload(this, '.viewer');
+            }
+        );
         // Disable next/prev button when not avalieble.
         $('.lightbox .viewer a').click(
             function() {
                 let $this = $(this);
                 let $lightbox = $(getLightbox(this));
                 let href;
+                unload(this, '.viewer');
                 switch ($this.attr('class')) {
                     case 'prev':
                         let prev = $lightbox.prev();
@@ -68,7 +71,7 @@ $(document).ready(
                             prev = prev.prev();
                         }
                         href = '#' + prev.attr('id');
-                        reload(prev);
+                        reload(prev, '.viewer');
                         break;
                     case 'next':
                         let next = $lightbox.next();
@@ -76,38 +79,23 @@ $(document).ready(
                             next = next.next();
                         }
                         href = '#' + next.attr('id');
-                        reload(next);
+                        reload(next, '.viewer');
                         break;
                     default:
                         href = $this.attr('href');
                 }
-                $('.lightbox video').each(
-                    function() {
-                        this.pause();
-                    }
-                );
                 $this.attr('href', href);
                 if (href == '#undefined') {
                     return false;
                 }
             }
         );
-        $('.lightbox a.zoom').click(
-            function() {
-                reload(this);
-            }
-        );
         // Switch controls.
-        $('.lightbox .full video').on('canplaythrough',
+        $('.lightbox .full video').on('readystatechange',
             function() {
-                // let video = this;
-                /** Hide controls for single frame.  */
-                this.controls = this.duration > 1;
-                // function setControls() {
-                //     video.controls = video.duration > 1;
-                // };
-                // this.oncanplaythrough = setControls;
-                // setControls();
+                if (this.readyState > 0) {
+                    this.controls = this.duration > 1;
+                }
             }
         );
 
@@ -120,13 +108,6 @@ $(document).ready(
 
         );
 
-        // $('.lightbox img').each(
-        //     function() {
-        //         $(this).attr('src', null);
-        //         hide(this);
-        //         useMinimal(this);
-        //     }
-        // );
         // simlpe help
         $('nav').append(
             $('<button/>', {
@@ -184,8 +165,8 @@ $(document).ready(
 
 /**
  * get a light box from element parent.
- * @param {element} element this element.
- * @return {element} lightbox element.
+ * @param {Element} element this element.
+ * @return {Element} lightbox element.
  */
 function getLightbox(element) {
     let $element = $(element);
@@ -198,19 +179,136 @@ function getLightbox(element) {
 
 /**
  * Reload related video.
- * @param {element} element lightbox related element.
+ * @param {Element} element element in a lightbox.
+ * @param {String} selector element selector.
  */
-function reload(element) {
-    let lightbox = getLightbox(element);
-    $(lightbox).find('video').each(
+function reload(element, selector = '*') {
+    let $lightbox = $(getLightbox(element));
+    $lightbox.find(selector).find('video').each(
         function() {
-            // this.src = $(lightbox).data('preview') +
-            //     '?timestamp=' + new Date().getTime().toPrecision(9);
+            updatePoster(this);
+            this.src = $(this).data('src');
             this.load();
+        }
+    );
+    $lightbox.find(selector).find('img').each(
+        function() {
+            let img = this;
+            let url = stampedURL($(this).data('src'));
+            imageAvailable(
+                url,
+                function() {
+                    img.src = url;
+                }
+            );
         }
     );
 }
 
+/**
+ * Unload related video to display poster.
+ * @param {Element} element element in a lightbox.
+ * @param {String} selector element selector.
+ */
+function unload(element, selector = '*') {
+    let $selected = $(getLightbox(element)).find(selector);
+    $selected.find('video').each(
+        function() {
+            updatePoster(this);
+            this.controls = false;
+            this.load();
+        }
+    );
+    $selected.find('img').each(
+        function() {
+            this.removeAttribute('src');
+        }
+    );
+}
+
+/**
+ * Update video poster.
+ * @param {Element} video video element.
+ */
+function updatePoster(video) {
+    let $video = $(video);
+    let $parent = $video.parent('figure.small');
+    let url = $(video).data('poster');
+    if (url) {
+        url = stampedURL(url);
+        imageAvailable(
+            url,
+            function() {
+                // Release size
+                if ($parent.length) {
+                    $video.height('');
+                    $parent.width('');
+                }
+                // update
+                video.poster = url;
+                // Keep size
+                if ($parent.length) {
+                    let height = $video.height();
+                    let width = $video.width();
+                    if (height == 200 && width) {
+                        $video.height(height);
+                        $parent.width(width);
+                    }
+                }
+                video.removeAttribute('src');
+            },
+            function() {
+                video.removeAttribute('poster');
+            }
+        );
+    }
+}
+
+/**
+ * Add timestamp to url.
+ * @param {String} url url to stamp.
+ * @param {Number} precision stamp precision.
+ * @return {String} stamped url.
+ */
+function stampedURL(url, precision = 9) {
+    return url + '?timestamp=' + new Date().getTime().toPrecision(precision);
+}
+
+/**
+ * Unload all lightbox video.
+ */
+function unloadAll() {
+    $html = $($('#images').innerHTML);
+    window.stop();
+    $('.lightbox .viewer img').each(
+        function() {
+            this.removeAttribute('src');
+        }
+    );
+    $('.lightbox .viewer video').each(
+        function() {
+            this.removeAttribute('poster');
+            this.removeAttribute('src');
+            this.controls = false;
+        }
+    );
+}
+
+/**
+ * Record attribute data on element.
+ * @param {Element} element element to record.
+ * @param {Array} attributes attribute names.
+ */
+function recordAttr(element, attributes) {
+    let $element = $(element);
+    for (let i = 0; i < attributes.length; i++) {
+        let name = attributes[i];
+        let value = $element.attr(name);
+        if (value) {
+            $element.data(name, value);
+        }
+    }
+}
 // /**
 //  * Hide lightbox  element then set count.
 //  * @param {element} lightbox lightbox to hide.
@@ -322,23 +420,23 @@ function reload(element) {
 //     return path;
 // }
 
-// /**
-//  * Load image in background.
-//  * @param {string} path image path.
-//  * @param {function} onload callback.
-//  * @param {function} onerror callback.
-//  */
-// function imageAvailable(path, onload, onerror) {
-//     if (path == null | path == 'null') {
-//         if (typeof (onerror) != 'undefined') {
-//             onerror();
-//         }
-//         return;
-//     }
-//     let temp = new Image;
-//     temp.onload = function() {
-//         onload(temp);
-//     };
-//     temp.onerror = onerror;
-//     temp.src = path + '?timestamp=' + new Date().getTime().toPrecision(9);
-// }
+/**
+ * Load image in background.
+ * @param {String} url image url.
+ * @param {Function} onload callback.
+ * @param {Function} onerror callback.
+ */
+function imageAvailable(url, onload, onerror) {
+    if (url == null | url == 'null') {
+        if (typeof (onerror) != 'undefined') {
+            onerror();
+        }
+        return;
+    }
+    let temp = new Image;
+    temp.onload = function() {
+        onload(temp);
+    };
+    temp.onerror = onerror;
+    temp.src = url;
+}

@@ -12,8 +12,8 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, render_template,
-                   request, send_file, redirect, send_from_directory, escape)
-from gevent import sleep, spawn, monkey
+                   request, send_file, redirect, send_from_directory)
+from gevent import sleep, spawn
 from gevent.queue import Queue
 
 from . import __version__
@@ -21,8 +21,6 @@ from .. import cgtwq
 from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
 
-
-# monkey.patch_all()
 
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
@@ -95,7 +93,7 @@ def render_local_dir():
     if request.args.get('pack'):
         return packed_page(images=get_images_from_dir(local_dir))
 
-    return from_dir(local_dir, is_local=True, relative_to=local_dir)
+    return from_dir(local_dir, is_web=True, relative_to=local_dir)
 
 
 @APP.route('/local/<path:filename>')
@@ -106,16 +104,17 @@ def get_local(filename):
     return send_from_directory(APP.config['local_dir'], filename)
 
 
-@APP.route('/images/<uuid>/preview')
+@APP.route('/images/<uuid>.<role>')
 @nocache
-def image_preview(uuid):
-    """Response preview video for uuid.
+def response_image(uuid, role):
+    """Response file for a image.
 
     Decorators:
         APP
 
     Args:
         uuid (str): Image uuid.
+        role (str): Role of wanted file.
 
     Returns:
         flask.Response: Response for client.
@@ -123,41 +122,13 @@ def image_preview(uuid):
 
     try:
         image = HTMLImage.from_uuid(uuid)
-    except KeyError:
+        assert isinstance(image, HTMLImage)
+
+        is_strict = role not in ('thumb','full')
+        generated = image.generate(role, is_strict=is_strict)
+        return send_file(unicode(generated))
+    except (KeyError, ValueError):
         abort(404)
-    assert isinstance(image, HTMLImage)
-
-    job = spawn(image.generate_preview)
-    while not job.ready():
-        sleep(0.1)
-    preview = job.get()
-    if preview is None:
-        return image_full(uuid)
-    return send_file(unicode(image.preview))
-
-
-@APP.route('/images/<uuid>/full')
-@nocache
-def image_full(uuid):
-    """Response full image for uuid.
-
-    Decorators:
-        APP
-
-    Args:
-        uuid (str): Image uuid.
-
-    Returns:
-        flask.Response: Response for client.
-    """
-
-    try:
-        image = HTMLImage.from_uuid(uuid)
-    except KeyError:
-        abort(404)
-    assert isinstance(image, HTMLImage)
-
-    return send_file(unicode(image.path))
 
 
 def get_images(shots):
@@ -237,10 +208,6 @@ def packed_page(**config):
     config['is_pack'] = True
 
     with ZipFile(f, 'w', allowZip64=True) as zipfile:
-        # Pack index.
-        index_page = render_template('csheet.html', **config)
-        zipfile.writestr('{}.html'.format(
-            config.get('title', 'index')), bytes(index_page))
 
         # Pack images.
         images = config.get('images')
@@ -250,16 +217,13 @@ def packed_page(**config):
 
         def _write_image(image):
             assert isinstance(image, HTMLImage)
-            try:
-                zipfile.write(unicode(image.path),
-                              'images/{}'.format(image.path.name))
-            except OSError:
-                pass
-            try:
-                zipfile.write(unicode(image.generate_preview()),
-                              'previews/{}'.format(image.preview.name))
-            except OSError:
-                pass
+            for role, dirname in image.folder_names.items():
+                try:
+                    generated = image.generate(role)
+                    zipfile.write(unicode(generated),
+                                  '{}/{}'.format(dirname, generated.name))
+                except (OSError, KeyError):
+                    pass
 
         for index, i in enumerate(images, 1):
             job = spawn(_write_image, i)
@@ -270,6 +234,11 @@ def packed_page(**config):
         # Pack static files:
         for i in config.get('static', ()):
             zipfile.write(APP.static_folder + '/' + i, 'static/{}'.format(i))
+
+        # Pack index.
+        index_page = render_template('csheet.html', **config)
+        zipfile.writestr('{}.html'.format(
+            config.get('title', 'index')), index_page.encode('utf-8'))
 
     f.seek(0, SEEK_END)
     size = f.tell()
@@ -311,49 +280,8 @@ def get_html_image(database, pipeline, prefix, name):
     if path is None:
         raise ValueError
     image = HTMLImage(path)
-    image.preview_source = (video_shots or shots).get_shot_submit_path(name)
+    image.source['preview'] = (video_shots or shots).get_shot_submit_path(name)
     return image
-
-
-# @APP.route('/images/<database>/<pipeline>/<prefix>/<name>')
-# @nocache
-# def get_image(database, pipeline, prefix, name):
-#     """Respon image request.  """
-#     name = name.split('.')[0]
-#     try:
-#         image = get_html_image(database, pipeline, prefix, name)
-#         return send_file(unicode(image.path))
-#     except (IOError, ValueError) as ex:
-#         APP.logger.error(ex)
-#         abort(404)
-
-
-# @APP.route('/previews/<database>/<pipeline>/<prefix>/<name>')
-# @nocache
-# def get_preview(database, pipeline, prefix, name):
-#     """Respon preview request.  """
-
-#     name = name.split('.')[0]
-#     height = {
-#         '动画': 180,
-#         '灯光': 200,
-#         '合成': 300,
-#     }.get(pipeline, None)
-
-#     try:
-#         image = get_html_image(database, pipeline, prefix, name)
-#         job = spawn(image.generate_preview, height=height)
-#         while not job.ready():
-#             sleep(0.1)
-#         preview = job.get()
-#         if preview is None:
-#             return get_image(database, pipeline, prefix, name)
-#         APP.logger.debug(u'获取动图: %s', preview)
-#     except ValueError:
-#         APP.logger.error(image)
-#         abort(404)
-
-#     return send_file(unicode(preview))
 
 
 @APP.route('/project_code/<project>')

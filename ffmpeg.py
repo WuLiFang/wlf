@@ -69,17 +69,51 @@ def generate_mp4(filename, output=None, width=None, height=None):
     ret = Path(output or path).with_suffix('.mp4')
     _filters = 'scale="{}:{}:flags=lanczos"'.format(
         '-2' if width is None else int(width) // 2 * 2,
-        r'min(ih\, 1080)' if height is None else int(height) // 2 * 2)
+        r'min(trunc(ih / 2) * 2\, 1080)' if height is None else int(height) // 2 * 2)
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
     # Generate.
-    cmd = 'ffmpeg -y -i "{}" -movflags faststart -vf {} -vcodec libx264 -pix_fmt yuv420p -f mp4 "{}"'.format(
-        filename, _filters, ret)
+    cmd = ('ffmpeg -y -i "{}" -movflags faststart '
+           '-vf {} -vcodec libx264 -pix_fmt yuv420p -f mp4 '
+           '"{}"').format(filename, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
     LOGGER.info('生成mp4: %s', ret)
+
+    # Copy mtime for skip generated.
+    os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
+
+    return ret
+
+
+def generate_jpg(filename, output=None, width=None, height=None):
+    """Convert given file to jpg format.
+
+    Args:
+        filename (path): File to convert.
+        output (path, optional): Defaults to None. Output filepath.
+
+    Returns:
+        wlf.Path: output path.
+    """
+
+    path = Path(filename)
+    ret = Path(output or path).with_suffix('.jpg')
+    _filters = 'scale="{}:{}:flags=lanczos"'.format(
+        '-1' if width is None else int(width),
+        r'min(ih\, 1080)' if height is None else int(height))
+
+    # Skip generated.
+    if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
+        return ret
+
+    # Generate.
+    cmd = 'ffmpeg -y -i "{}" -vframes 1 -vf {} "{}"'.format(
+        filename, _filters, ret)
+    _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
+    LOGGER.info('生成jpg: %s', ret)
 
     # Copy mtime for skip generated.
     os.utime(get_encoded(ret), (time.time(), path.stat().st_mtime))
