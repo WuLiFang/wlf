@@ -22,7 +22,7 @@ from .decorators import run_with_semaphore
 LOGGER = getLogger('com.wlf.ffmpeg')
 
 
-@run_with_semaphore(4)
+@run_with_semaphore(2)
 def generate_gif(filename, output=None, **kwargs):
     """Generate a gif with same name.  """
 
@@ -57,7 +57,7 @@ def generate_gif(filename, output=None, **kwargs):
     return ret
 
 
-@run_with_semaphore(4)
+@run_with_semaphore(1)
 def generate_mp4(filename, output=None, **kwargs):
     """Convert a video file to mp4 format.
 
@@ -102,7 +102,7 @@ def generate_mp4(filename, output=None, **kwargs):
     return ret
 
 
-@run_with_semaphore(8)
+@run_with_semaphore(2)
 def generate_jpg(filename, output=None, **kwargs):
     """Convert given file to jpg format.
 
@@ -200,7 +200,7 @@ class ProbeResult(dict):
         return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
 
 
-@run_with_semaphore(8)
+@run_with_semaphore(2)
 def probe(filename):
     """Probe for media file info.
 

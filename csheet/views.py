@@ -130,12 +130,19 @@ def response_image(uuid, role):
 
     generated = image.genearated.get(role)
     if generated is None:
-        spawn(image.generate,
-              role,
-              is_strict=is_strict,
-              duration=duration)
+        lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
+        is_idle = lock.acquire(False)
+        if is_idle:
+            try:
+                spawn(image.generate,
+                      role,
+                      is_strict=is_strict,
+                      duration=duration)
+            finally:
+                lock.release()
 
-        return make_response('Generating.', 503, {'Retry-After': 5})
+        return make_response('Generating.', 503,
+                             {'Retry-After': 5 if is_idle else 120})
 
     return send_file(unicode(generated), conditional=True)
 

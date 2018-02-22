@@ -81,7 +81,7 @@ class HTMLImage(Image):
             return
 
         super(HTMLImage, self).__init__(path)
-        self._locks = {i: Semaphore() for i in self.folder_names}
+        self.locks = {i: Semaphore() for i in self.folder_names}
         self.source = {}
         self.genearated = {}
         self.uuid = self.get_uuid(path)
@@ -217,7 +217,7 @@ class HTMLImage(Image):
         output = Path(output or self.get_default(role))
         method = self.generate_methods[role]
 
-        with self._locks[role]:
+        with self.locks[role]:
             output.parent.mkdir(parents=True, exist_ok=True)
             ret = method(source, output, **_kwargs)
             ret = Path(ret)

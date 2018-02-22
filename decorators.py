@@ -19,6 +19,7 @@ from .env import HAS_QT, has_nuke
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
 
+
 def run_async(func):
     """Run func in thread.  """
 
@@ -138,6 +139,7 @@ def run_with_memory_require(size=1):
 
     return _wrap
 
+
 def run_with_semaphore(value):
     """Run with a semaphore lock.
 
@@ -155,6 +157,9 @@ def run_with_semaphore(value):
         def _func(*args, **kwargs):
             with _lock:
                 return func(*args, **kwargs)
+
+        _func.lock = _lock
+
         return _func
 
     return _wrap
