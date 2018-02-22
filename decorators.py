@@ -5,16 +5,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import inspect
 import logging
-import threading
 import time
+import threading
 from functools import wraps
 from multiprocessing.dummy import Queue
+try:
+    from gevent.lock import Semaphore
+except ImportError:
+    Semaphore = threading.Semaphore
 
 from .env import HAS_QT, has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
-
 
 def run_async(func):
     """Run func in thread.  """
@@ -131,6 +134,27 @@ def run_with_memory_require(size=1):
 
             return func(*args, **kwargs)
 
+        return _func
+
+    return _wrap
+
+def run_with_semaphore(value):
+    """Run with a semaphore lock.
+
+    Args:
+        value (int): Semaphore value.
+
+    Returns:
+        function: function warpper.
+    """
+
+    def _wrap(func):
+        _lock = Semaphore(value)
+
+        @wraps(func)
+        def _func(*args, **kwargs):
+            with _lock:
+                return func(*args, **kwargs)
         return _func
 
     return _wrap
