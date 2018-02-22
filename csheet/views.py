@@ -28,7 +28,7 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
-APP.config['duration_limit'] = 300
+APP.config['preview_duration'] = 60
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
@@ -129,21 +129,15 @@ def response_image(uuid, role):
         abort(404, 'Image not exists.')
 
     is_strict = role not in ('thumb', 'full')
-    if is_strict:
-        source = image.source.get(role)
-        if not source:
-            abort(404, 'Role source not been set: {}'.format(role))
+    duration = APP.config['preview_duration']
 
-        duration = ffmpeg.probe(source).duration()
-        limit = APP.config['duration_limit']
-        if duration > limit:
-            generated = image.genearated.get(role)
-            if not generated:
-                abort(403, ('Media duration exceed limit : {} > {}'
-                            .format(duration, limit)))
-
-    generated = image.generate(role, is_strict=is_strict)
-    return send_file(unicode(generated))
+    try:
+        generated = image.generate(role,
+                                   is_strict=is_strict,
+                                   duration=duration)
+        return send_file(unicode(generated))
+    except (ValueError, ffmpeg.GenerateError) as ex:
+        abort(500, unicode(ex))
 
 
 def get_images(shots):

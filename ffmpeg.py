@@ -22,10 +22,12 @@ from .path import Path, get_encoded as e, get_unicode as u
 LOGGER = getLogger('com.wlf.ffmpeg')
 
 
-def generate_gif(filename, output=None, width=None, height=300):
+def generate_gif(filename, output=None, **kwargs):
     """Generate a gif with same name.  """
 
     path = Path(filename)
+    width = kwargs.get('width')
+    height = kwargs.get('height')
     _palette = mktemp('.png')
     _filters = 'fps=15,scale={}:{}:flags=lanczos'.format(
         -1 if width is None else width,
@@ -54,7 +56,7 @@ def generate_gif(filename, output=None, width=None, height=300):
     return ret
 
 
-def generate_mp4(filename, output=None, width=None, height=None):
+def generate_mp4(filename, output=None, **kwargs):
     """Convert a video file to mp4 format.
 
     Args:
@@ -67,18 +69,28 @@ def generate_mp4(filename, output=None, width=None, height=None):
 
     path = Path(filename)
     ret = Path(output or path).with_suffix('.mp4')
-    _filters = 'scale="{}:{}:flags=lanczos"'.format(
+    width = kwargs.get('width')
+    height = kwargs.get('height')
+    duration = kwargs.get('duration')
+    output_options = [
+        '-movflags faststart',
+        '-vcodec libx264',
+        '-pix_fmt yuv420p',
+        '-f mp4'
+    ]
+    if duration > 0:
+        output_options.append('-t {}'.format(duration))
+    output_options.append('-vf scale="{}:{}:flags=lanczos"'.format(
         '-2' if width is None else int(width) // 2 * 2,
-        r'min(trunc(ih / 2) * 2\, 1080)' if height is None else int(height) // 2 * 2)
+        r'min(trunc(ih / 2) * 2\, 1080)' if height is None else int(height) // 2 * 2))
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
     # Generate.
-    cmd = ('ffmpeg -y -i "{}" -movflags faststart '
-           '-vf {} -vcodec libx264 -pix_fmt yuv420p -f mp4 '
-           '"{}"').format(filename, _filters, ret)
+    cmd = ('ffmpeg -y -hide_banner -i "{}" {} "{}"').format(
+        filename, ' '.join(output_options), ret)
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
     LOGGER.info('生成mp4: %s', ret)
 
@@ -88,7 +100,7 @@ def generate_mp4(filename, output=None, width=None, height=None):
     return ret
 
 
-def generate_jpg(filename, output=None, width=None, height=None):
+def generate_jpg(filename, output=None, **kwargs):
     """Convert given file to jpg format.
 
     Args:
@@ -100,6 +112,8 @@ def generate_jpg(filename, output=None, width=None, height=None):
     """
 
     path = Path(filename)
+    width = kwargs.get('width')
+    height = kwargs.get('height')
     ret = Path(output or path).with_suffix('.jpg')
     _filters = 'scale="{}:{}:flags=lanczos"'.format(
         '-1' if width is None else int(width),
@@ -115,7 +129,9 @@ def generate_jpg(filename, output=None, width=None, height=None):
         seekstart = 0
 
     # Generate.
-    cmd = 'ffmpeg -y -i "{}" -vframes 1 -ss {} -vf {} "{}"'.format(
+    cmd = ('ffmpeg -y -hide_banner '
+           '-noaccurate_seek -i "{}" -vframes 1 -ss {} '
+           '-vf {} "{}"').format(
         filename, seekstart, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
     LOGGER.info('生成jpg: %s', ret)
@@ -211,7 +227,7 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
     stderr = proc.communicate()[1]
     if proc.wait():
         raise GenerateError(
-            '%s:\n\t %s\n\t%s' % (error_msg, cmd, stderr))
+            '%s:\n\t %s\n\t%s' % (u(error_msg), u(cmd), u(stderr)))
 
 
 class GenerateError(RuntimeError):
