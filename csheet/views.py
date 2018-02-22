@@ -135,7 +135,7 @@ def response_image(uuid, role):
         generated = image.generate(role,
                                    is_strict=is_strict,
                                    duration=duration)
-        return send_file(unicode(generated))
+        return send_file(unicode(generated), conditional=True)
     except (ValueError, ffmpeg.GenerateError) as ex:
         abort(500, unicode(ex))
 
