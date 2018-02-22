@@ -31,7 +31,11 @@ $(document).ready(
         );
         $smallVideos.on('appear',
             function() {
-                updatePoster(this);
+                $(getLightbox(this)).find('video').each(
+                    function() {
+                        updatePoster(this);
+                    }
+                );
             }
         );
         $('.lightbox a.zoom').click(
