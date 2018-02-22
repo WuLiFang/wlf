@@ -3,7 +3,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-
 from functools import update_wrapper
 from os import SEEK_END
 from os.path import join
@@ -11,17 +10,15 @@ from tempfile import TemporaryFile, gettempdir
 from zipfile import ZipFile
 
 from diskcache import FanoutCache
-from flask import (Flask, Response, abort, make_response, render_template,
-                   request, send_file, redirect, send_from_directory)
+from flask import (Flask, Response, abort, make_response, redirect,
+                   render_template, request, send_file, send_from_directory)
 from gevent import sleep, spawn
 from gevent.queue import Queue
 
 from . import __version__
 from .. import cgtwq
-from .html import HTMLImage, updated_config, from_dir, get_images_from_dir
 from ..path import Path
-from .. import ffmpeg
-
+from .html import HTMLImage, from_dir, get_images_from_dir, updated_config
 
 APP = Flask(__name__, static_folder='../static')
 APP.config['PACK_FOLDER'] = 'D:/'
@@ -131,13 +128,16 @@ def response_image(uuid, role):
     is_strict = role not in ('thumb', 'full')
     duration = APP.config['preview_duration']
 
-    try:
-        generated = image.generate(role,
-                                   is_strict=is_strict,
-                                   duration=duration)
-        return send_file(unicode(generated), conditional=True)
-    except (ValueError, ffmpeg.GenerateError) as ex:
-        abort(500, unicode(ex))
+    generated = image.genearated.get(role)
+    if generated is None:
+        spawn(image.generate,
+              role,
+              is_strict=is_strict,
+              duration=duration)
+
+        return make_response('Generating.', 503, {'Retry-After': 5})
+
+    return send_file(unicode(generated), conditional=True)
 
 
 def get_images(shots):
@@ -177,7 +177,7 @@ def pack_progress(value=None):
         if old_value != value:
             for queue in PROGRESS_EVENT_LISTENER:
                 queue.put(value)
-        return
+
     return str(STATUS.get('PACK_PROGRESS', -1))
 
 
