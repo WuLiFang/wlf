@@ -109,9 +109,14 @@ def generate_jpg(filename, output=None, width=None, height=None):
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
+    try:
+        seekstart = probe(path).duration() / 2
+    except (ValueError, KeyError):
+        seekstart = 0
+
     # Generate.
-    cmd = 'ffmpeg -y -i "{}" -vframes 1 -vf {} "{}"'.format(
-        filename, _filters, ret)
+    cmd = 'ffmpeg -y -i "{}" -vframes 1 -ss {} -vf {} "{}"'.format(
+        filename, seekstart, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
     LOGGER.info('生成jpg: %s', ret)
 
@@ -145,7 +150,7 @@ class ProbeResult(dict):
 
     def duration(self):
         """File duration in secondes.
-        
+
         Returns:
             float: media duration.
         """
@@ -154,7 +159,7 @@ class ProbeResult(dict):
 
     def frames(self):
         """Frames in this file.
-        
+
         Returns:
             int: frame count.
         """
