@@ -9,7 +9,6 @@ try:
 except ImportError:
     pass
 
-
 import os
 import json
 import time
@@ -18,10 +17,12 @@ from subprocess import PIPE, Popen
 from tempfile import mktemp
 
 from .path import Path, get_encoded as e, get_unicode as u
+from .decorators import run_with_semaphore
 
 LOGGER = getLogger('com.wlf.ffmpeg')
 
 
+@run_with_semaphore(4)
 def generate_gif(filename, output=None, **kwargs):
     """Generate a gif with same name.  """
 
@@ -56,6 +57,7 @@ def generate_gif(filename, output=None, **kwargs):
     return ret
 
 
+@run_with_semaphore(4)
 def generate_mp4(filename, output=None, **kwargs):
     """Convert a video file to mp4 format.
 
@@ -100,6 +102,7 @@ def generate_mp4(filename, output=None, **kwargs):
     return ret
 
 
+@run_with_semaphore(8)
 def generate_jpg(filename, output=None, **kwargs):
     """Convert given file to jpg format.
 
@@ -132,7 +135,7 @@ def generate_jpg(filename, output=None, **kwargs):
     cmd = ('ffmpeg -y -hide_banner '
            '-noaccurate_seek -i "{}" -vframes 1 -ss {} '
            '-vf {} "{}"').format(
-        filename, seekstart, _filters, ret)
+               filename, seekstart, _filters, ret)
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
     LOGGER.info('生成jpg: %s', ret)
 
@@ -197,11 +200,12 @@ class ProbeResult(dict):
         return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
 
 
+@run_with_semaphore(8)
 def probe(filename):
     """Probe for media file info.
 
     Args:
-        filename (pathLike object): file path. 
+        filename (pathLike object): file path.
 
     Returns:
         ProbeResult: Optimized dict to save result.
