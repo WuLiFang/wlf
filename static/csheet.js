@@ -281,6 +281,7 @@ function updatePoster(video) {
         imageAvailable(
             url,
             function() {
+                expandLightbox(video);
                 // Release size
                 if ($parent.length) {
                     $video.height('');
@@ -297,13 +298,14 @@ function updatePoster(video) {
                         $parent.width(width);
                     }
                 }
-                expandLightbox(video);
             },
             function() {
-                if (video.poster == url) {
+                if (video.attributes.poster == url) {
                     video.removeAttribute('poster');
                 }
-                shrinkLightbox(video);
+                if (!video.poster) {
+                    shrinkLightbox(video);
+                }
             }
         );
     }

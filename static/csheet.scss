@@ -179,20 +179,14 @@ video {
             outline: none;
             pointer-events: none;
             video {
+                display: block;
+                margin: auto;
                 pointer-events: visible;
-            }
-            /* for animation */
-            transition: inherit;
-            opacity: 0;
-            img {
-                position: fixed;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                max-height: 70%;
-                max-width: 90%;
-                pointer-events: auto;
-                /* For animation */
-                top: 30%;
+                img {
+                    max-width: 90%;
+                    /* for animation */
+                    max-height: 70%;
+                }
             }
             figcaption {
                 position: fixed;
@@ -274,7 +268,6 @@ video {
             opacity: 1;
             height: 90%;
             img {
-                top: 50%;
                 max-height: 90%;
             }
         }

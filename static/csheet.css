@@ -139,21 +139,15 @@ video {
       opacity: 0;
       margin: 0;
       outline: none;
-      pointer-events: none;
-      /* for animation */
-      transition: inherit;
-      opacity: 0; }
+      pointer-events: none; }
       .lightbox .viewer .full video {
+        display: block;
+        margin: auto;
         pointer-events: visible; }
-      .lightbox .viewer .full img {
-        position: fixed;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        max-height: 70%;
-        max-width: 90%;
-        pointer-events: auto;
-        /* For animation */
-        top: 30%; }
+        .lightbox .viewer .full video img {
+          max-width: 90%;
+          /* for animation */
+          max-height: 70%; }
       .lightbox .viewer .full figcaption {
         position: fixed;
         z-index: 3;
@@ -214,7 +208,6 @@ video {
       opacity: 1;
       height: 90%; }
       .lightbox:target > .viewer .full img {
-        top: 50%;
         max-height: 90%; }
     .lightbox:target > .viewer figcaption {
       top: 99%; }
