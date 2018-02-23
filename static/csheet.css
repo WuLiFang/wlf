@@ -199,7 +199,8 @@ video {
       z-index: 3;
       position: absolute; }
       .lightbox .viewer button.refresh {
-        bottom: 10%; }
+        top: 10px;
+        right: 10px; }
         .lightbox .viewer button.refresh:after {
           content: "刷新"; }
   .lightbox.shrink {

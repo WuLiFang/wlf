@@ -251,7 +251,8 @@ video {
             z-index: 3;
             position: absolute;
             &.refresh{
-                bottom: 10%;
+                top: 10px;
+                right: 10px;
                 &:after{
                     content:'刷新'
                 }
