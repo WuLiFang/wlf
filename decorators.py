@@ -6,15 +6,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 import inspect
 import logging
 import time
-import threading
 from functools import wraps
 from multiprocessing.dummy import Queue
+from threading import Thread, current_thread
+
+from .env import HAS_QT, has_nuke
+
 try:
     from gevent.lock import Semaphore
 except ImportError:
-    Semaphore = threading.Semaphore
+    from threading import Semaphore
 
-from .env import HAS_QT, has_nuke
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
@@ -25,7 +27,7 @@ def run_async(func):
 
     @wraps(func)
     def _func(*args, **kwargs):
-        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread = Thread(target=func, args=args, kwargs=kwargs)
         thread.start()
         return thread
     return _func
@@ -66,7 +68,7 @@ def run_in_main_thread(func):
 
         @wraps(func)
         def _func(*args, **kwargs):
-            if nuke.GUI and threading.current_thread().name != 'MainThread':
+            if nuke.GUI and current_thread().name != 'MainThread':
                 return nuke.executeInMainThreadWithResult(func, args, kwargs)
 
             return func(*args, **kwargs)

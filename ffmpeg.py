@@ -2,22 +2,24 @@
 """Manipulate video with FFMPEG."""
 from __future__ import absolute_import, print_function, unicode_literals
 
-# Use gevent
-try:
-    from gevent import monkey
-    monkey.patch_subprocess()
-except ImportError:
-    pass
-
-import os
 import json
+import mimetypes
+import os
 import time
 from logging import getLogger
-from subprocess import PIPE, Popen
+from subprocess import PIPE
 from tempfile import mktemp
 
-from .path import Path, get_encoded as e, get_unicode as u
 from .decorators import run_with_semaphore
+from .path import get_encoded as e
+from .path import get_unicode as u
+from .path import Path
+
+try:
+    from gevent.subprocess import Popen
+except ImportError:
+    from subprocess import Popen  # pylint: disable=ungrouped-imports
+
 
 LOGGER = getLogger('com.wlf.ffmpeg')
 
@@ -45,7 +47,7 @@ def generate_gif(filename, output=None, **kwargs):
            '-y "{0[_palette]}"').format(locals())
     _try_run_cmd(cmd, 'Error during generate gif palette', cwd=str(ret.parent))
     # Generate gif
-    cmd = (u'ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
+    cmd = ('ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
            '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
            '-y "{0[ret]}"').format(locals())
     _try_run_cmd(cmd, 'Error during generate gif', cwd=str(ret.parent))
@@ -130,12 +132,14 @@ def generate_jpg(filename, output=None, **kwargs):
         '-noaccurate_seek'
     ]
 
-    try:
-        mediainfo = probe(path)
-        if mediainfo.frames() > 1:
-            input_options.append('-ss {}'.format(mediainfo.duration() / 2))
-    except (ValueError, KeyError):
-        pass
+    type_, _ = mimetypes.guess_type(unicode(path))
+    if unicode(type_).startswith('video/'):
+        try:
+            mediainfo = probe(path)
+            if mediainfo.frames() > 1:
+                input_options.append('-ss {}'.format(mediainfo.duration() / 2))
+        except (ValueError, KeyError):
+            pass
 
     # Generate.
     cmd = ('ffmpeg -y -hide_banner '

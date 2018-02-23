@@ -1,13 +1,13 @@
 // TODO: button image loop
-// let count = 0;
+let count = 0;
 $(document).ready(
     function() {
-        $('body').dblclick(
+        $('html').dblclick(
             function() {
                 $('.lightbox .small video:appeared').each(
                     function() {
-                        reload(this, '.small');
-                        // this.play();
+                        loadResource(this, '.small');
+                        this.play();
                     }
                 );
             }
@@ -16,8 +16,8 @@ $(document).ready(
         $smallVideos.appear();
         $smallVideos.mouseenter(
             function() {
-                reload(this, '.small');
-                // this.play();
+                loadResource(this, '.small');
+                this.play();
             }
         );
         $smallVideos.mouseout(
@@ -32,7 +32,7 @@ $(document).ready(
         );
         $smallVideos.on('disappear',
             function() {
-                unload(this, '.small');
+                unloadResource(this, '.small');
             }
         );
         $smallVideos.on('appear',
@@ -46,7 +46,13 @@ $(document).ready(
         );
         $('.lightbox a.zoom').click(
             function() {
-                reload(this, '.viewer');
+                loadResource(this, '.viewer');
+            }
+        );
+        $('.viewer button.refresh').click(
+            function() {
+                unloadResource(this);
+                loadResource(this);
             }
         );
         // Disable next/prev button when not avalieble.
@@ -55,23 +61,23 @@ $(document).ready(
                 let $this = $(this);
                 let $lightbox = $(getLightbox(this));
                 let href;
-                unload(this, '.viewer');
+                unloadResource(this, '.viewer');
                 switch ($this.attr('class')) {
                     case 'prev':
                         let prev = $lightbox.prev();
-                        while (prev.is('.hidden')) {
+                        while (prev.is('.shrink')) {
                             prev = prev.prev();
                         }
                         href = '#' + prev.attr('id');
-                        reload(prev, '.viewer');
+                        loadResource(prev, '.viewer');
                         break;
                     case 'next':
                         let next = $lightbox.next();
-                        while (next.is('.hidden')) {
+                        while (next.is('.shrink')) {
                             next = next.next();
                         }
                         href = '#' + next.attr('id');
-                        reload(next, '.viewer');
+                        loadResource(next, '.viewer');
                         break;
                     default:
                         href = $this.attr('href');
@@ -91,10 +97,10 @@ $(document).ready(
 
         // Set drag data.
         $('.lightbox a.zoom').on('dragstart', function(ev) {
-                ev.originalEvent.dataTransfer.clearData();
-                ev.originalEvent.dataTransfer
-                    .setData('text/plain', $(getLightbox(this)).data('drag'));
-            }
+            ev.originalEvent.dataTransfer.clearData();
+            ev.originalEvent.dataTransfer
+                .setData('text/plain', $(getLightbox(this)).data('drag'));
+        }
 
         );
 
@@ -107,6 +113,7 @@ $(document).ready(
                 },
             })
         );
+
         // show pack progress
         $('button.pack').click(
             function() {
@@ -151,7 +158,7 @@ $(document).ready(
             }
         );
         // Setup.
-        $('.noscript').addClass('hidden');
+        $('.noscript').remove();
         $('video').removeClass('hidden');
         $smallVideos.each(
             function() {
@@ -180,19 +187,19 @@ function getLightbox(element) {
  * @param {Element} element element in a lightbox.
  * @param {String} selector element selector.
  */
-function reload(element, selector = '*') {
+function loadResource(element, selector = '*') {
     let $lightbox = $(getLightbox(element));
-    $lightbox.find(selector).find('video').each(
+    let $selected = $lightbox.find(selector);
+    $selected.find('video').each(
         function() {
             updatePoster(this);
-            let src = $(this).data('src');
-            if (this.src != src) {
-                this.src = src;
+            if (!this.src) {
+                this.src = $(this).data('src');
                 this.load();
             }
         }
     );
-    $lightbox.find(selector).find('img').each(
+    $selected.find('img').each(
         function() {
             let img = this;
             let url = stampedURL($(this).data('src'));
@@ -211,12 +218,15 @@ function reload(element, selector = '*') {
  * @param {Element} element element in a lightbox.
  * @param {String} selector element selector.
  */
-function unload(element, selector = '*') {
+function unloadResource(element, selector = '*') {
     let $selected = $(getLightbox(element)).find(selector);
     $selected.find('video').each(
         function() {
-            updatePoster(this);
             this.controls = false;
+            this.removeAttribute('src');
+            if (!$(this).parent('figure.small').length) {
+                this.removeAttribute('poster');
+            }
             this.load();
         }
     );
@@ -256,12 +266,13 @@ function updatePoster(video) {
                         $parent.width(width);
                     }
                 }
-                video.removeAttribute('src');
+                expandLightbox(video);
             },
             function() {
                 if (video.poster == url) {
                     video.removeAttribute('poster');
                 }
+                shrinkLightbox(video);
             }
         );
     }
@@ -277,116 +288,46 @@ function stampedURL(url, precision = 9) {
     return url + '?timestamp=' + new Date().getTime().toPrecision(precision);
 }
 
-// /**
-//  * Hide lightbox  element then set count.
-//  * @param {element} lightbox lightbox to hide.
-//  */
-// function hide(lightbox) {
-//     lightbox = getLightbox(lightbox);
-//     let $lightbox = $(lightbox);
-//     if ($lightbox.is('.hidden')) {
-//         return;
-//     }
-//     $lightbox.addClass('hidden');
+/**
+ * Shrink lightbox  element then set count.
+ * @param {Element} element lightbox to hide.
+ */
+function shrinkLightbox(element) {
+    let $lightbox = $(getLightbox(element));
+    if ($lightbox.is('.shrink')) {
+        return;
+    }
+    $lightbox.addClass('shrink');
 
-//     count += 1;
-//     updateCount();
-// }
+    count += 1;
+    updateCount();
+}
 
-// /**
-//  * Show element related lightbox.
-//  * @param {element} element The root element.
-//  */
-// function show(element) {
-//     let lightbox = $(getLightbox(element));
-//     if (!lightbox.is('.hidden')) {
-//         return;
-//     }
-//     lightbox.removeClass('hidden');
-//     count -= 1;
-//     updateCount();
-// }
+/**
+ * Expand element related lightbox.
+ * @param {Element} element The root element.
+ */
+function expandLightbox(element) {
+    let $lightbox = $(getLightbox(element));
+    if (!$lightbox.is('.shrink')) {
+        return;
+    }
+    $lightbox.removeClass('shrink');
+    count -= 1;
+    updateCount();
+}
 
-// /**
-//  * Update count display.
-//  */
-// function updateCount() {
-//     let header = document.getElementsByTagName('header')[0];
-//     let lightboxes = document.getElementsByClassName('lightbox');
-//     let total = lightboxes.length;
-//     header.children[0].innerText = (
-//         (total - count).toString() + '/' + total.toString()
-//     );
-// }
-// /**
-//  * use minimal images for this element.
-//  * @param {element} element root element.
-//  */
-// function useMinimal(element) {
-//     // Use minaimal image to save memory.
-//     useData(element, 'thumb',
-//         function() {
-//             useData(element, 'full',
-//                 function() {
-//                     useData(element, 'preview',
-//                         function() {
-//                             hide(element);
-//                         }
-//                     );
-//                 }
-//             );
-//         }
-//     );
-// }
-
-// /**
-//  * Choose data to use on image.
-//  * @param {element} element root element.
-//  * @param {string} data data name.
-//  * @param {function} onerror callback
-//  * @return {string} Used data
-//  */
-// function useData(element, data, onerror) {
-//     let lightbox = getLightbox(element);
-//     let path = lightbox.getAttribute('data-' + data);
-//     let $element = $(element);
-//     if ($element.has('span.mark[for="' + data + '"]').length > 0) {
-//         return;
-//     }
-//     // get container.
-//     let container = $element.children('.container.mark');
-//     if (container.length <= 0) {
-//         container = $('<div/>', {
-//             'class': 'mark container',
-//         });
-//         $element.prepend(container);
-//     }
-//     let mark = $('<span/>', {
-//         'class': 'mark',
-//         'for': data,
-//     });
-//     container.append(mark);
-//     imageAvailable(
-//         path,
-//         function(temp) {
-//             if (!$element.is('img')) {
-//                 $element = $element.find('img');
-//             }
-//             $element.attr('src', temp.src);
-//             $('span.mark[for="' + data + '"]', container).remove();
-//             show(element);
-
-//             mark.remove();
-//         },
-//         function() {
-//             $('span.mark[for="' + data + '"]', container).remove();
-//             if (onerror) {
-//                 onerror();
-//             }
-//         }
-//     );
-//     return path;
-// }
+/**
+ * Update count display.
+ */
+function updateCount() {
+    let header = document.getElementsByTagName('header')[0];
+    let lightboxes = document.getElementsByClassName('lightbox');
+    let total = lightboxes.length;
+    header.children[0].innerText = (
+        (total - count).toString() + '/' + total.toString()
+    );
+}
 
 /**
  * Load image in background.

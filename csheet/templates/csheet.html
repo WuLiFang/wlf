@@ -105,7 +105,7 @@ is_local, 'relative_to' : relative_to} %}
                 <a class="prev" href="#image{{ loop.index - 1 }}">
                 </a>
                 <a class="next" href="#image{{ loop.index + 1 }}">
-                </a>
+                </a> {% block viewer %} {% endblock %}
             </div>
         </li>
         {% endfor %}

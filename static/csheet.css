@@ -137,16 +137,17 @@ video {
       top: 5%;
       height: 70%;
       opacity: 0;
+      margin: 0;
       outline: none;
       pointer-events: none;
       /* for animation */
       transition: inherit;
       opacity: 0; }
       .lightbox .viewer .full video {
-        display: block;
-        pointer-events: visible;
-        margin: auto;
-        height: 90%; }
+        top: 50%;
+        position: absolute;
+        transform: translate(-50%, -50%);
+        pointer-events: visible; }
       .lightbox .viewer .full img {
         position: fixed;
         left: 50%;
@@ -194,16 +195,20 @@ video {
       top: 0px;
       left: 0px;
       cursor: zoom-out; }
-  .lightbox.hidden {
+    .lightbox .viewer button {
+      z-index: 3;
+      position: absolute; }
+      .lightbox .viewer button.refresh {
+        bottom: 10%; }
+        .lightbox .viewer button.refresh:after {
+          content: "刷新"; }
+  .lightbox.shrink {
     width: 10px;
     overflow: hidden;
     height: 200px;
     background: linear-gradient(black, grey 33%, black); }
-    .lightbox.hidden .small {
-      width: 10px;
-      height: 200px; }
-      .lightbox.hidden .small :not(a) {
-        display: none; }
+    .lightbox.shrink .small figcaption {
+      display: none; }
   .lightbox:target > .viewer {
     visibility: visible;
     transform: none; }

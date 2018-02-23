@@ -71,9 +71,7 @@ class HTMLImage(Image):
         except KeyError:
             pass
 
-        ret = super(HTMLImage, cls).__new__(cls, path)
-
-        return ret
+        return super(HTMLImage, cls).__new__(cls, path)
 
     def __init__(self, path):
         if (isinstance(path, HTMLImage)
@@ -82,9 +80,9 @@ class HTMLImage(Image):
 
         super(HTMLImage, self).__init__(path)
         self.locks = {i: Semaphore() for i in self.folder_names}
+        self.uuid = self.get_uuid(path)
         self.source = {}
         self.genearated = {}
-        self.uuid = self.get_uuid(path)
 
         type_ = unicode(mimetypes.guess_type(unicode(self.path))[0])
         if type_.startswith('image/'):
@@ -92,8 +90,12 @@ class HTMLImage(Image):
         elif type_.startswith('video/'):
             self.source['preview'] = self.path
 
-        self._is_initiated = True
         HTMLImage._cache[self.uuid] = self
+
+        self._is_initiated = True
+
+    def __getnewargs__(self):
+        return (self.path,)
 
     @classmethod
     def get_uuid(cls, path):
@@ -146,13 +148,14 @@ class HTMLImage(Image):
             return ('/images/{}.{}'.format(self.uuid, role))
 
         path = self.genearated.get(role, self.source.get(role, self.path))
+        assert isinstance(path, PurePath)
         if config.get('is_pack'):
             folder_name = self.folder_names[role]
             return '{}/{}'.format(
                 folder_name,
                 path.name)
 
-        return PurePath(path).as_uri()
+        return path.as_uri()
 
     def get_default(self, role):
         """Get default path.
@@ -174,12 +177,11 @@ class HTMLImage(Image):
 
         return Path.home() / '.wlf/csheet' / folder_name / filename
 
-    def generate(self, role, source=None, output=None, is_strict=True, **kwargs):
+    def generate(self, role, source=None, output=None, is_strict=True, is_async=False, **kwargs):
         """Generate file for role name.
 
         Args:
             role (str): role name.
-            **kwargs : method kwargs
             source (pathLike object, optional): Defaults to None. Source path
             output (pathLike object, optional): Defaults to None. Output path.
             is_strict (bool): Defaults to True,
@@ -187,6 +189,9 @@ class HTMLImage(Image):
                 raises KeyError when self.source[role] not been set.
                 if `is_strict` is False,
                 will use self.path as source alternative.
+            is_async (bool): Defaults to False, if `is_async` is True,
+                will raise ValueError when already generating.
+            **kwargs : kwargs for generate method.
 
         Returns:
             path.Path: Generated file path.
@@ -208,21 +213,34 @@ class HTMLImage(Image):
         if not source.exists():
             raise ValueError('Source file not exists.', source)
 
+        def _same_mimetype(suffix_a, suffix_b):
+            map_ = mimetypes.types_map
+            type_a, type_b = map_.get(suffix_a), map_.get(suffix_b)
+            return type_a and type_a == type_b
+
         if (output is None
-                and source.suffix == self.file_suffix[role]
-                and not _kwargs):
+                and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
+                and source.stat().st_size < 1 * 2 ** 20):
             return source
 
         _kwargs.update(kwargs)
         output = Path(output or self.get_default(role))
         method = self.generate_methods[role]
 
-        with self.locks[role]:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            ret = method(source, output, **_kwargs)
-            ret = Path(ret)
-            self.genearated[role] = ret
-            return ret
+        lock = self.locks[role]
+        is_locked = lock.acquire(False)
+        if is_locked:
+            try:
+                output.parent.mkdir(parents=True, exist_ok=True)
+                ret = method(source, output, **_kwargs)
+                ret = Path(ret)
+                self.genearated[role] = ret
+                return ret
+            finally:
+                lock.release()
+
+        if not is_async:
+            raise ValueError('Already generating.')
 
     def download(self, dest):
         """Download this image to dest.  """

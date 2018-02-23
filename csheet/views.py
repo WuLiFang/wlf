@@ -26,12 +26,13 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
 APP.config['preview_duration'] = 60
+# APP.config['generate_folder'] = join(gettempdir(), 'csheet_server/generated')
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
 SHOTS_CACHE = {}
 PROGRESS_EVENT_LISTENER = []
-CACHE = FanoutCache(join(gettempdir(), 'csheet_server'))
+CACHE = FanoutCache(join(gettempdir(), 'csheet_server/cache'))
 
 
 def nocache(func):
@@ -125,27 +126,24 @@ def response_image(uuid, role):
         image = HTMLImage.from_uuid(uuid)
         assert isinstance(image, HTMLImage)
     except (KeyError, ValueError):
-        abort(404, 'Image not exists.')
+        abort(404, 'No image match this uuid.')
 
-    is_strict = role not in ('thumb', 'full')
+    kwargs = {}
+    folder = APP.config.get('generate_folder')
+    if folder:
+        kwargs['output'] = join(folder, role, uuid)
+    job = spawn(image.generate, role,
+                is_strict=role not in ('thumb', 'full'),
+                duration=APP.config['preview_duration'],
+                is_async=True,
+                **kwargs)
+    job.join(timeout=0.1)
 
-    generated = image.genearated.get(role)
+    generated = job.value
     if generated is None:
-
-        lock = getattr(image.generate_methods[role], 'lock', image.locks[role])
-        is_idle = lock.acquire(False)
-        lock.release()
-
-        if is_strict and not is_idle:
-            return make_response('Generating.', 503, {'Retry-After': 10})
-
-        job = spawn(image.generate,
-                    role,
-                    is_strict=is_strict,
-                    duration=APP.config['preview_duration'])
-        while not job.ready():
-            sleep(0.1)
-        generated = job.get()
+        return make_response('Image not ready.', 503, {'Retry-After': 10})
+    elif isinstance(generated, Exception):
+        abort(503, unicode(generated))
 
     if not Path(generated).exists():
         del image.genearated[role]
@@ -266,7 +264,7 @@ def packed_page(**config):
     f.seek(0, SEEK_END)
     size = f.tell()
     f.seek(0)
-    resp = send_file(f, as_attachment=True, attachment_filename=filename,
+    resp = send_file(f, as_attachment=True, attachment_filename=filename.encode('utf-8'),
                      add_etags=False)
     resp.headers.extend({
         'Content-Length': size,
@@ -286,7 +284,7 @@ def get_shots(database, pipeline, prefix):
     return SHOTS_CACHE[key]
 
 
-@CACHE.memoize(tag='htmlimage', expire=3600)
+# @CACHE.memoize(tag='htmlimage', expire=3600)
 def get_html_image(database, pipeline, prefix, name):
     """Get HTMLImage object.  """
 
@@ -303,7 +301,9 @@ def get_html_image(database, pipeline, prefix, name):
     if path is None:
         raise ValueError
     image = HTMLImage(path)
-    image.source['preview'] = (video_shots or shots).get_shot_submit_path(name)
+    preview_source = (video_shots or shots).get_shot_submit_path(name)
+    if preview_source:
+        image.source['preview'] = preview_source
     return image
 
 

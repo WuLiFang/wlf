@@ -1,5 +1,6 @@
 # -*- coding=UTF-8 -*-
 """Get information from `shot_task` module.  """
+from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import logging

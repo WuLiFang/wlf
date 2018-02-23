@@ -175,13 +175,14 @@ video {
             top: 5%;
             height: 70%;
             opacity: 0;
+            margin: 0;
             outline: none;
             pointer-events: none;
             video {
-                display: block;
+                top: 50%;
+                position: absolute;
+                transform: translate(-50%, -50%);
                 pointer-events: visible;
-                margin: auto;
-                height: 90%;
             }
             /* for animation */
             transition: inherit;
@@ -246,16 +247,24 @@ video {
                 cursor: zoom-out;
             }
         }
+        button{
+            z-index: 3;
+            position: absolute;
+            &.refresh{
+                bottom: 10%;
+                &:after{
+                    content:'刷新'
+                }
+            }
+        }
     }
-    &.hidden {
+    &.shrink {
         width: 10px;
         overflow: hidden;
         height: 200px;
         background: linear-gradient(black, grey 33%, black);
         .small {
-            width: 10px;
-            height: 200px;
-            :not(a) {
+            figcaption {
                 display: none;
             }
         }
