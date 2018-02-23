@@ -182,6 +182,7 @@ video {
                 display: block;
                 margin: auto;
                 pointer-events: visible;
+                height: 100%;
                 img {
                     max-width: 90%;
                     /* for animation */
@@ -266,9 +267,9 @@ video {
         transform: none;
         .full {
             opacity: 1;
-            height: 90%;
+            height: 85%;
             img {
-                max-height: 90%;
+                max-height: 100%;
             }
         }
         figcaption {

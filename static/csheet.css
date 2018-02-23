@@ -143,7 +143,8 @@ video {
       .lightbox .viewer .full video {
         display: block;
         margin: auto;
-        pointer-events: visible; }
+        pointer-events: visible;
+        height: 100%; }
         .lightbox .viewer .full video img {
           max-width: 90%;
           /* for animation */
@@ -206,9 +207,9 @@ video {
     transform: none; }
     .lightbox:target > .viewer .full {
       opacity: 1;
-      height: 90%; }
+      height: 85%; }
       .lightbox:target > .viewer .full img {
-        max-height: 90%; }
+        max-height: 100%; }
     .lightbox:target > .viewer figcaption {
       top: 99%; }
     .lightbox:target > .viewer a.prev, .lightbox:target > .viewer a.next {
