@@ -53,8 +53,9 @@ def render_main():
     if APP.config.get('local_dir'):
         return redirect('/local')
 
-    if not cgtwq.MODULE_ENABLE:
-        return '服务器无法连接CGTeamWork', 503
+    if not cgtwq.CGTeamWorkClient.is_logged_in():
+        return make_response('服务器无法连接CGTeamWork', 503, {
+            'Content-Type': 'text/html; charset=utf-8'})
 
     if request.query_string:
         args = request.args
