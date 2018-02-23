@@ -61,6 +61,7 @@ class HTMLImage(Image):
         'preview': ffmpeg.generate_mp4,
         'full': ffmpeg.generate_jpg
     }
+    max_skipgen_size = 1 * 2 ** 20 # 1MB
 
     def __new__(cls, path):
         if isinstance(path, HTMLImage):
@@ -226,7 +227,7 @@ class HTMLImage(Image):
 
         if (output is None
                 and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
-                and source.stat().st_size < 1 * 2 ** 20):
+                and source.stat().st_size < self.max_skipgen_size):
             return source
 
         _kwargs.update(kwargs)
