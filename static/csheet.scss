@@ -179,9 +179,6 @@ video {
             outline: none;
             pointer-events: none;
             video {
-                top: 50%;
-                position: absolute;
-                transform: translate(-50%, -50%);
                 pointer-events: visible;
             }
             /* for animation */
@@ -247,14 +244,14 @@ video {
                 cursor: zoom-out;
             }
         }
-        button{
+        button {
             z-index: 3;
             position: absolute;
-            &.refresh{
+            &.refresh {
                 top: 10px;
                 right: 10px;
-                &:after{
-                    content:'刷新'
+                &:after {
+                    content: '刷新'
                 }
             }
         }

@@ -144,9 +144,6 @@ video {
       transition: inherit;
       opacity: 0; }
       .lightbox .viewer .full video {
-        top: 50%;
-        position: absolute;
-        transform: translate(-50%, -50%);
         pointer-events: visible; }
       .lightbox .viewer .full img {
         position: fixed;
