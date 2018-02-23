@@ -231,7 +231,8 @@ function loadResource(element, selector) {
     $selected.find('img').each(
         function() {
             let img = this;
-            let url = stampedURL($(this).data('src'));
+            let url = $(this).data('src');
+            url = this.src ? stampedURL(url) : url;
             imageAvailable(
                 url,
                 function() {
@@ -276,7 +277,7 @@ function updatePoster(video) {
     let $parent = $video.parent('figure.small');
     let url = $(video).data('poster');
     if (url) {
-        url = stampedURL(url);
+        url = video.poster ? stampedURL(url) : url;
         imageAvailable(
             url,
             function() {

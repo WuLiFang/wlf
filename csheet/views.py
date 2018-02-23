@@ -203,7 +203,6 @@ def pack_progress(value=None):
 
 
 @APP.route('/pack_progress')
-@nocache
 def pack_event():
     def _sse(data):
         return 'data: {}\n\n'.format(data)
