@@ -95,13 +95,37 @@ $(document).ready(
             }
         );
 
-        // Set drag data.
-        $('.lightbox a.zoom').on('dragstart', function(ev) {
-            ev.originalEvent.dataTransfer.clearData();
-            ev.originalEvent.dataTransfer
-                .setData('text/plain', $(getLightbox(this)).data('drag'));
-        }
-
+        // Setup drag.
+        let $figures = $('.lightbox figure');
+        $figures.each(
+            function() {
+                this.draggable = true;
+            }
+        );
+        $figures.on('dragstart',
+            function(ev) {
+                let event = ev.originalEvent;
+                let lightbox = getLightbox(this);
+                let dragData = $(lightbox).data('drag');
+                let plainData = dragData;
+                if (window.location.protocol == 'file:') {
+                    plainData =
+                        window.location.origin
+                        + decodeURI(
+                            window.location.pathname.slice(
+                                0, window.location.pathname.lastIndexOf('/')))
+                        + '/'
+                        + plainData;
+                }
+                event.dataTransfer.setData('text/plain', plainData);
+                event.dataTransfer
+                    .setData('text/uri-list',
+                        window.location.origin
+                        + window.location.pathname
+                        + window.location.search
+                        + '#'
+                        + lightbox.id);
+            }
         );
 
         // simlpe help

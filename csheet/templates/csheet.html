@@ -55,7 +55,7 @@ is_local, 'relative_to' : relative_to} %}
     <ul class="images">
         {% for image in images %}
         <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
-            <a href="#image{{ loop.index }}" class="zoom" draggable="true">
+            <a href="#image{{ loop.index }}" class="zoom">
                 <figure class="small">
                     <video class='hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}" muted
                         loop>
@@ -83,17 +83,17 @@ is_local, 'relative_to' : relative_to} %}
                 </div>
                 <a class="close" href="#void">
                 </a>
-                <figure class="full" draggable="true">
+                <figure class="full">
                     <video class='hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}" draggable="true">
                         <a href="{{ image.get('full', **config) }}" target="_blank">
-                            <img alt="no image" data-src="{{ image.get('full', **config) }}" draggable="true" />
+                            <img alt="no image" data-src="{{ image.get('full', **config) }}" />
                         </a>
                     </video>
                     <div class="noscript">
                         <noscript>
                             <video poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}" draggable="true">
                                 <a href="{{ image.get('full', **config) }}" target="_blank">
-                                    <img alt="no image" src="{{ image.get('full', **config) }}" draggable="true" />
+                                    <img alt="no image" src="{{ image.get('full', **config) }}" />
                                 </a>
                             </video>
                         </noscript>
