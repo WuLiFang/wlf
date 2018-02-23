@@ -27,11 +27,13 @@ is_local, 'relative_to' : relative_to} %}
         <div class="count">
             {{ images.__len__() }}
         </div>
-        <div class="noscript">
-            <noscript>
-                需要浏览器启用javascript
-            </noscript>
+        <div id="_remove_me">
+            页面脚本无法运行, 功能受限
         </div>
+        <script>
+            let element = document.getElementById('_remove_me');
+            element.parentElement.removeChild(element)
+        </script>
         <nav>
             {% block nav %} {% endblock %}
         </nav>
