@@ -17,7 +17,9 @@ $(document).ready(
         $smallVideos.mouseenter(
             function() {
                 loadResource(this, '.small');
-                this.play();
+                if (this.readyState > 1) {
+                    this.play();
+                }
             }
         );
         $smallVideos.mouseout(
@@ -27,7 +29,9 @@ $(document).ready(
         );
         $smallVideos.on('durationchange',
             function() {
-                this.play();
+                if (this.readyState > 1) {
+                    this.play();
+                }
             }
         );
         $smallVideos.on('disappear',
