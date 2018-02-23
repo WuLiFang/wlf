@@ -8,9 +8,13 @@ from wlf.csheet.views import APP
 
 
 def main():
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+
     port = 5001
     APP.debug = True
     server = WSGIServer(('localhost', port), APP)
+    APP.logger.debug('Server ready')
     server.serve_forever()
 
 

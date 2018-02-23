@@ -46,6 +46,13 @@ def nocache(func):
     return update_wrapper(_func, func)
 
 
+def u_abort(status, msg):
+    """Abort with unicode message.  """
+
+    abort(make_response(unicode(msg), status, {
+        'Content-Type': 'text/html; charset=utf-8'}))
+
+
 @APP.route('/', methods=('GET',))
 @nocache
 def render_main():
@@ -55,12 +62,13 @@ def render_main():
         return redirect('/local')
 
     if not cgtwq.CGTeamWorkClient.is_logged_in():
-        return make_response('服务器无法连接CGTeamWork', 503, {
-            'Content-Type': 'text/html; charset=utf-8'})
+        u_abort(503, '服务器无法连接到CGTeamWork')
 
-    if request.query_string:
-        args = request.args
+    args = request.args
+    if not args:
+        return render_template('index.html', projects=PROJECT.names())
 
+    try:
         project = args['project']
         prefix = args.get('prefix')
         pipeline = args.get('pipeline')
@@ -80,8 +88,9 @@ def render_main():
         resp.set_cookie('prefix', prefix, max_age=cookie_life)
 
         return resp
-
-    return render_template('index.html', projects=PROJECT.names())
+    except Exception as ex:
+        u_abort(500, ex)
+        raise
 
 
 @APP.route('/local')
@@ -143,7 +152,7 @@ def response_image(uuid, role):
     if generated is None:
         return make_response('Image not ready.', 503, {'Retry-After': 10})
     elif isinstance(generated, Exception):
-        abort(503, unicode(generated))
+        u_abort(500, generated)
 
     if not Path(generated).exists():
         del image.genearated[role]

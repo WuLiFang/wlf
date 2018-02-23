@@ -131,7 +131,10 @@ class HTMLImage(Image):
                 self.folder_names['full'],
                 self.path.name)
 
-        return self.path.as_uri()
+        try:
+            return self.path.as_uri()
+        except ValueError:
+            return ''
 
     def get(self, role, **config):
         """Get url for given role.
@@ -155,7 +158,10 @@ class HTMLImage(Image):
                 folder_name,
                 path.name)
 
-        return path.as_uri()
+        try:
+            return path.as_uri()
+        except ValueError:
+            return unicode(path)
 
     def get_default(self, role):
         """Get default path.
