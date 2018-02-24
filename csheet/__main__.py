@@ -305,32 +305,45 @@ def run_server(port=5000, local_dir=None):
     from .views import APP
     from socket import gethostname, gethostbyname
     APP.config['local_dir'] = local_dir
+    host_ip = gethostbyname(gethostname())
     server = WSGIServer(('0.0.0.0', port), APP)
-    print('服务器运行于: https://{}:{}'.format(gethostbyname(gethostname()), port))
+    address = 'https://{}:{}'.format(host_ip, port)
+    print(address)
+    LOGGER.info('服务器运行于: %s', address)
     server.serve_forever()
+
+    return (host_ip, port)
 
 
 def main():
     import argparse
-
-    parser = argparse.ArgumentParser(
-        description='吾立方色板工具 {}'.format(__version__))
+    desc = '吾立方色板工具 {}'.format(__version__)
+    parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-d', '--dir', metavar='目录', required=False,
                         help='包含色板所需图像的目录')
     parser.add_argument('-p', '--port', metavar='端口', type=int, required=False,
                         help='服务器运行端口')
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO)
+
     if args.port:
         return run_server(args.port, args.dir)
     elif args.dir:
         from . import create_html_from_dir
         result = create_html_from_dir(args.dir)
-        print('生成色板: {}'.format(result))
+        LOGGER.info('生成色板: %s', result)
+        print(result)
         webbrowser.open(str(result))
         return
 
-    main_show_dialog(Dialog)
+    from wlf.cgtwq import CGTeamWorkClient
+    if CGTeamWorkClient.is_logged_in():
+        main_show_dialog(Dialog)
+    else:
+        dummy_app = QtWidgets.QApplication([])
+        QtWidgets.QMessageBox.critical(
+            None, desc, '未登录CGTeamWork\n使用`-h`参数查看命令行用法')
 
 
 if __name__ == '__main__':
