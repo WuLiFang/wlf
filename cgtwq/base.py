@@ -17,7 +17,6 @@ from .client import CGTeamWorkClient
 from .exceptions import IDError
 
 LOGGER = logging.getLogger('com.wlf.cgtwq')
-logging.basicConfig()
 
 Filebox = namedtuple('Filebox', ['id', 'title'])
 Pipeline = namedtuple('Pipeline', ['id', 'name'])

@@ -19,7 +19,6 @@ except ImportError:
     from threading import Semaphore
 
 
-logging.basicConfig()
 LOGGER = logging.getLogger('wlf.chseet.html')
 RESOURCES_DIR = Path(Path(__file__).parent.parent / 'static')
 RESOURCES_DIR.resolve()
