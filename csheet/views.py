@@ -11,7 +11,7 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, redirect,
-                   render_template, request, send_file, send_from_directory, escape)
+                   render_template, request, send_file, escape)
 from gevent import sleep, spawn, Timeout
 from gevent.queue import Queue
 
@@ -25,7 +25,7 @@ APP.config['PACK_FOLDER'] = 'D:/'
 APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
-APP.config['preview_duration'] = 60
+APP.config['preview_limit_size'] = 10 * 2 ** 20  # 10MB
 # APP.config['generate_folder'] = join(gettempdir(), 'csheet_server/generated')
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
@@ -54,7 +54,6 @@ def u_abort(status, msg):
 
 
 @APP.route('/', methods=('GET',))
-@nocache
 def render_main():
     """main page.  """
 
@@ -107,14 +106,6 @@ def render_local_dir():
     return from_dir(local_dir, is_client=True, relative_to=local_dir)
 
 
-@APP.route('/local/<path:filename>')
-@nocache
-def get_local(filename):
-    """get file in local_dir.  """
-
-    return send_from_directory(APP.config['local_dir'], filename)
-
-
 @APP.route('/images/<uuid>.<role>')
 def response_image(uuid, role):
     """Response file for a image.
@@ -142,7 +133,7 @@ def response_image(uuid, role):
         kwargs['output'] = join(folder, role, uuid)
     job = spawn(image.generate, role,
                 is_strict=role not in ('thumb', 'full'),
-                duration=APP.config['preview_duration'],
+                limit_size=APP.config['preview_limit_size'],
                 **kwargs)
 
     sleep()

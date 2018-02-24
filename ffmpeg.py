@@ -50,12 +50,13 @@ def generate_gif(filename, output=None, **kwargs):
     cmd = ('ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
            '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
            '-y "{0[ret]}"').format(locals())
+    start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate gif', cwd=str(ret.parent))
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))
 
-    LOGGER.info('生成GIF: %s', ret)
+    LOGGER.info('生成GIF: %s, 耗时 %s 秒', ret, time.clock() - start_time)
     return ret
 
 
@@ -76,14 +77,22 @@ def generate_mp4(filename, output=None, **kwargs):
     width = kwargs.get('width')
     height = kwargs.get('height')
     duration = kwargs.get('duration')
+    limit_size = kwargs.get('limit_size')
+
     output_options = [
         '-movflags faststart',
         '-vcodec libx264',
+        '-preset veryslow',
+        '-tune fastdecode',
+        '-crf 18',
         '-pix_fmt yuv420p',
         '-f mp4'
     ]
     if duration > 0:
         output_options.append('-t {}'.format(duration))
+    if limit_size:
+        output_options.append('-fs {}'.format(limit_size))
+
     output_options.append('-vf scale="{}:{}:flags=lanczos"'.format(
         '-2' if width is None else int(width) // 2 * 2,
         r'min(trunc(ih / 2) * 2\, 1080)' if height is None else int(height) // 2 * 2))
@@ -95,8 +104,9 @@ def generate_mp4(filename, output=None, **kwargs):
     # Generate.
     cmd = ('ffmpeg -y -hide_banner -i "{}" {} "{}"').format(
         filename, ' '.join(output_options), ret)
+    start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
-    LOGGER.info('生成mp4: %s', ret)
+    LOGGER.info('生成mp4: %s, 耗时 %s 秒', ret, time.clock() - start_time)
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))
@@ -146,8 +156,9 @@ def generate_jpg(filename, output=None, **kwargs):
            '{} -i "{}" -vframes 1 '
            '-vf {} "{}"').format(
                ' '.join(input_options), filename, _filters, ret)
+    start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
-    LOGGER.info('生成jpg: %s', ret)
+    LOGGER.info('生成jpg: %s, 耗时 %s 秒', ret, time.clock() - start_time)
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))
