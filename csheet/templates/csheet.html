@@ -68,56 +68,46 @@
         {% for image in images %}
         <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
             <a href="#image{{ loop.index }}" class="zoom">
-                <figure class="small">
-                    <video class='hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}" muted
-                        loop>
-                        <img alt="no image" data-src="{{ image.get('thumb', **config) }}" />
-                    </video>
-                    <div class="noscript">
-                        <noscript>
-                            <video poster="{{ image.get('thumb', **config) }}" src="{{ image.get('preview', **config) }}" muted loop>
-                                <img alt="no image" src="{{ image.get('thumb', **config) }}" />
-                            </video>
-                        </noscript>
-                    </div>
-                    <figcaption>
-                        {{ image.name | e }}
-                        <!-- SNJYW_EP26_01_
-                        <span class="highlight">
-                            sc001
-                        </span> -->
-                    </figcaption>
-                </figure>
+                <video class='small hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}"
+                    muted loop>
+                    <img alt="no image" data-src="{{ image.get('thumb', **config) }}" />
+                </video>
+                <div class="noscript">
+                    <noscript>
+                        <video poster="{{ image.get('thumb', **config) }}" src="{{ image.get('preview', **config) }}" muted loop>
+                            <img alt="no image" src="{{ image.get('thumb', **config) }}" />
+                        </video>
+                    </noscript>
+                </div>
+                <span>
+                    {{ image.name | e }}
+                </span>
             </a>
             <div class="viewer">
-                <div class="detail">
-
+                <div class="detail"> </div>
+                <a class="close" href="#void"> </a>
+                <video class='full hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}"
+                    draggable="true">
+                    <a href="{{ image.get('full', **config) }}" target="_blank">
+                        <img alt="no image" data-src="{{ image.get('full', **config) }}" />
+                    </a>
+                </video>
+                <div class="noscript">
+                    <noscript>
+                        <video class='full' poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}" draggable="true">
+                            <a href="{{ image.get('full', **config) }}" target="_blank">
+                                <img alt="no image" src="{{ image.get('full', **config) }}" />
+                            </a>
+                        </video>
+                    </noscript>
                 </div>
-                <a class="close" href="#void">
-                </a>
-                <figure class="full">
-                    <video class='hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}" draggable="true">
-                        <a href="{{ image.get('full', **config) }}" target="_blank">
-                            <img alt="no image" data-src="{{ image.get('full', **config) }}" />
-                        </a>
-                    </video>
-                    <div class="noscript">
-                        <noscript>
-                            <video poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}" draggable="true">
-                                <a href="{{ image.get('full', **config) }}" target="_blank">
-                                    <img alt="no image" src="{{ image.get('full', **config) }}" />
-                                </a>
-                            </video>
-                        </noscript>
-                    </div>
-                    <figcaption>
+                <div class="bottom">
+                    <span>
                         {{ image | e }}
-                    </figcaption>
-                </figure>
-                <a class="prev" href="#image{{ loop.index - 1 }}">
-                </a>
-                <a class="next" href="#image{{ loop.index + 1 }}">
-                </a> {% block viewer %} {% endblock %}
+                    </span>
+                </div>
+                <a class="prev" href="#image{{ loop.index - 1 }}"> </a>
+                <a class="next" href="#image{{ loop.index + 1 }}"> </a> {% block viewer %} {% endblock %}
             </div>
         </li>
         {% endfor %}

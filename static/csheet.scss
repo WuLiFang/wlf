@@ -80,6 +80,8 @@ a.button {
 }
 
 header {
+    z-index: 1;
+    transition: 0.5s ease-in-out;
     .count {
         &:before {
             content: "总计: ";
@@ -134,10 +136,11 @@ video {
 
 .lightbox {
     display: inline-block;
-    *max-width: 400px;
     margin: 0;
     transition: 0.5s ease-in-out;
-    figcaption {
+    position: relative;
+    height: 200px;
+    span {
         word-break: keep-all;
         text-overflow: ellipsis;
         overflow: hidden;
@@ -170,50 +173,42 @@ video {
         }
     }
     .small {
-        height: 200px !important;
-        display: block;
+        z-index: 1;
         text-align: center;
         margin: 0;
+        width: 100%;
+        transition: 0.5s ease-in-out;
         cursor: zoom-in;
         img {
             border: 1px solid grey;
         }
     }
     .viewer {
-        visibility: hidden;
-        z-index: 100;
+        z-index: 1;
         position: fixed;
+        top: 0;
+        left: 0;
         height: 100%;
         width: 100%;
         background-color: rgba(0, 0, 0, 0.8);
-        top: 0;
-        left: 0;
         /* for animation */
+        visibility: hidden;
+        transition: inherit;
         transform: translate(0, -100%);
         .full {
             z-index: 2;
-            position: fixed;
-            top: 0%;
-            left: 0%;
-            width: 100%;
-            top: 5%;
-            height: 70%;
-            opacity: 0;
-            margin: 0;
-            outline: none;
-            pointer-events: none;
-            video {
-                display: block;
-                margin: auto;
-                pointer-events: visible;
-                height: 100%;
-                img {
-                    max-width: 90%;
-                    /* for animation */
-                    max-height: 70%;
-                }
+            padding: 2% 2% 3% 2%;
+            box-sizing: border-box;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            img {
+                max-width: 90%;
+                /* for animation */
+                max-height: 70%;
             }
-            figcaption {
+            span {
                 position: fixed;
                 z-index: 3;
                 top: 110%;
@@ -276,39 +271,42 @@ video {
         }
     }
     &.shrink {
-        width: 10px;
         overflow: hidden;
-        height: 200px;
         background: linear-gradient(black, grey 33%, black);
-        .small {
-            figcaption {
-                display: none;
-            }
+        span {
+            visibility: hidden;
         }
     }
-    &:target>.viewer {
-        visibility: visible;
-        transform: none;
-        .full {
-            opacity: 1;
-            height: 85%;
-            img {
-                max-height: 100%;
+    &:target {
+        & .viewer {
+            visibility: visible;
+            transform: none;
+            .full {
+                img {
+                    max-height: 100%;
+                }
             }
-        }
-        figcaption {
-            top: 99%;
-        }
-        a {
-            &.prev,
-            &.next {
-                opacity: 1;
+            .bottom {
+                position: absolute;
+                box-sizing: border-box;
+                bottom: 0;
+                width: 100%;
+                padding: 0.5%;
+                span {
+                    background: rgba(0, 0, 0, 0.5)
+                }
             }
-            &.prev {
-                left: 1%;
-            }
-            &.next {
-                right: 1%;
+            a {
+                &.prev,
+                &.next {
+                    opacity: 1;
+                }
+                &.prev {
+                    left: 1%;
+                }
+                &.next {
+                    right: 1%;
+                }
             }
         }
     }

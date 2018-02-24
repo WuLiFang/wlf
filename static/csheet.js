@@ -1,6 +1,7 @@
 // TODO: button image loop
 let count = 0;
 let isClient = false;
+let lightboxHeight = 200;
 $(document).ready(
     function() {
         $('html').dblclick(
@@ -15,7 +16,7 @@ $(document).ready(
                 );
             }
         );
-        let $smallVideos = $('.lightbox .small video');
+        let $smallVideos = $('.lightbox video.small');
         $smallVideos.appear();
         $smallVideos.mouseenter(
             function() {
@@ -82,7 +83,7 @@ $(document).ready(
                 }
             ).trigger('click');
         }
-        $('.lightbox figure.small').mouseenter(
+        $smallVideos.mouseenter(
             function() {
                 loadResource(this, '.small');
             }
@@ -103,22 +104,27 @@ $(document).ready(
         );
         $('.lightbox a.zoom').click(
             function() {
-                loadResource(this, '.viewer');
+                loadResource(this, '.full');
             }
         );
-        $('.viewer button.refresh').click(
-            function() {
-                unloadResource(this);
-                loadResource(this);
-            }
-        );
+        if (isClient) {
+            $('.viewer').append(
+                $('<button>', {
+                    class: 'refresh',
+                    click: function() {
+                        unloadResource(this);
+                        loadResource(this);
+                    },
+                })
+            );
+        }
         // Disable next/prev button when not avalieble.
         $('.lightbox .viewer a').click(
             function() {
                 let $this = $(this);
                 let $lightbox = $(getLightbox(this));
                 let href;
-                unloadResource(this, '.viewer');
+                unloadResource(this, '.full');
                 switch ($this.attr('class')) {
                     case 'prev':
                         let prev = $lightbox.prev();
@@ -126,7 +132,7 @@ $(document).ready(
                             prev = prev.prev();
                         }
                         href = '#' + prev.attr('id');
-                        loadResource(prev, '.viewer');
+                        loadResource(prev, '.full');
                         break;
                     case 'next':
                         let next = $lightbox.next();
@@ -134,7 +140,7 @@ $(document).ready(
                             next = next.next();
                         }
                         href = '#' + next.attr('id');
-                        loadResource(next, '.viewer');
+                        loadResource(next, '.full');
                         break;
                     default:
                         href = $this.attr('href');
@@ -146,20 +152,20 @@ $(document).ready(
             }
         );
         // Switch controls.
-        $('.lightbox .full video').on('durationchange',
+        $('.lightbox video.full').on('durationchange',
             function() {
                 this.controls = this.duration > 0.1;
             }
         );
 
         // Setup drag.
-        let $figures = $('.lightbox figure');
-        $figures.each(
+        let $videos = $('.lightbox video');
+        $videos.each(
             function() {
                 this.draggable = true;
             }
         );
-        $figures.on('dragstart',
+        $videos.on('dragstart',
             function(ev) {
                 let event = ev.originalEvent;
                 let lightbox = getLightbox(this);
@@ -187,7 +193,7 @@ $(document).ready(
 
         // simlpe help
         $('nav').append(
-            $('<button/>', {
+            $('<button>', {
                 text: '帮助',
                 click: function() {
                     $('.help').toggleClass('hidden');
@@ -243,7 +249,8 @@ $(document).ready(
         $('video').removeClass('hidden');
         $smallVideos.each(
             function() {
-                updatePoster(this);
+                shrinkLightbox(this);
+                // updatePoster(this);
             }
         );
     }
@@ -272,7 +279,7 @@ function loadResource(element, selector) {
     selector = typeof (selector) === 'undefined' ? '*' : selector;
     let $lightbox = $(getLightbox(element));
     let $selected = $lightbox.find(selector);
-    $selected.find('video').each(
+    $selected.filter('video').each(
         function() {
             updatePoster(this);
             if (!this.src) {
@@ -304,11 +311,11 @@ function loadResource(element, selector) {
 function unloadResource(element, selector) {
     selector = typeof (selector) === 'undefined' ? '*' : selector;
     let $selected = $(getLightbox(element)).find(selector);
-    $selected.find('video').each(
+    $selected.filter('video').each(
         function() {
             this.controls = false;
             this.removeAttribute('src');
-            if (!$(this).parent('figure.small').length) {
+            if (!$(this).is('.small')) {
                 this.removeAttribute('poster');
             }
             this.load();
@@ -327,42 +334,32 @@ function unloadResource(element, selector) {
  */
 function updatePoster(video) {
     let $video = $(video);
-    let $parent = $video.parent('figure.small');
+    let isSmall = $video.is('.small');
     let url = $(video).data('poster');
     if (url) {
         url = video.poster && isClient ? stampedURL(url) : url;
         imageAvailable(
             url,
-            function() {
+            function(img) {
+                if (isSmall) {
+                    getLightbox(video).dataset.ratio =
+                        img.width / img.height;
+                }
                 expandLightbox(video);
-                // Release size
-                if ($parent.length) {
-                    $video.height('');
-                    $parent.width('');
-                }
-                // update
                 video.poster = url;
-                // Keep size
-                if ($parent.length) {
-                    let height = $video.height();
-                    let width = $video.width();
-                    if (height == 200 && width) {
-                        $video.height(height);
-                        $parent.width(width);
-                    }
-                }
             },
             function() {
                 if (video.attributes.poster == url) {
                     video.removeAttribute('poster');
                 }
-                if ($parent.length && !video.poster) {
+                if (isSmall && !video.poster) {
                     shrinkLightbox(video);
                 }
             }
         );
     }
 }
+
 
 /**
  * Add timestamp to url.
@@ -385,7 +382,7 @@ function shrinkLightbox(element) {
         return;
     }
     $lightbox.addClass('shrink');
-
+    $lightbox.width('10px');
     count += 1;
     updateCount();
 }
@@ -396,12 +393,13 @@ function shrinkLightbox(element) {
  */
 function expandLightbox(element) {
     let $lightbox = $(getLightbox(element));
-    if (!$lightbox.is('.shrink')) {
-        return;
+    $lightbox.height(lightboxHeight);
+    $lightbox.width($lightbox.data('ratio') * lightboxHeight);
+    if ($lightbox.is('.shrink')) {
+        $lightbox.removeClass('shrink');
+        count -= 1;
+        updateCount();
     }
-    $lightbox.removeClass('shrink');
-    count -= 1;
-    updateCount();
 }
 
 /**

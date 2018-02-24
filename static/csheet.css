@@ -63,13 +63,16 @@ div.refresh-module {
 a.button {
   text-decoration: none; }
 
-header .count:before {
-  content: "总计: "; }
-header .count:after {
-  content: " 图像"; }
-header:hover {
-  opacity: 1;
-  background: black; }
+header {
+  z-index: 1;
+  transition: 0.5s ease-in-out; }
+  header .count:before {
+    content: "总计: "; }
+  header .count:after {
+    content: " 图像"; }
+  header:hover {
+    opacity: 1;
+    background: black; }
 
 ul.images {
   width: 85%;
@@ -102,11 +105,12 @@ video {
 
 .lightbox {
   display: inline-block;
-  *max-width: 400px;
   margin: 0;
   transition: 0.5s ease-in-out;
+  position: relative;
+  height: 200px;
   /* loading indicator*/ }
-  .lightbox figcaption {
+  .lightbox span {
     word-break: keep-all;
     text-overflow: ellipsis;
     overflow: hidden;
@@ -129,46 +133,39 @@ video {
         font-size: 50%;
         opacity: 0.5; }
   .lightbox .small {
-    height: 200px !important;
-    display: block;
+    z-index: 1;
     text-align: center;
     margin: 0;
+    width: 100%;
+    transition: 0.5s ease-in-out;
     cursor: zoom-in; }
     .lightbox .small img {
       border: 1px solid grey; }
   .lightbox .viewer {
-    visibility: hidden;
-    z-index: 100;
+    z-index: 1;
     position: fixed;
+    top: 0;
+    left: 0;
     height: 100%;
     width: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    top: 0;
-    left: 0;
     /* for animation */
+    visibility: hidden;
+    transition: inherit;
     transform: translate(0, -100%); }
     .lightbox .viewer .full {
       z-index: 2;
-      position: fixed;
-      top: 0%;
-      left: 0%;
-      width: 100%;
-      top: 5%;
-      height: 70%;
-      opacity: 0;
-      margin: 0;
-      outline: none;
-      pointer-events: none; }
-      .lightbox .viewer .full video {
-        display: block;
-        margin: auto;
-        pointer-events: visible;
-        height: 100%; }
-        .lightbox .viewer .full video img {
-          max-width: 90%;
-          /* for animation */
-          max-height: 70%; }
-      .lightbox .viewer .full figcaption {
+      padding: 2% 2% 3% 2%;
+      box-sizing: border-box;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%); }
+      .lightbox .viewer .full img {
+        max-width: 90%;
+        /* for animation */
+        max-height: 70%; }
+      .lightbox .viewer .full span {
         position: fixed;
         z-index: 3;
         top: 110%;
@@ -215,27 +212,28 @@ video {
         .lightbox .viewer button.refresh:after {
           content: "刷新"; }
   .lightbox.shrink {
-    width: 10px;
     overflow: hidden;
-    height: 200px;
     background: linear-gradient(black, grey 33%, black); }
-    .lightbox.shrink .small figcaption {
-      display: none; }
-  .lightbox:target > .viewer {
+    .lightbox.shrink span {
+      visibility: hidden; }
+  .lightbox:target .viewer {
     visibility: visible;
     transform: none; }
-    .lightbox:target > .viewer .full {
-      opacity: 1;
-      height: 85%; }
-      .lightbox:target > .viewer .full img {
-        max-height: 100%; }
-    .lightbox:target > .viewer figcaption {
-      top: 99%; }
-    .lightbox:target > .viewer a.prev, .lightbox:target > .viewer a.next {
+    .lightbox:target .viewer .full img {
+      max-height: 100%; }
+    .lightbox:target .viewer .bottom {
+      position: absolute;
+      box-sizing: border-box;
+      bottom: 0;
+      width: 100%;
+      padding: 0.5%; }
+      .lightbox:target .viewer .bottom span {
+        background: rgba(0, 0, 0, 0.5); }
+    .lightbox:target .viewer a.prev, .lightbox:target .viewer a.next {
       opacity: 1; }
-    .lightbox:target > .viewer a.prev {
+    .lightbox:target .viewer a.prev {
       left: 1%; }
-    .lightbox:target > .viewer a.next {
+    .lightbox:target .viewer a.next {
       right: 1%; }
 
 /* Indicate invaid anchor */
