@@ -236,7 +236,8 @@ def get_default_progress_handler(**handler_kwargs):
     return CLIProgressHandler(**handler_kwargs)
 
 
-def progress(iterable, name=None, handler=None, start_message=None, **handler_kwargs):
+def progress(iterable, name=None, handler=None,
+             start_message=None, oncancel=None, **handler_kwargs):
     """Progress with iterator. """
 
     assert handler is None or isinstance(
@@ -257,13 +258,27 @@ def progress(iterable, name=None, handler=None, start_message=None, **handler_kw
         except TypeError:
             pass
 
-    handler.on_started()
-    if start_message is not None:
-        handler.set_message(start_message)
-    for i in iterable:
-        handler.step(i)
-        yield i
-    handler.on_finished()
+    finished_event = threading.Event()
+
+    if callable(oncancel):
+        def _watch():
+            while not finished_event.is_set():
+                time.sleep(0.2)
+                if handler.is_cancelled():
+                    return oncancel()
+
+        threading.Thread(target=_watch).start()
+
+    try:
+        handler.on_started()
+        if start_message is not None:
+            handler.set_message(start_message)
+        for i in iterable:
+            handler.step(i)
+            yield i
+        handler.on_finished()
+    finally:
+        finished_event.set()
 
 
 class CancelledError(Exception):
