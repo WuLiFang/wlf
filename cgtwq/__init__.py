@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from ..env import has_cgtw
 from .exceptions import (AccountError, CGTeamWorkException, IDError,
-                         PrefixError, SignError)
+                         PrefixError, SignError, LoginError)
 from .client import CGTeamWorkClient
 
 MODULE_ENABLE = has_cgtw()
@@ -13,7 +13,7 @@ MODULE_ENABLE = has_cgtw()
 if MODULE_ENABLE:
     from . import patches
     from .base import CGTeamWork, Filebox, Pipeline
-    from .public import Account, Project, Public
+    from .public import Account, Project, Public, proj_info
     from .shottask import Shot, Shots, ShotTask
 
     # Apply patch.

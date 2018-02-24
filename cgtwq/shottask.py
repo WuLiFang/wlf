@@ -192,8 +192,16 @@ class Shot(ShotTask):
         if not id_list:
             raise IDError(self.database, self.module,
                           self.pipeline, self.name)
-        elif len(id_list) != 1:
-            raise IDError('Multiple match', id_list)
+        elif len(id_list) > 1:
+            LOGGER.warning('Multiple match %s', id_list)
+            for i in list(id_list):
+                self.task_module.init_with_id(i['id'])
+                try:
+                    if self.task_module.get(['shot_task.artist'])[0]['shot_task.artist']:
+                        id_list = [i]
+                        break
+                except (TypeError,KeyError):
+                    continue
         self._id = id_list[0]['id']
 
         self.task_module.init_with_id(self.shot_id)

@@ -49,3 +49,5 @@ class Config(dict):
                 self.update(dict(json.load(f)))
         except (ValueError, IOError):
             pass
+
+        return self

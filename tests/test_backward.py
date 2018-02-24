@@ -5,6 +5,8 @@ from __future__ import absolute_import
 from unittest import TestCase, main
 from inspect import ismodule
 
+# pylint: disable=no-member,no-name-in-module,unused-variable,import-error
+
 
 class BackwardTestCase(TestCase):
 

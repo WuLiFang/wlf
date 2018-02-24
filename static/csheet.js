@@ -7,7 +7,9 @@ $(document).ready(
                 $('.lightbox .small video:appeared').each(
                     function() {
                         loadResource(this, '.small');
-                        this.play();
+                        if (this.readyState > 1) {
+                            this.play();
+                        }
                     }
                 );
             }
@@ -95,7 +97,7 @@ $(document).ready(
         // Switch controls.
         $('.lightbox .full video').on('durationchange',
             function() {
-                this.controls = this.duration > 1;
+                this.controls = this.duration > 0.1;
             }
         );
 
@@ -232,7 +234,7 @@ function loadResource(element, selector) {
         function() {
             let img = this;
             let url = $(this).data('src');
-            url = this.src ? stampedURL(url) : url;
+            url = img.src ? stampedURL(url) : url;
             imageAvailable(
                 url,
                 function() {
