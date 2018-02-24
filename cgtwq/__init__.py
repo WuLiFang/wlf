@@ -5,7 +5,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from ..env import has_cgtw
 from .exceptions import (AccountError, CGTeamWorkException, IDError,
-                         PrefixError, SignError)
+                         PrefixError, SignError, LoginError)
 from .client import CGTeamWorkClient
 
 MODULE_ENABLE = has_cgtw()
