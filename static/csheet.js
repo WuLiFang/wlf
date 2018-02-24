@@ -1,5 +1,6 @@
 // TODO: button image loop
 let count = 0;
+let isClient = false;
 $(document).ready(
     function() {
         $('html').dblclick(
@@ -18,7 +19,6 @@ $(document).ready(
         $smallVideos.appear();
         $smallVideos.mouseenter(
             function() {
-                loadResource(this, '.small');
                 if (this.readyState > 1) {
                     this.play();
                 }
@@ -34,6 +34,57 @@ $(document).ready(
                 if (this.readyState > 1) {
                     this.play();
                 }
+            }
+        );
+        // Soure manage.
+        if (isClient) {
+            let refreshInterval;
+            let buttons = $('.refresh-module')
+                .removeClass('hidden').find('button');
+            let spans = buttons.find('span');
+            let interval = 10000;
+            let lastRefreshTime;
+
+            /** Refresh page if reached interval */
+            function autoRefresh() {
+                let value;
+                if (lastRefreshTime === undefined) {
+                    value = 0;
+                } else {
+                    value = (1 -
+                        (new Date().getTime() - lastRefreshTime) / interval);
+                }
+                if (value <= 0) {
+                    value = 0;
+                    $smallVideos.filter(':appeared').each(
+                        function() {
+                            updatePoster(this);
+                        }
+                    );
+                    lastRefreshTime = new Date().getTime();
+                }
+                spans.css({
+                    width: value * 100 + '%',
+                });
+            };
+            buttons.click(
+                function() {
+                    if (refreshInterval === undefined) {
+                        refreshInterval = setInterval(
+                            autoRefresh, interval / 100);
+                        buttons.attr('status', 'on');
+                    } else {
+                        clearInterval(refreshInterval);
+                        buttons.attr('status', 'off');
+                        refreshInterval = undefined;
+                        lastRefreshTime = undefined;
+                    }
+                }
+            ).trigger('click');
+        }
+        $('.lightbox figure.small').mouseenter(
+            function() {
+                loadResource(this, '.small');
             }
         );
         $smallVideos.on('disappear',
@@ -234,7 +285,7 @@ function loadResource(element, selector) {
         function() {
             let img = this;
             let url = $(this).data('src');
-            url = img.src ? stampedURL(url) : url;
+            url = img.src && isClient ? stampedURL(url) : url;
             imageAvailable(
                 url,
                 function() {
@@ -279,7 +330,7 @@ function updatePoster(video) {
     let $parent = $video.parent('figure.small');
     let url = $(video).data('poster');
     if (url) {
-        url = video.poster ? stampedURL(url) : url;
+        url = video.poster && isClient ? stampedURL(url) : url;
         imageAvailable(
             url,
             function() {

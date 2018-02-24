@@ -1,8 +1,4 @@
 @charset "UTF-8";
-* {
-    transition: 0.5s ease-in-out;
-}
-
 html {
     height: 100%;
     margin: auto;
@@ -48,8 +44,35 @@ div.noscript div {
     }
 }
 
-nav button {
-    display: inline;
+div.refresh-module {
+    display: inline-block;
+    button {
+        position: relative;
+        width: 100%;
+        &:before {
+            content: "自动刷新"
+        }
+        &[status="on"]:after {
+            content: ": 开"
+        }
+        &[status="off"]:after {
+            content: ": 关"
+        }
+        div {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: white;
+            box-sizing: border-box;
+            span {
+                height: 100%;
+                background: #444;
+                display: block;
+            }
+        }
+    }
 }
 
 a.button {
@@ -113,6 +136,7 @@ video {
     display: inline-block;
     *max-width: 400px;
     margin: 0;
+    transition: 0.5s ease-in-out;
     figcaption {
         word-break: keep-all;
         text-overflow: ellipsis;

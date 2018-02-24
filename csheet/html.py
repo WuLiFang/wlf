@@ -65,7 +65,7 @@ class HTMLImage(Image):
         'preview': ffmpeg.generate_mp4,
         'full': ffmpeg.generate_jpg
     }
-    max_skipgen_size = 1 * 2 ** 20 # 1MB
+    max_skipgen_size = 1 * 2 ** 20  # 1MB
 
     def __new__(cls, path):
         if isinstance(path, HTMLImage):
@@ -151,8 +151,8 @@ class HTMLImage(Image):
         Returns:
             str: url  for role name.
         """
-
-        if config.get('is_web'):
+        LOGGER.info(config)
+        if config.get('is_client'):
             return ('/images/{}.{}'.format(self.uuid, role))
 
         path = self.genearated.get(role, self.source.get(role, self.path))
@@ -188,7 +188,7 @@ class HTMLImage(Image):
 
         return Path.home() / '.wlf/csheet' / folder_name / filename
 
-    def generate(self, role, source=None, output=None, is_strict=True, is_async=False, **kwargs):
+    def generate(self, role, source=None, output=None, is_strict=True, **kwargs):
         """Generate file for role name.
 
         Args:
@@ -200,58 +200,55 @@ class HTMLImage(Image):
                 raises KeyError when self.source[role] not been set.
                 if `is_strict` is False,
                 will use self.path as source alternative.
-            is_async (bool): Defaults to False, if `is_async` is True,
-                will raise ValueError when already generating.
             **kwargs : kwargs for generate method.
 
         Returns:
             path.Path: Generated file path.
         """
 
-        default_kwargs = {
-            'thumb': {'height': 200},
-        }
-        _kwargs = default_kwargs.get(role, {})
-
-        try:
-            source = Path(source or self.source[role])
-        except KeyError:
-            if is_strict:
-                raise
-
-            source = Path(self.path)
-
-        if not source.exists():
-            raise ValueError('Source file not exists.', source)
-
-        def _same_mimetype(suffix_a, suffix_b):
-            map_ = mimetypes.types_map
-            type_a, type_b = map_.get(suffix_a), map_.get(suffix_b)
-            return type_a and type_a == type_b
-
-        if (output is None
-                and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
-                and source.stat().st_size < self.max_skipgen_size):
-            return source
-
-        _kwargs.update(kwargs)
-        output = Path(output or self.get_default(role))
-        method = self.generate_methods[role]
-
         lock = self.locks[role]
         is_locked = lock.acquire(False)
-        if is_locked:
-            try:
-                output.parent.mkdir(parents=True, exist_ok=True)
-                ret = method(source, output, **_kwargs)
-                ret = Path(ret)
-                self.genearated[role] = ret
-                return ret
-            finally:
-                lock.release()
-
-        if not is_async:
+        if not is_locked:
             raise ValueError('Already generating.')
+
+        try:
+            default_kwargs = {
+                'thumb': {'height': 200},
+            }
+            _kwargs = default_kwargs.get(role, {})
+
+            try:
+                source = Path(source or self.source[role])
+            except KeyError:
+                if is_strict:
+                    raise
+
+                source = Path(self.path)
+
+            if not source.exists():
+                raise ValueError('Source file not exists.', source)
+
+            def _same_mimetype(suffix_a, suffix_b):
+                map_ = mimetypes.types_map
+                type_a, type_b = map_.get(suffix_a), map_.get(suffix_b)
+                return type_a and type_a == type_b
+
+            if (output is None
+                    and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
+                    and source.stat().st_size < self.max_skipgen_size):
+                return source
+
+            _kwargs.update(kwargs)
+            output = Path(output or self.get_default(role))
+            method = self.generate_methods[role]
+
+            output.parent.mkdir(parents=True, exist_ok=True)
+            ret = method(source, output, **_kwargs)
+            ret = Path(ret)
+            self.genearated[role] = ret
+            return ret
+        finally:
+            lock.release()
 
     def download(self, dest):
         """Download this image to dest.  """
@@ -277,7 +274,7 @@ def from_dir(images_folder, **config):
     images = get_images_from_dir(images_folder)
     config.setdefault('title', path.name)
 
-    return from_list(images, **updated_config(config))
+    return from_list(images, **config)
 
 
 def get_images_from_dir(images_folder):

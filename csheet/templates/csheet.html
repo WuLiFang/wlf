@@ -1,5 +1,5 @@
-<!DOCTYPE html> {% set config = {'database': database, 'pipeline': pipeline, 'prefix': prefix, 'is_pack': is_pack, 'is_web' : is_web, 'is_local':
-is_local, 'relative_to' : relative_to} %}
+<!DOCTYPE html> {% set config = {'database': database, 'pipeline': pipeline, 'prefix': prefix, 'is_pack': is_pack, 'is_client' : is_client,
+'is_local': is_local, 'relative_to' : relative_to} %}
 <html lang="zh-CN">
 
 <head>
@@ -20,6 +20,9 @@ is_local, 'relative_to' : relative_to} %}
     // window.open("http://outdatedbrowser.com/zh-cn", "_self");
     </script>
     <![endif]-->
+    <script>
+        isClient = "{{ config['is_client'] }}" === "True";
+    </script>
 </head>
 
 <body>
@@ -35,6 +38,13 @@ is_local, 'relative_to' : relative_to} %}
             element.parentElement.removeChild(element)
         </script>
         <nav>
+            <div class="refresh-module hidden">
+                <button>
+                    <div>
+                        <span></span>
+                    </div>
+                </button>
+            </div>
             {% block nav %} {% endblock %}
         </nav>
         <div class="help hidden">

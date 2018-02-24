@@ -1,7 +1,4 @@
 @charset "UTF-8";
-* {
-  transition: 0.5s ease-in-out; }
-
 html {
   height: 100%;
   margin: auto; }
@@ -39,8 +36,29 @@ div.noscript div {
   word-break: break-all;
   text-align: center; }
 
-nav button {
-  display: inline; }
+div.refresh-module {
+  display: inline-block; }
+  div.refresh-module button {
+    position: relative;
+    width: 100%; }
+    div.refresh-module button:before {
+      content: "自动刷新"; }
+    div.refresh-module button[status="on"]:after {
+      content: ": 开"; }
+    div.refresh-module button[status="off"]:after {
+      content: ": 关"; }
+    div.refresh-module button div {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: white;
+      box-sizing: border-box; }
+      div.refresh-module button div span {
+        height: 100%;
+        background: #444;
+        display: block; }
 
 a.button {
   text-decoration: none; }
@@ -86,6 +104,7 @@ video {
   display: inline-block;
   *max-width: 400px;
   margin: 0;
+  transition: 0.5s ease-in-out;
   /* loading indicator*/ }
   .lightbox figcaption {
     word-break: keep-all;

@@ -11,8 +11,8 @@ from zipfile import ZipFile
 
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, redirect,
-                   render_template, request, send_file, send_from_directory)
-from gevent import sleep, spawn
+                   render_template, request, send_file, send_from_directory, escape)
+from gevent import sleep, spawn, Timeout
 from gevent.queue import Queue
 
 from . import __version__
@@ -49,7 +49,7 @@ def nocache(func):
 def u_abort(status, msg):
     """Abort with unicode message.  """
 
-    abort(make_response(unicode(msg), status, {
+    abort(make_response(escape(unicode(msg)), status, {
         'Content-Type': 'text/html; charset=utf-8'}))
 
 
@@ -78,10 +78,10 @@ def render_main():
         if 'pack' in args:
             return packed_page(**config)
 
-        config['is_web'] = True
+        config['is_client'] = True
 
         # Respon with cookies set.
-        resp = make_response(render_template('csheet_web.html', **config))
+        resp = make_response(render_template('csheet_app.html', **config))
         cookie_life = 60 * 60 * 24 * 90
         resp.set_cookie('project', project, max_age=cookie_life)
         resp.set_cookie('pipeline', pipeline, max_age=cookie_life)
@@ -104,7 +104,7 @@ def render_local_dir():
     if request.args.get('pack'):
         return packed_page(images=get_images_from_dir(local_dir))
 
-    return from_dir(local_dir, is_web=True, relative_to=local_dir)
+    return from_dir(local_dir, is_client=True, relative_to=local_dir)
 
 
 @APP.route('/local/<path:filename>')
@@ -143,21 +143,21 @@ def response_image(uuid, role):
     job = spawn(image.generate, role,
                 is_strict=role not in ('thumb', 'full'),
                 duration=APP.config['preview_duration'],
-                is_async=True,
                 **kwargs)
-    job.join(timeout=0.1)
 
-    generated = job.value
-    if generated is None:
+    sleep()
+    try:
+        generated = job.get(block=False)
+        if not Path(generated).exists():
+            del image.genearated[role]
+            return make_response('Generated file has been moved', 503, {'Retry-After': 10})
+
+        return send_file(unicode(generated), conditional=True)
+    except Timeout:
         return make_response('Image not ready.', 503, {'Retry-After': 10})
-    elif isinstance(generated, Exception):
-        u_abort(500, generated)
-
-    if not Path(generated).exists():
-        del image.genearated[role]
-        return make_response('Generated file has been moved', 503, {'Retry-After': 1})
-
-    return send_file(unicode(generated), conditional=True)
+    except Exception as ex:
+        u_abort(500, ex)
+        raise
 
 
 def get_images(shots):
