@@ -45,6 +45,8 @@ class BaseProgressHandler(object):
     def step(self, item=None):
         """Progress one step forward.  """
 
+        if self.is_cancelled():
+            raise CancelledError
         if not self.is_busy():
             self.set_value(self.count * 100 / self.total)
             self.set_message(self.message_factory(item))
@@ -179,9 +181,6 @@ if HAS_QT:
             return self.progress_bar.isCancelled()
 
         def step(self, item=None):
-            if self.is_cancelled():
-                self.on_finished()
-                raise CancelledError
             super(QtProgressHandler, self).step(item)
             QtWidgets.QApplication.processEvents()
 
@@ -212,6 +211,9 @@ class NukeProgressHandler(BaseProgressHandler):
                 and self.last_step_time is not None
                 and time.time() - self.last_step_time < 0.1)
 
+    def is_cancelled(self):
+        return self.progress_bar.isCancelled()
+
     def on_started(self):
         super(NukeProgressHandler, self).on_started()
         self.progress_bar = __import__('nuke').ProgressTask(
@@ -234,7 +236,7 @@ def get_default_progress_handler(**handler_kwargs):
     return CLIProgressHandler(**handler_kwargs)
 
 
-def progress(iterable, name=None, handler=None, **handler_kwargs):
+def progress(iterable, name=None, handler=None, start_message=None, **handler_kwargs):
     """Progress with iterator. """
 
     assert handler is None or isinstance(
@@ -256,6 +258,8 @@ def progress(iterable, name=None, handler=None, **handler_kwargs):
             pass
 
     handler.on_started()
+    if start_message is not None:
+        handler.set_message(start_message)
     for i in iterable:
         handler.step(i)
         yield i
