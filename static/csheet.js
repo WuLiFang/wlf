@@ -97,7 +97,7 @@ $(document).ready(
         // Switch controls.
         $('.lightbox .full video').on('durationchange',
             function() {
-                this.controls = this.duration > 1;
+                this.controls = this.duration > 0.1;
             }
         );
 
