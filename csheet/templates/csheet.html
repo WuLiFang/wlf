@@ -8,11 +8,10 @@
         {{ config['title'] }}
     </title>
     {% for i in static %} {% if i.endswith('.css') %}
-    <link href="{{ static_folder }}/{{ i }}" rel="stylesheet" type="text/css" /> {% elif i in ('html5shiv.min.html', ) %}
+    <link href="{{ static_folder }}/{{ i }}" rel="stylesheet" type="text/css" /> {% elif i in ('html5shiv.min.js', ) %}
     <!--[if lt IE 9]>
 	<script src="{{ static_folder }}/{{ i }}"></script>
-    <![endif]-->
-    {% elif i.endswith('.js') %}
+    <![endif]-->{% elif i.endswith('.js') %}
     <script src="{{ static_folder }}/{{ i }}"></script> {% endif %} {% endfor %}
     <!--[if IE]>
     <script type="text/javascript">
