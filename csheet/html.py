@@ -151,7 +151,7 @@ class HTMLImage(Image):
         Returns:
             str: url  for role name.
         """
-        LOGGER.info(config)
+        
         if config.get('is_client'):
             return ('/images/{}.{}'.format(self.uuid, role))
 
