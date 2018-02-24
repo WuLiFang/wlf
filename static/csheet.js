@@ -356,7 +356,7 @@ function updatePoster(video) {
                 if (video.attributes.poster == url) {
                     video.removeAttribute('poster');
                 }
-                if (!video.poster) {
+                if ($parent.length && !video.poster) {
                     shrinkLightbox(video);
                 }
             }
