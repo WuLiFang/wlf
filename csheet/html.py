@@ -29,6 +29,11 @@ def updated_config(config=None):
     """Return a default csheet config or updated default from given @config. """
 
     default = {'static': ('csheet.css',
+                          'es5-shim.min.js',
+                          'es5-sham.min.js',
+                          'json3.min.js',
+                          'es6-shim.min.js',
+                          'es6-sham.min.js',
                           'html5shiv.min.js',
                           'jquery-3.2.1.min.js',
                           'jquery.appear.js',

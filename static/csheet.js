@@ -215,7 +215,8 @@ function getLightbox(element) {
  * @param {Element} element element in a lightbox.
  * @param {String} selector element selector.
  */
-function loadResource(element, selector = '*') {
+function loadResource(element, selector) {
+    selector = typeof (selector) === 'undefined' ? '*' : selector;
     let $lightbox = $(getLightbox(element));
     let $selected = $lightbox.find(selector);
     $selected.find('video').each(
@@ -246,7 +247,8 @@ function loadResource(element, selector = '*') {
  * @param {Element} element element in a lightbox.
  * @param {String} selector element selector.
  */
-function unloadResource(element, selector = '*') {
+function unloadResource(element, selector) {
+    selector = typeof (selector) === 'undefined' ? '*' : selector;
     let $selected = $(getLightbox(element)).find(selector);
     $selected.find('video').each(
         function() {
@@ -312,7 +314,8 @@ function updatePoster(video) {
  * @param {Number} precision stamp precision.
  * @return {String} stamped url.
  */
-function stampedURL(url, precision = 9) {
+function stampedURL(url, precision) {
+    precision = typeof (precision) === 'undefined' ? 9 : precision;
     return url + '?timestamp=' + new Date().getTime().toPrecision(precision);
 }
 
