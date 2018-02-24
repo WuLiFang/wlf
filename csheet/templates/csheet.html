@@ -102,9 +102,9 @@
                     </noscript>
                 </div>
                 <div class="bottom">
-                    <span>
-                        {{ image | e }}
-                    </span>
+                    <div class='caption' title="{{ image.name | e }}">
+                        <span>{{ image.name | e }} </span>
+                    </div>
                 </div>
                 <a class="prev" href="#image{{ loop.index - 1 }}"> </a>
                 <a class="next" href="#image{{ loop.index + 1 }}"> </a> {% block viewer %} {% endblock %}

@@ -151,18 +151,20 @@ class HTMLImage(Image):
         Returns:
             str: url  for role name.
         """
-        
+
         if config.get('is_client'):
             return ('/images/{}.{}'.format(self.uuid, role))
 
+        if config.get('is_pack'):
+            try:
+                return '{}/{}'.format(
+                    self.folder_names[role],
+                    self.genearated[role].name)
+            except KeyError:
+                return ''
+
         path = self.genearated.get(role, self.source.get(role, self.path))
         assert isinstance(path, PurePath)
-        if config.get('is_pack'):
-            folder_name = self.folder_names[role]
-            return '{}/{}'.format(
-                folder_name,
-                path.name)
-
         try:
             return path.as_uri()
         except ValueError:
@@ -236,6 +238,7 @@ class HTMLImage(Image):
             if (output is None
                     and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
                     and source.stat().st_size < self.max_skipgen_size):
+                self.genearated[role] = source
                 return source
 
             _kwargs.update(kwargs)

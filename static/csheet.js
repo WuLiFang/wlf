@@ -250,7 +250,9 @@ $(document).ready(
         $smallVideos.each(
             function() {
                 shrinkLightbox(this);
-                // updatePoster(this);
+                if (!isClient) {
+                    updatePoster(this);
+                }
             }
         );
     }
