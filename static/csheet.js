@@ -7,7 +7,9 @@ $(document).ready(
                 $('.lightbox .small video:appeared').each(
                     function() {
                         loadResource(this, '.small');
-                        this.play();
+                        if (this.readyState > 1) {
+                            this.play();
+                        }
                     }
                 );
             }
@@ -231,7 +233,8 @@ function loadResource(element, selector) {
     $selected.find('img').each(
         function() {
             let img = this;
-            let url = stampedURL($(this).data('src'));
+            let url = $(this).data('src');
+            url = img.src ? stampedURL(url) : url;
             imageAvailable(
                 url,
                 function() {
@@ -276,7 +279,7 @@ function updatePoster(video) {
     let $parent = $video.parent('figure.small');
     let url = $(video).data('poster');
     if (url) {
-        url = stampedURL(url);
+        url = video.poster ? stampedURL(url) : url;
         imageAvailable(
             url,
             function() {
@@ -302,7 +305,9 @@ function updatePoster(video) {
                 if (video.poster == url) {
                     video.removeAttribute('poster');
                 }
-                shrinkLightbox(video);
+                if (!video.poster) {
+                    shrinkLightbox(video);
+                }
             }
         );
     }

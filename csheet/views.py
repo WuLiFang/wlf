@@ -116,7 +116,6 @@ def get_local(filename):
 
 
 @APP.route('/images/<uuid>.<role>')
-@nocache
 def response_image(uuid, role):
     """Response file for a image.
 
