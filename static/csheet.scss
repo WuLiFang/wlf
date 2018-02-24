@@ -140,7 +140,7 @@ video {
     transition: 0.5s ease-in-out;
     position: relative;
     height: 200px;
-    span {
+    .caption {
         word-break: keep-all;
         text-overflow: ellipsis;
         overflow: hidden;
@@ -273,7 +273,7 @@ video {
     &.shrink {
         overflow: hidden;
         background: linear-gradient(black, grey 33%, black);
-        span {
+        .caption {
             visibility: hidden;
         }
     }
@@ -292,7 +292,7 @@ video {
                 bottom: 0;
                 width: 100%;
                 padding: 0.5%;
-                span {
+                .caption {
                     background: rgba(0, 0, 0, 0.5)
                 }
             }

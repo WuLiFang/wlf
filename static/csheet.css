@@ -110,7 +110,7 @@ video {
   position: relative;
   height: 200px;
   /* loading indicator*/ }
-  .lightbox span {
+  .lightbox .caption {
     word-break: keep-all;
     text-overflow: ellipsis;
     overflow: hidden;
@@ -214,7 +214,7 @@ video {
   .lightbox.shrink {
     overflow: hidden;
     background: linear-gradient(black, grey 33%, black); }
-    .lightbox.shrink span {
+    .lightbox.shrink .caption {
       visibility: hidden; }
   .lightbox:target .viewer {
     visibility: visible;
@@ -227,7 +227,7 @@ video {
       bottom: 0;
       width: 100%;
       padding: 0.5%; }
-      .lightbox:target .viewer .bottom span {
+      .lightbox:target .viewer .bottom .caption {
         background: rgba(0, 0, 0, 0.5); }
     .lightbox:target .viewer a.prev, .lightbox:target .viewer a.next {
       opacity: 1; }
