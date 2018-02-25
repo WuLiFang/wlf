@@ -53,12 +53,12 @@
                     <th>用途</th>
                 </tr>
                 <tr>
-                    <td>双击空白处</td>
-                    <td>切换至动图</td>
+                    <td>双击两侧空白处</td>
+                    <td>播放所有可见视频</td>
                 </tr>
                 <tr>
                     <td>拖动图片</td>
-                    <td>可拖入其他软件(例如 Nuke、资源管理器)</td>
+                    <td>可拖入其他软件(例如 Nuke)</td>
                 </tr>
             </table>
         </div>
@@ -66,7 +66,7 @@
     <ul class="images">
         {% for image in images %}
         <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
-            <a href="#image{{ loop.index }}" class="zoom">
+            <a href="#image{{ loop.index }}" class="zoom" draggable="false">
                 <video class='small hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}"
                     muted loop>
                     <img alt="no image" data-src="{{ image.get('thumb', **config) }}" />
@@ -85,15 +85,14 @@
             <div class="viewer">
                 <div class="detail"> </div>
                 <a class="close" href="#void"> </a>
-                <video class='full hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}"
-                    draggable="true">
+                <video class='full hidden' data-poster="{{ image.get('full', **config) }}" data-src="{{ image.get('preview', **config) }}">
                     <a href="{{ image.get('full', **config) }}" target="_blank">
                         <img alt="no image" data-src="{{ image.get('full', **config) }}" />
                     </a>
                 </video>
                 <div class="noscript">
                     <noscript>
-                        <video class='full' poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}" draggable="true">
+                        <video class='full' poster="{{ image.get('full', **config) }}" src="{{ image.get('preview', **config) }}">
                             <a href="{{ image.get('full', **config) }}" target="_blank">
                                 <img alt="no image" src="{{ image.get('full', **config) }}" />
                             </a>

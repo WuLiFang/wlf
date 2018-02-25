@@ -4,50 +4,67 @@ let isClient = false;
 let lightboxHeight = 200;
 $(document).ready(
     function() {
+        let $videos = $('.lightbox video');
+        let $smallVideos = $videos.filter('.small');
+        $smallVideos.appear();
         $('html').dblclick(
             function() {
-                $('.lightbox .small video:appeared').each(
+                $smallVideos.filter(':appeared').each(
                     function() {
-                        loadResource(this, '.small');
-                        if (this.readyState > 1) {
+                        if (!this.readyState) {
+                            loadResource(this, '.small');
+                        } else {
                             this.play();
                         }
                     }
                 );
             }
         );
-        let $smallVideos = $('.lightbox video.small');
-        $smallVideos.appear();
+        // Soure manage.
         $smallVideos.mouseenter(
             function() {
-                if (this.readyState > 1) {
-                    this.play();
+                if (!this.readyState) {
+                    loadResource(this, '.small');
                 }
             }
         );
-        $smallVideos.mouseout(
+        $smallVideos.on('disappear',
             function() {
-                this.pause();
+                unloadResource(this, '.small');
             }
         );
-        $smallVideos.on('durationchange',
+        $smallVideos.on('appear',
             function() {
-                if (this.readyState > 1) {
-                    this.play();
-                }
+                $(getLightbox(this)).find('video').each(
+                    function() {
+                        updatePoster(this);
+                    }
+                );
             }
         );
-        // Soure manage.
+        $('.lightbox a.zoom').click(
+            function() {
+                loadResource(this, '.full');
+            }
+        );
         if (isClient) {
+            // Refresh button.
+            $('.viewer').append(
+                $('<button>', {
+                    class: 'refresh',
+                    click: function() {
+                        loadResource(this);
+                    },
+                })
+            );
+            // Auto refresh button.
             let refreshInterval;
             let buttons = $('.refresh-module')
                 .removeClass('hidden').find('button');
             let spans = buttons.find('span');
             let interval = 10000;
             let lastRefreshTime;
-
-            /** Refresh page if reached interval */
-            function autoRefresh() {
+            let onInterval = function() {
                 let value;
                 if (lastRefreshTime === undefined) {
                     value = 0;
@@ -72,7 +89,7 @@ $(document).ready(
                 function() {
                     if (refreshInterval === undefined) {
                         refreshInterval = setInterval(
-                            autoRefresh, interval / 100);
+                            onInterval, interval / 100);
                         buttons.attr('status', 'on');
                     } else {
                         clearInterval(refreshInterval);
@@ -82,41 +99,6 @@ $(document).ready(
                     }
                 }
             ).trigger('click');
-        }
-        $smallVideos.mouseenter(
-            function() {
-                loadResource(this, '.small');
-            }
-        );
-        $smallVideos.on('disappear',
-            function() {
-                unloadResource(this, '.small');
-            }
-        );
-        $smallVideos.on('appear',
-            function() {
-                $(getLightbox(this)).find('video').each(
-                    function() {
-                        updatePoster(this);
-                    }
-                );
-            }
-        );
-        $('.lightbox a.zoom').click(
-            function() {
-                loadResource(this, '.full');
-            }
-        );
-        if (isClient) {
-            $('.viewer').append(
-                $('<button>', {
-                    class: 'refresh',
-                    click: function() {
-                        unloadResource(this);
-                        loadResource(this);
-                    },
-                })
-            );
         }
         // Disable next/prev button when not avalieble.
         $('.lightbox .viewer a').click(
@@ -151,24 +133,16 @@ $(document).ready(
                 }
             }
         );
-        // Switch controls.
-        $('.lightbox video.full').on('durationchange',
-            function() {
-                this.controls = this.duration > 0.1;
-            }
-        );
-
         // Setup drag.
-        let $videos = $('.lightbox video');
-        $videos.each(
+        $('.lightbox').each(
             function() {
                 this.draggable = true;
             }
-        );
-        $videos.on('dragstart',
+        ).on('dragstart',
             function(ev) {
                 let event = ev.originalEvent;
-                let lightbox = getLightbox(this);
+                // let lightbox = getLightbox(this);
+                let lightbox = this;
                 let dragData = $(lightbox).data('drag');
                 let plainData = dragData;
                 if (window.location.protocol == 'file:') {
@@ -190,7 +164,29 @@ $(document).ready(
                         lightbox.id);
             }
         );
-
+        // Video play controls.
+        $smallVideos.on('loadeddata',
+            function() {
+                this.play();
+            }
+        );
+        $smallVideos.mouseenter(
+            function() {
+                if (this.readyState > 1) {
+                    this.play();
+                }
+            }
+        );
+        $smallVideos.mouseleave(
+            function() {
+                this.pause();
+            }
+        );
+        $('.lightbox video.full').on('loadedmetadata',
+            function() {
+                this.controls = this.duration > 0.1;
+            }
+        );
         // simlpe help
         $('nav').append(
             $('<button>', {
@@ -284,10 +280,12 @@ function loadResource(element, selector) {
     $selected.filter('video').each(
         function() {
             updatePoster(this);
-            if (!this.src) {
-                this.src = $(this).data('src');
-                this.load();
+            let url = $(this).data('src');
+            if (isClient && this.src && !this.readyState) {
+                url = stampedURL(url);
             }
+            this.src = url;
+            this.load();
         }
     );
     $selected.find('img').each(
