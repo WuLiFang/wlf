@@ -53,7 +53,7 @@ $(document).ready(
                 $('<button>', {
                     class: 'refresh',
                     click: function() {
-                        loadResource(this);
+                        loadResource(this, '.full', true);
                     },
                 })
             );
@@ -76,7 +76,9 @@ $(document).ready(
                     value = 0;
                     $smallVideos.filter(':appeared').each(
                         function() {
-                            updatePoster(this);
+                            if (this.paused) {
+                                updatePoster(this, true);
+                            }
                         }
                     );
                     lastRefreshTime = new Date().getTime();
@@ -272,8 +274,9 @@ function getLightbox(element) {
  * Reload related video.
  * @param {Element} element element in a lightbox.
  * @param {String} selector element selector.
+ * @param {Boolean} isRefresh if `isRefresh` is true, will add timestamp to url.
  */
-function loadResource(element, selector) {
+function loadResource(element, selector, isRefresh) {
     selector = typeof (selector) === 'undefined' ? '*' : selector;
     let $lightbox = $(getLightbox(element));
     let $selected = $lightbox.find(selector);
@@ -281,7 +284,7 @@ function loadResource(element, selector) {
         function() {
             updatePoster(this);
             let url = $(this).data('src');
-            if (isClient && this.src && !this.readyState) {
+            if (isRefresh || isClient && this.src && !this.readyState) {
                 url = stampedURL(url);
             }
             this.src = url;
@@ -310,8 +313,8 @@ function loadResource(element, selector) {
  */
 function unloadResource(element, selector) {
     selector = typeof (selector) === 'undefined' ? '*' : selector;
-    let $selected = $(getLightbox(element)).find(selector);
-    $selected.filter('video').each(
+    let $selected = $(getLightbox(element)).find('video').filter(selector);
+    $selected.each(
         function() {
             this.controls = false;
             this.removeAttribute('src');
@@ -331,8 +334,9 @@ function unloadResource(element, selector) {
 /**
  * Update video poster.
  * @param {Element} video video element.
+ * @param {Boolean} isReplace force poster to display.
  */
-function updatePoster(video) {
+function updatePoster(video, isReplace) {
     let $video = $(video);
     let isSmall = $video.is('.small');
     let url = $(video).data('poster');
@@ -347,6 +351,10 @@ function updatePoster(video) {
                 }
                 expandLightbox(video);
                 video.poster = url;
+                if (isReplace) {
+                    video.removeAttribute('src');
+                    video.load();
+                }
             },
             function() {
                 if (video.attributes.poster == url) {
