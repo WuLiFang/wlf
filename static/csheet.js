@@ -64,6 +64,12 @@ $(document).ready(
             let spans = buttons.find('span');
             let interval = 10000;
             let lastRefreshTime;
+            let isHovering;
+            $('.images').mouseenter(function() {
+                isHovering = true;
+            }).mouseleave(function() {
+                isHovering = false;
+            });
             let onInterval = function() {
                 let value;
                 if (lastRefreshTime === undefined) {
@@ -74,10 +80,10 @@ $(document).ready(
                 }
                 if (value <= 0) {
                     value = 0;
-                    $smallVideos.filter(':appeared').each(
+                    $smallVideos.each(
                         function() {
                             if (this.paused) {
-                                updatePoster(this, true);
+                                updatePoster(this, !isHovering);
                             }
                         }
                     );
