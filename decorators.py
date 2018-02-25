@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import inspect
 import logging
 import time
+import warnings
 from functools import wraps
 from multiprocessing.dummy import Queue
 from threading import Thread, current_thread
@@ -163,5 +164,59 @@ def run_with_semaphore(value):
         _func.lock = _lock
 
         return _func
+
+    return _wrap
+
+
+def renamed(old_name):
+    """Return decorator for renamed callable.
+
+    Args:
+        old_name (str): This name will still accessible, 
+            but call it will result a warn.
+
+    Returns:
+        decorator: this will do the setting about `old_name`
+            in the caller's module namespace.
+    """
+
+    def _wrap(obj):
+        assert callable(obj)
+
+        def _warn():
+            warnings.warn('Renamed: {} -> {}'
+                          .format(old_name, obj.__name__),
+                          DeprecationWarning, stacklevel=3)
+
+        # Make old name avalieble.
+        frame = inspect.currentframe().f_back
+        module = inspect.getmodule(frame)
+        if hasattr(module, old_name):
+            raise ValueError('Name already in use.', module, old_name)
+
+        if inspect.isclass(obj):
+            _old_init = obj.__init__
+
+            def __init__(*args, **kwargs):
+                # XXX: If use another name to call,
+                # you will not get the warning.
+                frame = inspect.currentframe().f_back
+                code = inspect.getframeinfo(frame).code_context
+                if [line for line in code
+                        if old_name in line]:
+                    _warn()
+
+                _old_init(*args, **kwargs)
+
+            obj.__init__ = __init__
+            setattr(module, old_name, obj)
+        else:
+            @wraps(obj)
+            def _func(*args, **kwargs):
+                _warn()
+                return obj(*args, **kwargs)
+            setattr(module, old_name, _func)
+
+        return obj
 
     return _wrap
