@@ -45,6 +45,11 @@ $(document).ready(
         $('.lightbox a.zoom').click(
             function() {
                 loadResource(this, '.full');
+                $smallVideos.each(
+                    function() {
+                        this.pause();
+                    }
+                );
             }
         );
         if (isClient) {
