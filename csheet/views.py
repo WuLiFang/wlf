@@ -26,7 +26,6 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
 APP.config['preview_limit_size'] = 10 * 2 ** 20  # 10MB
-# APP.config['generate_folder'] = join(gettempdir(), 'csheet_server/generated')
 if cgtwq.MODULE_ENABLE:
     PROJECT = cgtwq.Project()
 STATUS = {}
@@ -128,7 +127,7 @@ def response_image(uuid, role):
         abort(404, 'No image match this uuid.')
 
     kwargs = {}
-    folder = APP.config.get('generate_folder')
+    folder = APP.config.get('storage')
     if folder:
         kwargs['output'] = join(folder, role, uuid)
     job = spawn(image.generate, role,

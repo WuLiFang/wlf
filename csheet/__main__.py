@@ -323,10 +323,15 @@ def main():
                         help='包含色板所需图像的目录')
     parser.add_argument('-p', '--port', metavar='端口', type=int, required=False,
                         help='服务器运行端口')
+    parser.add_argument('-s', '--storage', metavar='文件仓库路径',
+                        type=lambda x: unicode(Path(x)), required=False,
+                        help='生成的文件集中存放至此')
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
-
+    if args.storage:
+        from .views import APP
+        APP.config['storage'] = args.storage
     if args.port:
         return run_server(args.port, args.dir)
     elif args.dir:
