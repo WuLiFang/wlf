@@ -7,7 +7,7 @@ import inspect
 import logging
 import time
 import warnings
-from functools import wraps
+from functools import wraps, WRAPPER_ASSIGNMENTS, partial
 from multiprocessing.dummy import Queue
 from threading import Thread, current_thread
 
@@ -204,18 +204,75 @@ def renamed(old_name):
                 return func(*args, **kwargs)
             return _func
 
-        # Make old name avalieble.
+        # Make old name available.
         frame = inspect.currentframe().f_back
-        module = inspect.getmodule(frame)
-        assert not hasattr(
-            module, old_name), ('Name already in use.', module, old_name)
+        assert old_name not in frame.f_globals, (
+            'Name already in use.', old_name)
 
         if inspect.isclass(obj):
             obj.__init__ = _wrap_with_warn(obj.__init__, True)
-            setattr(module, old_name, obj)
+            placeholder = obj
         else:
-            setattr(module, old_name, _wrap_with_warn(obj, False))
+            placeholder = _wrap_with_warn(obj, False)
+
+        frame.f_globals[old_name] = placeholder
 
         return obj
 
     return _wrap
+
+
+def deprecated(callable_or_name):
+    """Indicate this callable has been deprecated,
+        when got a name, will place a placeholer with that name
+        in the caller's global.
+
+    Args:
+        callable_or_name (callable, str): if got str, return a decorator,
+            else return decoratored callable.
+
+    Returns:
+        wrapped callable or decorator for wrap
+    """
+
+    def _wrap(callable_, name=None):
+        assert callable(callable_)
+
+        def _warn():
+            warnings.warn('Deprecated: {}'
+                          .format(name or callable_.__name__),
+                          DeprecationWarning, stacklevel=3)
+
+        def _wrap_with_warn(func):
+
+            def _func(*args, **kwargs):
+                _warn()
+                return func(*args, **kwargs)
+
+            # Only wrap attributes.
+            assigned = (i for i in WRAPPER_ASSIGNMENTS if hasattr(func, i))
+            _func = wraps(func, assigned=assigned)(_func)
+            if not is_class and name:
+                _func.__name__ = str(name)
+
+            return _func
+
+        is_class = inspect.isclass(callable_)
+        if is_class:
+            callable_.__init__ = _wrap_with_warn(callable_.__init__)
+            ret = callable_
+        else:
+            ret = _wrap_with_warn(callable_)
+
+        if name:
+            frame = inspect.currentframe().f_back
+            frame.f_globals[name] = ret
+
+        return ret
+
+    if callable(callable_or_name):
+        callable_ = callable_or_name
+        return _wrap(callable_)
+
+    name = callable_or_name
+    return partial(_wrap, name=name)
