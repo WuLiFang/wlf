@@ -9,6 +9,9 @@ from inspect import ismodule
 
 
 class BackwardTestCase(TestCase):
+    def assert_all_in(self, namespace, names):
+        for i in names:
+            self.assertIn(i, namespace)
 
     def test_csheet(self):
         import wlf.csheet_tool
@@ -40,6 +43,33 @@ class BackwardTestCase(TestCase):
         from wlf.Qt.QtWidgets import QApplication
         self.assertTrue(ismodule(QtCore))
         self.assertTrue(ismodule(QtWidgets))
+
+    def test_file(self):
+        from wlf import files
+        deprecated = (
+            'url_open',
+            'get_encoded', 'get_unicode', 'split_version', 'expand_frame',
+            'get_footage_name', 'get_layer', 'get_server',
+            'get_tag', 'remove_version', 'is_ascii', 'escape_batch',
+            'traytip'
+        )
+        self.assert_all_in(dir(files), deprecated)
+
+    def test_path(self):
+        from wlf import path
+        deprecated = (
+            'expand_frame',
+            'split_version', 'get_shot', 'get_tag', 'get_layer',
+            'get_footage_name'
+        )
+        self.assert_all_in(dir(path), deprecated)
+
+    def test_uitools(self):
+        from wlf import uitools
+        deprecated = (
+            'has_gui',
+        )
+        self.assert_all_in(dir(uitools), deprecated)
 
 
 if __name__ == '__main__':

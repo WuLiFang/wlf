@@ -1,20 +1,23 @@
 # -*- coding=UTF-8 -*-
 """Files operation. """
-from __future__ import unicode_literals, print_function, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
-import os
-import sys
-import shutil
-import logging
-import warnings
-import urllib
 import errno
-from subprocess import call, Popen
+import logging
 import multiprocessing.dummy
+import os
+import shutil
+import sys
+import urllib
+import warnings
+from subprocess import Popen, call
 
+from . import path
+from .decorators import deprecated
+from .notify import traytip as _traytip
 from .notify import Progress
-from .path import PurePath, Path, get_encoded as e
-
+from .path import get_encoded as e
+from .path import Path, PurePath
 
 LOGGER = logging.getLogger('com.wlf.files')
 
@@ -123,19 +126,6 @@ def map_drivers():
         LOGGER.warning('Map drivers not implemented on this platform.')
 
 
-def _url_open(url, isfile=False):
-    """(Decrypted)Open url.  """
-    import webbrowser
-
-    dummy = isfile
-    LOGGER.warning('url_open decrypted, use webbrowser.open instead.')
-    LOGGER.debug('Open url:\n%s', url)
-    webbrowser.open(url)
-
-
-setattr(sys.modules[__name__], 'url_open', _url_open)
-
-
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
     from .path import get_encoded
@@ -169,9 +159,21 @@ def is_same(src, dst):
 
     return False
 
-# Remap deprecated functions.
+# Deprecated functions.
 
 
+@deprecated('url_open')
+def _url_open(url, isfile=False):
+    """Open url.  """
+    import webbrowser
+
+    dummy = isfile
+    LOGGER.warning('url_open decrypted, use webbrowser.open instead.')
+    LOGGER.debug('Open url:\n%s', url)
+    webbrowser.open(url)
+
+
+@deprecated('unicode_popen')
 def _unicode_popen(args, **kwargs):
     """Return Popen object use encoded args.  """
 
@@ -186,40 +188,9 @@ def _unicode_popen(args, **kwargs):
     return Popen(args, **kwargs)
 
 
-locals()['unicode_popen'] = _unicode_popen
+for i in ('get_encoded', 'get_unicode', 'split_version', 'expand_frame',
+          'get_footage_name', 'get_layer', 'get_server',
+          'get_tag', 'remove_version', 'is_ascii', 'escape_batch'):
+    deprecated(i, reason='moved to wlf.path')(getattr(path, i))
 
-
-def _remap_deprecated():
-    from . import path
-
-    def _get_func(name):
-        def _func(*args, **kwargs):
-            import traceback
-            with warnings.catch_warnings():
-                warnings.simplefilter('once')
-                msg = 'Use wlf.path.{} Instead.'.format(
-                    i)
-                warnings.warn(msg, DeprecationWarning)
-            traceback.print_stack()
-
-            return getattr(path, name)(*args, **kwargs)
-        return _func
-    i = None
-    for i in ['get_encoded', 'get_unicode', 'split_version', 'expand_frame',
-              'get_footage_name', 'get_layer', 'get_server',
-              'get_tag', 'remove_version', 'is_ascii', 'escape_batch']:
-        setattr(sys.modules[__name__], i, _get_func(i))
-
-    def traytip(*args, **kwargs):
-        """Show a traytip(windows only).  """
-        with warnings.catch_warnings():
-            warnings.simplefilter('once')
-            warnings.warn(
-                'Use wlf.notify.traytip Instead.', DeprecationWarning)
-        from .notify import traytip as _new
-        _new(*args, **kwargs)
-
-    setattr(sys.modules[__name__], 'traytip', traytip)
-
-
-_remap_deprecated()
+deprecated('traytip', reason='use wlf.notify instead')(_traytip)

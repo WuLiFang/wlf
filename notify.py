@@ -10,7 +10,7 @@ import threading
 import time
 from datetime import timedelta
 
-from .decorators import run_in_main_thread
+from .decorators import run_in_main_thread, deprecated
 from .env import has_gui, has_nuke, HAS_QT
 from .path import get_encoded, get_unicode
 
@@ -434,6 +434,7 @@ else:
         setProgress = setMessage = do_nothing
 
 
+@deprecated('Progress')
 class _Progress(object):
     """A progressbar compatible with or without nuke imported."""
 
@@ -512,6 +513,3 @@ class _Progress(object):
 
         if self.is_cancelled():
             raise CancelledError
-
-
-setattr(sys.modules[__name__], 'Progress', _Progress)

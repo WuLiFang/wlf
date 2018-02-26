@@ -1,14 +1,16 @@
 # -*- coding=UTF-8 -*-
 """For build UI faster.  """
-from __future__ import print_function, unicode_literals, absolute_import
+from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
 
-from Qt import QtWidgets, QtCore, QtCompat
-from Qt.QtWidgets import QDialog, QApplication, QFileDialog, QMenu, QAction
+from Qt import QtCompat, QtCore, QtWidgets
+from Qt.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QMenu
 
 from .config import Config
-from .mp_logging import set_basic_logger
+from .decorators import deprecated
+from .env import has_gui as _has_gui
+from . import mp_logging
 from .path import Path
 
 
@@ -156,13 +158,13 @@ def main_show_dialog(dialog):
 
     from .notify import QtProgressBar
 
-    set_basic_logger()
+    mp_logging.basic_config()
     QApplication(sys.argv)
     frame = dialog()
     QtProgressBar.default_parent = frame
     sys.exit(frame.exec_())
 
+# Deprecated functions.
 
-# Remap moved function.
-setattr(sys.modules[__name__], 'has_gui', __import__(
-    'wlf.env', globals(), locals(), [str('has_gui')]).has_gui)
+
+deprecated('has_gui', reason='moved to wlf.env')(_has_gui)

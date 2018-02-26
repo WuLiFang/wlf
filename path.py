@@ -13,6 +13,7 @@ import string
 import logging
 
 import pathlib2
+from .decorators import deprecated
 
 with pathlib2.Path(pathlib2.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
     _TAGS = json.load(_f)
@@ -438,25 +439,29 @@ class WindowsPath(Path, PureWindowsPath):
         raise NotImplementedError("Path.group() is unsupported on this system")
 
 
-# Remap functions for backward compatibility.
+# Deprecated functions.
 
+@deprecated('expand_frame')
 def _expand_frame(filename, frame):
     return get_unicode(PurePath(filename).with_frame(frame))
 
 
+@deprecated('split_version')
 def _split_version(f):
     path = PurePath(f)
     return path.shot, path.version
 
-
+@deprecated('remove_version')
 def _remove_version(path):
     return get_unicode(PurePath(path).as_no_version())
 
 
+@deprecated('get_shot')
 def _get_shot(path):
     return PurePath(path).shot
 
 
+@deprecated('get_tag')
 def _get_tag(filename, pat=None, default=DEFAULT_TAG):
     path = PurePath(filename)
     path.tag_pattern = pat
@@ -465,20 +470,16 @@ def _get_tag(filename, pat=None, default=DEFAULT_TAG):
     return path.tag
 
 
+@deprecated('get_layer')
 def _get_layer(filename, layers=None):
     path = PurePath(filename)
     path.layers = layers
     return path.layer
 
 
+@deprecated('get_footage_name')
 def _get_footage_name(path):
     return PurePath(path).footage_name
 
 
-locals()['expand_frame'] = _expand_frame
-locals()['split_version'] = _split_version
-locals()['remove_version'] = _remove_version
-locals()['get_shot'] = _get_shot
-locals()['get_tag'] = _get_tag
-locals()['get_layer'] = _get_layer
-locals()['get_footage_name'] = _get_footage_name
+
