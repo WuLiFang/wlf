@@ -1,18 +1,16 @@
 # -*- coding=UTF-8 -*-
 """Tray icon and menu.  """
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, unicode_literals, absolute_import
 
 import os
 
 from Qt.QtWidgets import QSystemTrayIcon
 from Qt.QtGui import QIcon, QCursor
 
-from uitools import Menu
-from env import has_gui
+from .uitools import Menu
+from .env import has_gui
 
 RESOURCE_DIR = os.path.dirname(__file__)
-
-__version__ = '0.1.2'
 
 
 class Tray(QSystemTrayIcon):
@@ -45,8 +43,8 @@ class Tray(QSystemTrayIcon):
         """Set menu context.  """
 
         def _csheet_tool():
-            import wlf.csheet_tool
-            wlf.csheet_tool.Dialog().exec_()
+            import wlf.csheet
+            wlf.csheet.__main__.Dialog().exec_()
 
         def _uploader():
             import wlf.uploader
