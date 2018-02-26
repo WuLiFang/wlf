@@ -90,10 +90,13 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
     warnings.simplefilter('module', DeprecationWarning)
     logging.captureWarnings(True)
 
-    try:
-        loglevel = int(os.getenv('LOGLEVEL'))
-    except TypeError:
-        loglevel = None
+    if 'level' in kwargs:
+        loglevel = kwargs['level']
+    else:
+        try:
+            loglevel = int(os.getenv('LOGLEVEL'))
+        except TypeError:
+            loglevel = None
 
     _kwargs = {
         'level': loglevel,
