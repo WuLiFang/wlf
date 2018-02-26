@@ -12,7 +12,7 @@ import urllib
 import warnings
 from subprocess import Popen, call
 
-from . import path
+from . import path as _path
 from .decorators import deprecated
 from .notify import traytip as _traytip
 from .notify import Progress
@@ -188,9 +188,14 @@ def _unicode_popen(args, **kwargs):
     return Popen(args, **kwargs)
 
 
-for i in ('get_encoded', 'get_unicode', 'split_version', 'expand_frame',
-          'get_footage_name', 'get_layer', 'get_server',
-          'get_tag', 'remove_version', 'is_ascii', 'escape_batch'):
-    deprecated(i, reason='moved to wlf.path')(getattr(path, i))
-
 deprecated('traytip', reason='use wlf.notify instead')(_traytip)
+
+
+def _map_path_module():
+    for i in ('get_encoded', 'get_unicode', 'split_version', 'expand_frame',
+              'get_footage_name', 'get_layer', 'get_server',
+              'get_tag', 'remove_version', 'is_ascii', 'escape_batch'):
+        deprecated(i, reason='moved to wlf.path')(getattr(_path, i))
+
+
+_map_path_module()
