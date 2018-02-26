@@ -172,7 +172,7 @@ def renamed(old_name):
     """Return decorator for renamed callable.
 
     Args:
-        old_name (str): This name will still accessible, 
+        old_name (str): This name will still accessible,
             but call it will result a warn.
 
     Returns:
@@ -188,34 +188,33 @@ def renamed(old_name):
                           .format(old_name, obj.__name__),
                           DeprecationWarning, stacklevel=3)
 
+        def _wrap_with_warn(func, is_inspect):
+            @wraps(func)
+            def _func(*args, **kwargs):
+                if is_inspect:
+                    # XXX: If use another name to call,
+                    # you will not get the warning.
+                    frame = inspect.currentframe().f_back
+                    code = inspect.getframeinfo(frame).code_context
+                    if [line for line in code
+                            if old_name in line]:
+                        _warn()
+                else:
+                    _warn()
+                return func(*args, **kwargs)
+            return _func
+
         # Make old name avalieble.
         frame = inspect.currentframe().f_back
         module = inspect.getmodule(frame)
-        if hasattr(module, old_name):
-            raise ValueError('Name already in use.', module, old_name)
+        assert not hasattr(
+            module, old_name), ('Name already in use.', module, old_name)
 
         if inspect.isclass(obj):
-            _old_init = obj.__init__
-
-            def __init__(*args, **kwargs):
-                # XXX: If use another name to call,
-                # you will not get the warning.
-                frame = inspect.currentframe().f_back
-                code = inspect.getframeinfo(frame).code_context
-                if [line for line in code
-                        if old_name in line]:
-                    _warn()
-
-                _old_init(*args, **kwargs)
-
-            obj.__init__ = __init__
+            obj.__init__ = _wrap_with_warn(obj.__init__, True)
             setattr(module, old_name, obj)
         else:
-            @wraps(obj)
-            def _func(*args, **kwargs):
-                _warn()
-                return obj(*args, **kwargs)
-            setattr(module, old_name, _func)
+            setattr(module, old_name, _wrap_with_warn(obj, False))
 
         return obj
 
