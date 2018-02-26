@@ -222,7 +222,7 @@ def renamed(old_name):
     return _wrap
 
 
-def deprecated(callable_or_name):
+def deprecated(callable_or_name, reason=None):
     """Indicate this callable has been deprecated,
         when got a name, will place a placeholer with that name
         in the caller's global.
@@ -230,6 +230,7 @@ def deprecated(callable_or_name):
     Args:
         callable_or_name (callable, str): if got str, return a decorator,
             else return decoratored callable.
+        reason (str): default to None, will be used in warning message.
 
     Returns:
         wrapped callable or decorator for wrap
@@ -239,9 +240,11 @@ def deprecated(callable_or_name):
         assert callable(callable_)
 
         def _warn():
-            warnings.warn('Deprecated: {}'
-                          .format(name or callable_.__name__),
-                          DeprecationWarning, stacklevel=3)
+            msg = 'Deprecated: {}'.format(name or callable_.__name__)
+            if reason:
+                msg += ', {}'.format(reason)
+            msg += '.'
+            warnings.warn(msg, DeprecationWarning, stacklevel=3)
 
         def _wrap_with_warn(func):
 
