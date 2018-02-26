@@ -87,6 +87,8 @@ def set_basic_logger(logger=None):
     logger = logger or logging.getLogger()
     logger.propagate = False
 
+    logging.captureWarnings(True)
+
     # Loglevel
     loglevel = os.getenv('LOGLEVEL', logging.INFO)
     try:
