@@ -15,7 +15,7 @@ from subprocess import Popen, call
 from . import path as _path
 from .decorators import deprecated
 from .notify import traytip as _traytip
-from .notify import Progress
+from .notify import progress
 from .path import get_encoded as e
 from .path import Path, PurePath
 
@@ -128,20 +128,23 @@ def map_drivers():
 
 def checked_exists(checking_list):
     """Return file existed item in @checking_list.  """
-    from .path import get_encoded
 
-    checking_list = list(checking_list)
-    task = Progress('验证文件', total=len(checking_list))
+    checking_list = set(checking_list)
 
     def _check(i):
-        task.step(i)
-        if os.path.exists(get_encoded(i)):
+        if os.path.exists(e(i)):
             return i
+
+    ret = set()
     pool = multiprocessing.dummy.Pool()
+    for i in progress(pool.imap_unordered(_check, checking_list),
+                      '验证文件', total=len(checking_list), start_message=''):
+        if i:
+            ret.add(i)
     ret = pool.map(_check, checking_list)
     pool.close()
     pool.join()
-    return [i for i in ret if i]
+    return sorted(ret)
 
 
 def is_same(src, dst):
