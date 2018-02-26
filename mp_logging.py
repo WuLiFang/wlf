@@ -1,24 +1,24 @@
 # -*- coding=UTF-8 -*-
 """Handle logging with multiprocessing.  """
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import multiprocessing
-import multiprocessing.dummy
-import sys
 import os
+import sys
 import traceback
+from multiprocessing.dummy import Lock, Process, Queue
 
-__verion__ = '0.1.1'
+from .decorators import renamed
+
+_LOCK = Lock()
 
 
-class Handler(multiprocessing.dummy.Process):
+class Handler(Process):
     """Multiprocessing adapted handler.  """
 
-    def __init__(self, handler, args=(), kwargs=None):
+    def __init__(self, handler, args=(), **kwargs):
         assert issubclass(handler, logging.Handler)
 
-        kwargs = kwargs or {}
         self._handler = handler(*args, **kwargs)
         # Patch for use non default encoding.
         if issubclass(handler, logging.StreamHandler):
@@ -28,9 +28,9 @@ class Handler(multiprocessing.dummy.Process):
                     ret = ret.encode(sys.getfilesystemencoding())
                 return ret
             self._handler.format = _format
-        self.queue = multiprocessing.Queue(-1)
+        self.queue = Queue(-1)
 
-        super(Handler, self).__init__(name=handler.get_name(self._handler))
+        super(Handler, self).__init__(name=str(self._handler))
 
         self.daemon = True
         self.start()
@@ -47,7 +47,7 @@ class Handler(multiprocessing.dummy.Process):
                 raise
             except EOFError:
                 break
-            except:
+            except:  # pylint:disable=bare-except
                 traceback.print_exc(file=sys.stderr)
 
     def _format_record(self, record):
@@ -72,7 +72,7 @@ class Handler(multiprocessing.dummy.Process):
             self.queue.put_nowait(msg)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except:  # pylint:disable=bare-except
             self.handleError(record)
 
     def close(self):
@@ -81,34 +81,43 @@ class Handler(multiprocessing.dummy.Process):
         self._handler.close()
 
 
-def set_basic_logger(logger=None):
-    """Basic log setting.  """
-
-    logger = logger or logging.getLogger()
-    logger.propagate = False
+@renamed('set_basic_logger')
+def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
+    """Optmized logging.basicConfig.  """
 
     logging.captureWarnings(True)
 
-    # Loglevel
-    loglevel = os.getenv('LOGLEVEL', logging.INFO)
     try:
-        logger.setLevel(int(loglevel))
+        loglevel = int(os.getenv('LOGLEVEL'))
     except TypeError:
-        logging.warning(
-            'Can not recognize env:LOGLEVEL %s, expect a int', loglevel)
+        loglevel = None
 
-    # Stream handler
-    handler = Handler(logging.StreamHandler)
-    if logger.getEffectiveLevel() == logging.DEBUG:
-        formatter = logging.Formatter(
-            str('%(levelname)-6s[%(asctime)s]:%(filename)s:'
-                '%(lineno)d:%(funcName)s: %(message)s'), str('%H:%M:%S'))
-    else:
-        formatter = logging.Formatter(
-            str('%(levelname)-6s[%(asctime)s]:'
-                '%(name)s: %(message)s'), str('%H:%M:%S'))
+    _kwargs = {
+        'level': loglevel,
+        'format': (b'%(levelname)-6s[%(asctime)s]:%(filename)s:%(lineno)d:%(funcName)s: %(message)s'
+                   if loglevel == logging.DEBUG
+                   else b'%(levelname)-6s[%(asctime)s]:%(name)s: %(message)s'),
+        'datafmt':  b'%H:%M:%S'
+    }
+    _kwargs.update(kwargs)
+    kwargs = _kwargs
 
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    with _LOCK:
+        if not logging.root.handlers:
+            filename = kwargs.get("filename")
+            if filename:
+                mode = kwargs.get("filemode", 'a')
+                hdlr = Handler(logging.FileHandler, (filename, mode))
+            else:
+                stream = kwargs.get("stream")
+                hdlr = Handler(logging.StreamHandler, (stream,))
+            fms = kwargs.get("format", logging.BASIC_FORMAT)
+            dfs = kwargs.get("datefmt", None)
+            fmt = logging.Formatter(fms, dfs)
+            hdlr.setFormatter(fmt)
+            logging.root.addHandler(hdlr)
+            level = kwargs.get("level")
+            if level is not None:
+                logging.root.setLevel(level)
 
-    logger.debug('Basic logger set finish.')
+            logging.debug('Set basic logging config.')
