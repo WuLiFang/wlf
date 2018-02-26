@@ -60,17 +60,6 @@ class WSGICsheetTestCase(TestCase):
         APP.testing = True
         self.app = APP.test_client()
 
-    def test_index(self):
-        import wlf.csheet.views
-        wlf.csheet.views.MODULE_ENABLE = False
-        recieve = self.app.get('/')
-        self.assertEqual(recieve.status_code, 503)
-        wlf.csheet.views.MODULE_ENABLE = True
-        recieve = self.app.get('/')
-        self.assertEqual(recieve.status_code, 200)
-        for i in self.dummy_projects:
-            self.assertIn(i, recieve.data.decode('utf8'))
-
     def tearDown(self):
         pass
 
