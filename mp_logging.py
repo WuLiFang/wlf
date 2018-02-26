@@ -3,6 +3,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
+import warnings
 import os
 import sys
 import traceback
@@ -85,6 +86,8 @@ class Handler(Process):
 def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
     """Optmized logging.basicConfig.  """
 
+    # Set warnings.
+    warnings.simplefilter('module', DeprecationWarning)
     logging.captureWarnings(True)
 
     try:
