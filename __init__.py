@@ -31,8 +31,6 @@ def _init():
     import Qt
     import scandir
 
-    from .path import PurePath
-
     def _set_attr(name, value):
         setattr(sys.modules[__name__], name, value)
         sys.modules['{}.{}'.format(__name__, name)] = value
