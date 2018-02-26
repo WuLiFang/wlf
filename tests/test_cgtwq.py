@@ -46,5 +46,35 @@ class CGTeamWorkClientTestCase(TestCase):
         CGTeamWorkClient.refresh_select('proj_big', 'shot_task')
 
 
+class FiltersTestCase(TestCase):
+    def test_operations(self):
+        from wlf.cgtwq.module import Filter, FilterList
+        result = Filter('title', 'text') | Filter(
+            'data', 'test') & Filter('name', 'name')
+        self.assertIsInstance(result, FilterList)
+        self.assertListEqual(
+            result,
+            [['title', '=', 'text'],
+             'or', ['data', '=', 'test'],
+             'and', ['name', '=', 'name']]
+        )
+        result |= Filter('test2', '233')
+        self.assertIsInstance(result, FilterList)
+        self.assertListEqual(
+            result,
+            [['title', '=', 'text'],
+             'or', ['data', '=', 'test'],
+             'and', ['name', '=', 'name'],
+             'or', ['test2', '=', '233']]
+        )
+
+
+@skip_if_no_cgtw
+class ServerTestCase(TestCase):
+    def test_account(self):
+        from wlf.cgtwq import server
+        print(server.account())
+
+
 if __name__ == '__main__':
     main()
