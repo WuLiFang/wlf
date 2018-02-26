@@ -2,14 +2,16 @@
 """Contactsheet test.  """
 from __future__ import absolute_import, print_function, unicode_literals
 
+import logging
+
 from gevent.wsgi import WSGIServer
 
+from wlf import mp_logging
 from wlf.csheet.views import APP
 
 
 def main():
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
+    mp_logging.basic_config(level=logging.DEBUG)
 
     port = 5001
     APP.debug = True

@@ -20,6 +20,7 @@ from ..files import copy
 from ..notify import CancelledError, progress
 from ..path import Path, PurePath, get_encoded
 from ..uitools import DialogWithDir, main_show_dialog
+from .. import mp_logging
 from .html import RESOURCES_DIR, HTMLImage, from_list, updated_config
 
 LOGGER = logging.getLogger('com.wlf.csheet')
@@ -328,7 +329,7 @@ def main():
                         help='生成的文件集中存放至此')
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO)
+    mp_logging.basic_config(level=logging.INFO)
     if args.storage:
         from .views import APP
         APP.config['storage'] = args.storage
