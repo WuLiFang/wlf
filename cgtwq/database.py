@@ -41,6 +41,7 @@ class Selection(list):
         """
 
         assert isinstance(id_list, list), type(id_list)
+        assert isinstance(module, Module)
         super(Selection, self).__init__(id_list)
         self.module = module
         self.call = partial(self.module.call, id_array=self)
@@ -68,7 +69,7 @@ class Selection(list):
             tuple: Field data.
         """
 
-        field = self.module.format_field(field)
+        field = self.module.field(field)
         resp = self.call("c_orm", "get_in_id",
                          sign_array=[field],
                          order_sign_array=[field])
@@ -83,7 +84,7 @@ class Selection(list):
             value (any): Value to set.
         """
 
-        field = self.module.format_field(field)
+        field = self.module.field(field)
         resp = self.call("c_orm", "set_in_id",
                          sign_data_array={field: value})
         if resp.code == 0:
@@ -96,7 +97,7 @@ class Selection(list):
             field (unicode): Server defined field name.
         """
 
-        field = self.module.format_field(field)
+        field = self.module.field(field)
         resp = self.call("c_orm", "del_in_id")
 
     def get_path(self, sign_list):
