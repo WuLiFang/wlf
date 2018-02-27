@@ -90,13 +90,14 @@ class Selection(list):
         if resp.code == 0:
             raise ValueError(resp)
 
+    # TODO
     def delete_field(self, field):
         """Delete field data for the selection.
 
         Args:
             field (unicode): Server defined field name.
         """
-
+        raise NotImplementedError
         field = self.module.field(field)
         resp = self.call("c_orm", "del_in_id")
 
@@ -130,7 +131,7 @@ class Selection(list):
             Selection: Selection from the response.
         """
 
-        assert isinstance(response, server.Response)
+        assert isinstance(response, server.Response), response
         assert response.type == 'json', response
         payload = response.data
         try:

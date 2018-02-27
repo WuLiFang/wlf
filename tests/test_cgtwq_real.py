@@ -5,13 +5,9 @@ Only work when connected to server.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import socket
-from contextlib import contextmanager
-from functools import wraps
 from unittest import TestCase, main, skipIf
 
-from mock import MagicMock, call
-
+from wlf import mp_logging
 from wlf.cgtwq import CGTeamWorkClient
 
 skip_if_no_cgtw = skipIf(not CGTeamWorkClient.is_logged_in(),
@@ -50,27 +46,6 @@ class CGTeamWorkClientTestCase(TestCase):
         CGTeamWorkClient.refresh_select('proj_big', 'shot_task')
 
 
-class FiltersTestCase(TestCase):
-    def test_operations(self):
-        from wlf.cgtwq import Filter, FilterList
-        result = Filter('title', 'text') | Filter(
-            'data', 'test') & Filter('name', 'name')
-        self.assertIsInstance(result, FilterList)
-        self.assertListEqual(
-            result,
-            [['title', '=', 'text'],
-             'or', ['data', '=', 'test'],
-             'and', ['name', '=', 'name']]
-        )
-        result |= Filter('test2', '233')
-        self.assertIsInstance(result, FilterList)
-        self.assertListEqual(
-            result,
-            [['title', '=', 'text'],
-             'or', ['data', '=', 'test'],
-             'and', ['name', '=', 'name'],
-             'or', ['test2', '=', '233']]
-        )
 
 
 @skip_if_no_cgtw
@@ -84,56 +59,6 @@ class ServerTestCase(TestCase):
 
 @skip_if_no_cgtw
 class DataBaseTestCase(TestCase):
-    def test_mocked(self):
-        from wlf.cgtwq.server import Response
-        from wlf.cgtwq.database import Selection
-        from wlf.cgtwq import Database, Filter
-
-        module = Database('proj_big')['shot_task']
-        method = MagicMock(module.call)
-        module.call = method
-
-        method.return_value = Response(
-            [{"id": "1", "name": "name_value"}], 1, 'json')
-
-        # Filter / select
-        select = module.filter(Filter(' ', ' '))
-        method.assert_called_once()
-        module.select('1')
-        module.select(['1', '2'])
-        method.assert_called_once()
-        self.assertIsInstance(select, Selection)
-
-        # Getter.
-        method = MagicMock(select.call)
-
-        @contextmanager
-        def _once_call():
-            method.reset_mock()
-            yield
-            method.assert_called_once()
-        select.call = method
-        method.return_value = Response([{"id": "1", "shot_task.artist": "monkey"}, {
-            'id': "2", "shot_task.artist": "dog"}], 1, 'json')
-        with _once_call():
-            result = select.get_field('artist')
-        self.assertEqual(result, ('monkey', 'dog'))
-        with _once_call():
-            result = select['artist']
-        self.assertEqual(result, ('monkey', 'dog'))
-
-        # Setter.
-        with _once_call():
-            select.set_field('artist', 'Test')
-        with _once_call():
-            select['artist'] = 'Test'
-
-        # Deleter
-        with _once_call():
-            select.delete_field('artist')
-        with _once_call():
-            del select['artist']
-
     def test_account(self):
         from wlf.cgtwq.database import PROJECT
         result = PROJECT.names()
@@ -162,7 +87,6 @@ class DataBaseTestCase(TestCase):
         self.assertNotIsInstance(result['path'], dict)
 
 
-from wlf import mp_logging
-mp_logging.basic_config(level=logging.DEBUG)
+# mp_logging.basic_config(level=logging.DEBUG)
 if __name__ == '__main__':
     main()
