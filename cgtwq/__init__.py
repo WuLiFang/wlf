@@ -13,8 +13,11 @@ MODULE_ENABLE = has_cgtw()
 if MODULE_ENABLE:
     from . import patches
     from .base import CGTeamWork, Filebox, Pipeline
-    from .public import Account, Project, Public, proj_info
+    from .public import Project, Public, proj_info
+    from .database import ACCOUNT, PROJECT
     from .shottask import Shot, Shots, ShotTask
+    from .database import Database
+    from .filter import Filter, FilterList
 
     # Apply patch.
     patches.patch_tw_lib()

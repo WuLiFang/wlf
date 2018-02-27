@@ -10,6 +10,7 @@ name = "pypi"
 pylint = "*"
 rope = "*"
 "autopep8" = "*"
+mock = "*"
 
 
 [packages]

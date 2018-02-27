@@ -26,7 +26,10 @@ class Handler(Process):
             def _format(record):
                 ret = handler.format(self._handler, record)
                 if isinstance(ret, unicode):
-                    ret = ret.encode(sys.getfilesystemencoding())
+                    try:
+                        ret = ret.encode(sys.stdout.encoding)
+                    except:  # pylint: disable=bare-except
+                        pass
                 return ret
             self._handler.format = _format
         self.queue = Queue(-1)

@@ -7,14 +7,17 @@ import json
 import os
 
 from .base import CGTeamWork
+from ..decorators import deprecated
 
 
-class Public(CGTeamWork):
+@deprecated('Public')
+class _Public(CGTeamWork):
     """Public database for project and account info.  """
     database = 'public'
 
 
-class Project(Public):
+@deprecated('Project')
+class _Project(_Public):
     """The project database.  """
     module = 'project'
     signs = {
@@ -56,11 +59,6 @@ class Project(Public):
                 if key in i:
                     return i[key]
                 return i
-
-
-class Account(Public):
-    """The account database.  """
-    module = 'project'
 
 
 def proj_info(shot_name=None, database=None):
