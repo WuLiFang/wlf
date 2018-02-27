@@ -29,7 +29,6 @@ class TableTestCase(TestCase):
                           ('E1', ('E2', ('F3',))): 2})
 
     def test_tuple(self):
-        print('testing tuple data')
         data = NestedData(self.test_tuple_data)
         self.assertEqual(data.to_columns(), [['A1'], ['B1', 'C1'], ['B1', 'C2'],
                                              ['D1'], ['E1', 'E2', 'E3'], ['E1', 'E2', 'F3']])
