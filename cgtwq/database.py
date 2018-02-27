@@ -9,7 +9,7 @@ from functools import partial
 from . import server
 from .filter import Filter, FilterList
 
-_OS = {'windows': 'wind', 'linux': 'linux', 'darwin': 'mac'}.get(
+_OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
 LOGGER = logging.getLogger('wlf.cgtwq.database')
 
@@ -160,7 +160,7 @@ class Module(object):
 
     def __getitem__(self, name):
         if isinstance(name, (Filter, FilterList)):
-            return self.filter(name)
+            self.filter(name)
         return self.select(name)
 
     def select(self, id_list):
@@ -191,6 +191,7 @@ class Module(object):
         resp = self.call('c_orm', 'get_with_filter',
                          sign_array=[self.field('id')],
                          sign_filter_array=_filters)
+
         return Selection.from_response(resp, self)
 
     def field(self, name):

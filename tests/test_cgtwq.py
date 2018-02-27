@@ -155,8 +155,11 @@ class DataBaseTestCase(TestCase):
     def test_get_filebox(self):
         from wlf.cgtwq.database import Database, Filter
         module = Database('proj_big')['shot_task']
-        module[Filter('task_name', 'SNJYW_EP26_01_sc001')
-               ].get_filebox('submit')
+        select = module.filter(Filter(
+            'shot.shot', 'SNJYW_EP26_01_sc026') & Filter('pipeline', '合成'))
+        result = select.get_filebox('submit')
+        self.assertIsInstance(result, dict)
+        self.assertNotIsInstance(result['path'], dict)
 
 
 from wlf import mp_logging
