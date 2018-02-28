@@ -22,7 +22,6 @@ CGTeamWorkClientStatus = namedtuple(
 
 LOGGER = logging.getLogger('wlf.cgtwq.client')
 
-
 class CGTeamWorkClient(object):
     """Query from CGTeamWork GUI clients.  """
 
@@ -222,14 +221,17 @@ class CGTeamWorkClient(object):
             'type': 'get'
         }
         _kwargs.update(kwargs)
-        _kwargs['calss_name'] = controller
+        _kwargs['class_name'] = controller
         _kwargs['method_name'] = method
 
+        payload = json.dumps(_kwargs, indent=4, sort_keys=True)
         conn = create_connection(cls.url, cls.time_out)
 
         try:
-            conn.send(json.dumps(_kwargs))
+            conn.send(payload)
+            LOGGER.debug('SEND: %s', payload)
             recv = conn.recv()
+            LOGGER.debug('RECV: %s', recv)
             ret = json.loads(recv)
             ret = ret['data']
             try:
