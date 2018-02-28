@@ -15,12 +15,24 @@ from websocket import create_connection
 
 from ..decorators import deprecated
 from ..env import has_cgtw
+from .exceptions import IDError
 
 CGTeamWorkClientStatus = namedtuple(
     'CGTeamWorkClientStatus',
-    ['server_ip', 'server_http', 'token'])
-
+    ('server_ip', 'server_http', 'token'))
+PluginData = namedtuple(
+    'PulginData',
+    ('plugin_id',
+     'filebox_id',
+     'database',
+     'module',
+     'id_list',
+     'folder',
+     'file_path_list',
+     )
+)
 LOGGER = logging.getLogger('wlf.cgtwq.client')
+
 
 class CGTeamWorkClient(object):
     """Query from CGTeamWork GUI clients.  """
@@ -160,15 +172,27 @@ class CGTeamWorkClient(object):
             return None
         return ret
 
+    # TODO
     @classmethod
-    def get_plugin_data(cls, uuid):
+    def get_plugin_data(cls, uuid=''):
         """Get plugin data for uuid.
 
         Args:
             uuid (unicode): Plugin uuid.
         """
 
-        return cls.call_main_widget("get_plugin_data", plugin_uuid=uuid)
+        data = cls.call_main_widget("get_plugin_data", plugin_uuid=uuid)
+        if not data:
+            msg = 'No matched plugin'
+            if uuid:
+                msg += ': {}'.format(uuid)
+            msg += '.'
+            raise IDError(msg)
+        data = json.loads(data)
+        assert isinstance(data, dict), type(data)
+        for i in PluginData._fields:
+            data.setdefault(i, None)
+        return PluginData(**data)
 
     @classmethod
     def send_plugin_result(cls, uuid, result=False):
@@ -210,7 +234,8 @@ class CGTeamWorkClient(object):
 
         Args:
             controller: Client defined controller name.
-            method (str, unicode): Client defined method name on the controller.
+            method (str, unicode): Client defined method name
+                on the controller.
             **kwargs: Client defined method keyword arguments.
 
         Returns:
