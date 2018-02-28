@@ -20,5 +20,5 @@ if MODULE_ENABLE:
 
     # Apply patch.
     patches.patch_tw_lib()
-    patches.patch_tw_local_con()
+    # patches.patch_tw_local_con()
     patches.patch_tw_message()

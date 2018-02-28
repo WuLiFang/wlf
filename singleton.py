@@ -16,9 +16,6 @@ except ImportError:
     raise
 
 LOGGER = logging.getLogger("wlf.singleton")
-LOGGER.addHandler(logging.StreamHandler())
-
-__version__ = '0.1.3'
 
 
 class SingleInstance(object):
@@ -32,7 +29,7 @@ class SingleInstance(object):
         self.lockfile = os.path.normpath(
             tempfile.gettempdir() + '/' + basename)
 
-        LOGGER.debug("SingleInstance lockfile: " + self.lockfile)
+        LOGGER.debug("SingleInstance lockfile: %s", self.lockfile)
 
         self.check()
         self.initialized = True

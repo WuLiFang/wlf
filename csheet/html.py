@@ -235,8 +235,13 @@ class HTMLImage(Image):
                 type_a, type_b = map_.get(suffix_a), map_.get(suffix_b)
                 return type_a and type_a == type_b
 
+            # Skip some generation to speed up.
             if (output is None
+                    # Keep generated file update.
+                    and role not in self.genearated
+                    # Ensure same memetype.
                     and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
+                    # Accept argument.
                     and source.stat().st_size < self.max_skipgen_size):
                 self.genearated[role] = source
                 return source

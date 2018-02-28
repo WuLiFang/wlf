@@ -4,18 +4,34 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
+import logging
 import os
 import socket
 from collections import namedtuple
 from subprocess import Popen
+from functools import partial
 
 from websocket import create_connection
 
-from wlf.env import has_cgtw
+from ..decorators import deprecated
+from ..env import has_cgtw
+from .exceptions import IDError
 
 CGTeamWorkClientStatus = namedtuple(
     'CGTeamWorkClientStatus',
-    ['server_ip', 'server_http', 'token', 'executable'])
+    ('server_ip', 'server_http', 'token'))
+PluginData = namedtuple(
+    'PulginData',
+    ('plugin_id',
+     'filebox_id',
+     'database',
+     'module',
+     'id_list',
+     'folder',
+     'file_path_list',
+     )
+)
+LOGGER = logging.getLogger('wlf.cgtwq.client')
 
 
 class CGTeamWorkClient(object):
@@ -25,6 +41,21 @@ class CGTeamWorkClient(object):
     time_out = 1
 
     def __init__(self):
+        self.start()
+        self.status = CGTeamWorkClientStatus(
+            server_ip=self.server_ip(),
+            server_http=self.server_http(),
+            token=self.token(),
+        )
+
+    @staticmethod
+    def executable():
+        """Get a cgteawmwork client executable.
+
+        Returns:
+            unicode: Executable path.
+        """
+
         # Get client executable.
         if has_cgtw():
             import cgtw
@@ -36,19 +67,17 @@ class CGTeamWorkClient(object):
 
         if not os.path.exists(executable):
             executable = None
+        return executable
 
-        # Start client if not running.
-        if executable and not self.is_running():
+    @classmethod
+    def start(cls):
+        """Start client if not running.  """
+
+        executable = cls.executable()
+        if executable and not cls.is_running():
             Popen(executable,
                   cwd=os.path.dirname(executable),
                   close_fds=True)
-
-        self.status = CGTeamWorkClientStatus(
-            server_ip=self.server_ip(),
-            server_http=self.server_http(),
-            token=self.token(),
-            executable=executable
-        )
 
     @classmethod
     def is_running(cls):
@@ -83,32 +112,6 @@ class CGTeamWorkClient(object):
         return False
 
     @classmethod
-    def get_plugin_data(cls, uuid):
-        """Get plugin data for uuid.
-
-        Args:
-            uuid (unicode): Plugin uuid.
-        """
-
-        return cls.send_main_widget(method_name="get_plugin_data", plugin_uuid=uuid)
-
-    @classmethod
-    def send_plugin_result(cls, uuid, result=False):
-        """
-        Tell client plugin execution result.
-        if result is `False`, following operation will been abort.
-
-        Args:
-            uuid (unicode): Plugin uuid.
-            result (bool, optional): Defaults to False. Plugin execution result.
-        """
-
-        cls.send_main_widget(method_name="exec_plugin_result",
-                             uuid=uuid,
-                             result=result,
-                             type='send')
-
-    @classmethod
     def refresh(cls, database, module):
         """
         Refresh specified view in client
@@ -119,13 +122,10 @@ class CGTeamWorkClient(object):
             module (unicode): Module of view.
         """
 
-        cls.send(
-            module=module,
-            database=database,
-            class_name='view_control',
-            method_name='refresh',
-            type='send',
-        )
+        cls.call('view_control', 'refresh',
+                 module=module,
+                 database=database,
+                 type='send')
 
     @classmethod
     def refresh_select(cls, database, module):
@@ -138,11 +138,10 @@ class CGTeamWorkClient(object):
             module (unicode): Module of view.
         """
 
-        cls.send(
+        cls.call(
+            'view_control', 'refresh_select',
             module=module,
             database=database,
-            class_name='view_control',
-            method_name='refresh_select',
             type='send',
         )
 
@@ -150,7 +149,7 @@ class CGTeamWorkClient(object):
     def token(cls):
         """Client token.  """
 
-        ret = cls.send_main_widget(method_name="get_token")
+        ret = cls.call_main_widget("get_token")
         if ret is True:
             return None
         return ret
@@ -159,7 +158,7 @@ class CGTeamWorkClient(object):
     def server_ip(cls):
         """Server ip current using by client.  """
 
-        ret = cls.send_main_widget(method_name="get_server_ip")
+        ret = cls.call_main_widget("get_server_ip")
         if ret is True:
             return None
         return ret
@@ -168,13 +167,51 @@ class CGTeamWorkClient(object):
     def server_http(cls):
         """Server http current using by client.  """
 
-        ret = cls.send_main_widget(method_name="get_server_http")
+        ret = cls.call_main_widget("get_server_http")
         if ret is True:
             return None
         return ret
 
+    # TODO
     @classmethod
-    def send_main_widget(cls, **data):
+    def get_plugin_data(cls, uuid=''):
+        """Get plugin data for uuid.
+
+        Args:
+            uuid (unicode): Plugin uuid.
+        """
+
+        data = cls.call_main_widget("get_plugin_data", plugin_uuid=uuid)
+        if not data:
+            msg = 'No matched plugin'
+            if uuid:
+                msg += ': {}'.format(uuid)
+            msg += '.'
+            raise IDError(msg)
+        data = json.loads(data)
+        assert isinstance(data, dict), type(data)
+        for i in PluginData._fields:
+            data.setdefault(i, None)
+        return PluginData(**data)
+
+    @classmethod
+    def send_plugin_result(cls, uuid, result=False):
+        """
+        Tell client plugin execution result.
+        if result is `False`, following operation will been abort.
+
+        Args:
+            uuid (unicode): Plugin uuid.
+            result (bool, optional): Defaults to False. Plugin execution result.
+        """
+
+        cls.call_main_widget("exec_plugin_result",
+                             uuid=uuid,
+                             result=result,
+                             type='send')
+
+    @classmethod
+    def call_main_widget(cls, *args, **kwargs):
         """Send data to main widget.
 
         Args:
@@ -184,34 +221,42 @@ class CGTeamWorkClient(object):
             dict or unicode: Recived data.
         """
 
-        return cls.send(
+        method = partial(
+            cls.call, "main_widget",
             module="main_widget",
-            database="main_widget",
-            class_name="main_widget",
-            **data)
+            database="main_widget")
+
+        return method(*args, **kwargs)
 
     @classmethod
-    def send(cls, **data):
-        """Send data to gui progress.
+    def call(cls, controller, method, **kwargs):
+        """Call method on the cgteawork client.
 
         Args:
-            **data (dict): Data to send.
+            controller: Client defined controller name.
+            method (str, unicode): Client defined method name
+                on the controller.
+            **kwargs: Client defined method keyword arguments.
 
         Returns:
             dict or unicode: Recived data.
         """
 
-        default = {
+        _kwargs = {
             'type': 'get'
         }
-        default.update(data)
-        data = default
+        _kwargs.update(kwargs)
+        _kwargs['class_name'] = controller
+        _kwargs['method_name'] = method
 
+        payload = json.dumps(_kwargs, indent=4, sort_keys=True)
         conn = create_connection(cls.url, cls.time_out)
 
         try:
-            conn.send(json.dumps(data))
+            conn.send(payload)
+            LOGGER.debug('SEND: %s', payload)
             recv = conn.recv()
+            LOGGER.debug('RECV: %s', recv)
             ret = json.loads(recv)
             ret = ret['data']
             try:
@@ -221,3 +266,17 @@ class CGTeamWorkClient(object):
             return ret
         finally:
             conn.close()
+
+    @classmethod
+    @deprecated('Use `call_main_widget` instead.')
+    def send_main_widget(cls, *args, **kwargs):
+        """Depreacted. Use `call_main_widget` instead.  """
+
+        return cls.call_main_widget(*args, **kwargs)
+
+    @classmethod
+    @deprecated('Use `call` instead.')
+    def send(cls, *args, **kwargs):
+        """Depreacted. Use `call` instead.  """
+
+        return cls.call(*args, **kwargs)
