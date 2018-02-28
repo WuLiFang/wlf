@@ -240,11 +240,29 @@ def deprecated(callable_or_name, reason=None):
         assert callable(callable_)
 
         def _warn():
-            msg = 'Deprecated: {}'.format(name or callable_.__name__)
+            msg = 'Deprecated'
+            try:
+                msg += ": '{}' {}".format(name or callable_.__name__,
+                                          repr(callable_))
+            except:  # pylint: disable=bare-except
+                pass
             if reason:
                 msg += ', {}'.format(reason)
             msg += '.'
-            warnings.warn(msg, DeprecationWarning, stacklevel=3)
+
+            frame = inspect.currentframe()
+            filename = inspect.getframeinfo(frame)[0]
+            frame = frame.f_back
+            stacklevel = 1
+
+            while frame:
+                stacklevel += 1
+                _filename = frame.f_code.co_filename
+                if _filename != filename:
+                    warnings.warn(msg, DeprecationWarning,
+                                  stacklevel=stacklevel)
+                    break
+                frame = frame.f_back
 
         def _wrap_with_warn(func):
 
