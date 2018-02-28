@@ -7,7 +7,7 @@ import json
 import os
 
 from .base import CGTeamWork
-from ..decorators import deprecated
+from wlf.decorators import deprecated
 
 
 @deprecated('Public')
