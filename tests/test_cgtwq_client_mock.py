@@ -90,14 +90,16 @@ class CGTeamWorkClientTestCase(TestCase):
 
     def test_executable(self):
         result = cgtwq.CGTeamWorkClient.executable()
-        self.assertIsInstance(result, unicode)
+        if result is not None:
+            self.assertIsInstance(result, (unicode))
         self.conn.assert_not_called()
 
     def test_start(self):
         conn = self.conn
         conn.recv.return_value = server_dumps(1, True)
         cgtwq.CGTeamWorkClient.start()
-        self.conn.send.assert_called_once()
+        if cgtwq.CGTeamWorkClient.executable():
+            self.conn.send.assert_called_once()
 
     def test_refresh(self):
         conn = self.conn
@@ -193,13 +195,17 @@ class CGTeamWorkClientTestCase(TestCase):
         self.assertEqual(result, dummy_http)
 
     def test_plugin_data(self):
-        dummy_data = unicode(uuid.uuid4())
+        dummy_data = {'id_list': ['1', '2']}
         uuid_ = unicode(uuid.uuid4())
         conn = self.conn
         json.loads
         conn.recv.return_value = server_dumps(1, dummy_data)
         result = cgtwq.CGTeamWorkClient.get_plugin_data(uuid_)
-        self.assertEqual(result, dummy_data)
+        self.assertEqual(result,
+                         cgtwq.client.PluginData(
+                             plugin_id=None, filebox_id=None, database=None,
+                             module=None, id_list=['1', '2'], folder=None,
+                             file_path_list=None))
         conn.send.assert_called_once_with(
             dumps(
                 {

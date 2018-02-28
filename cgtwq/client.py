@@ -188,7 +188,6 @@ class CGTeamWorkClient(object):
                 msg += ': {}'.format(uuid)
             msg += '.'
             raise IDError(msg)
-        data = json.loads(data)
         assert isinstance(data, dict), type(data)
         for i in PluginData._fields:
             data.setdefault(i, None)
