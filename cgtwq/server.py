@@ -66,10 +66,6 @@ def parse_recv(payload):
                 data = json.loads(data)
             except ValueError:
                 pass
-        elif isinstance(data, list):
-            assert all(len(i) == 1 and isinstance(i[0], (unicode, str))
-                       for i in data), data
-            data = [unicode(i[0]) for i in data]
     return Response(data, code, type_)
 
 

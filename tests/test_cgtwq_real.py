@@ -46,8 +46,6 @@ class CGTeamWorkClientTestCase(TestCase):
         CGTeamWorkClient.refresh_select('proj_big', 'shot_task')
 
 
-
-
 @skip_if_no_cgtw
 class ServerTestCase(TestCase):
     def test_account(self):
@@ -55,36 +53,6 @@ class ServerTestCase(TestCase):
         account = server.account()
         account_id = server.account_id()
         print('# account: <id: {}: {}>'.format(account_id, account))
-
-
-@skip_if_no_cgtw
-class DataBaseTestCase(TestCase):
-    def test_account(self):
-        from wlf.cgtwq.database import PROJECT
-        result = PROJECT.names()
-        self.assertIsInstance(result, tuple)
-        for i in result:
-            self.assertIsInstance(i, unicode)
-
-    def test_project(self):
-        from wlf.cgtwq.database import ACCOUNT
-        result = ACCOUNT.names()
-        self.assertIsInstance(result, tuple)
-        for i in result:
-            self.assertIsInstance(i, unicode)
-
-    def test_account_name(self):
-        from wlf.cgtwq.database import account_name
-        logging.debug(account_name())
-
-    def test_get_filebox(self):
-        from wlf.cgtwq.database import Database, Filter
-        module = Database('proj_big')['shot_task']
-        select = module.filter(Filter(
-            'shot.shot', 'SNJYW_EP26_01_sc026') & Filter('pipeline', '合成'))
-        result = select.get_filebox('submit')
-        self.assertIsInstance(result, dict)
-        self.assertNotIsInstance(result['path'], dict)
 
 
 # mp_logging.basic_config(level=logging.DEBUG)

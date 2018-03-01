@@ -15,12 +15,6 @@ _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
 LOGGER = logging.getLogger('wlf.cgtwq.database')
 
 
-def formatted_fields(fields, name):
-    if not name:
-        return tuple()
-    return tuple(i if '.' in i else '{}.{}'.format(name, i) for i in fields)
-
-
 class Database(object):
     """Database on server.    """
 
@@ -35,8 +29,11 @@ class FieldsData(list):
     """List for field data.  """
 
     def __init__(self, data, module):
-        for i in data:
-            if not isinstance(i, dict):
+        if not all(isinstance(i, dict)for i in data):
+            if all(isinstance(i, list) and len(i) == 1 for i in data):
+                # Unpack data.
+                data = [i[0] for i in data]
+            else:
                 raise TypeError('Got unknown data format.', data)
         super(FieldsData, self).__init__(data)
         assert isinstance(module, Module)
@@ -53,7 +50,9 @@ class FieldsData(list):
         """
 
         field = self.module.field(field)
-        return tuple(sorted(set(i[field] for i in self)))
+        return tuple(sorted(set(
+            i[field] if isinstance(i, dict) else i
+            for i in self)))
 
 
 class Selection(list):
@@ -67,6 +66,7 @@ class Selection(list):
         """
 
         assert isinstance(id_list, list), type(id_list)
+        assert all(isinstance(i, (int, unicode)) for i in id_list), id_list
         assert isinstance(module, Module)
         super(Selection, self).__init__(id_list)
         self.module = module
@@ -153,10 +153,17 @@ class Selection(list):
         assert isinstance(response, server.Response), response
         assert response.type == 'json', response
         payload = response.data
-        try:
-            id_list = [i['id'] if isinstance(i, dict) else i for i in payload]
-        except TypeError:
-            raise TypeError(payload)
+
+        def _get_id(data):
+            if isinstance(data, (unicode, int)):
+                return data
+            if isinstance(data, dict):
+                return data['id']
+            elif isinstance(data, list) and len(data) == 1:
+                return data[0]
+            raise TypeError(type(data))
+
+        id_list = [_get_id(i) for i in payload]
         ret = cls(id_list, module)
         return ret
 
@@ -180,7 +187,7 @@ class Module(object):
 
     def __getitem__(self, name):
         if isinstance(name, (Filter, FilterList)):
-            self.filter(name)
+            return self.filter(name)
         return self.select(name)
 
     def select(self, id_list):
@@ -309,4 +316,4 @@ def account_name():
         unicode
     """
 
-    return ACCOUNT[Filter('id', server.account_id())]['name'][0]
+    return ACCOUNT[server.account_id()]['name'][0]
