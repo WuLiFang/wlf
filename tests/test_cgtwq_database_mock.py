@@ -1,7 +1,6 @@
 # -*- coding=UTF-8 -*-
-"""Mocked Cgtw test.
-Also work when disconnected to server.
-"""
+"""Test module `cgtwq.database`. with a mocked environment.  """
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -133,44 +132,13 @@ class SelectionTestCase(TestCase):
             sign_data_array={'shot_task.artist': 'Monika'})
 
     @skip('TODO')
-    def test_deleter(self, *args):
+    def test_delete(self, *args):
         select = self.select
         call_method = self.call_method
 
         # Test `delete_field`.
-        select.delete_field('artist')
+        select.delete()
         call_method.assert_called_once_with()
-
-        # Test `__delitem__`.
-        call_method.reset_mock()
-        del select['task_name']
-        call_method.assert_called_once_with(
-            'c_orm', 'del_in_id',
-            db='proj_big', id_array=['1', '2'], module='shot_task')
-
-
-class FiltersTestCase(TestCase):
-    def test_operations(self):
-        Filter = cgtwq.Filter
-        FilterList = cgtwq.FilterList
-        result = Filter('title', 'text') | Filter(
-            'data', 'test') & Filter('name', 'name')
-        self.assertIsInstance(result, FilterList)
-        self.assertListEqual(
-            result,
-            [['title', '=', 'text'],
-             'or', ['data', '=', 'test'],
-             'and', ['name', '=', 'name']]
-        )
-        result |= Filter('test2', '233')
-        self.assertIsInstance(result, FilterList)
-        self.assertListEqual(
-            result,
-            [['title', '=', 'text'],
-             'or', ['data', '=', 'test'],
-             'and', ['name', '=', 'name'],
-             'or', ['test2', '=', '233']]
-        )
 
 
 if __name__ == '__main__':
