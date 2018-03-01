@@ -31,30 +31,5 @@ class CGTWTestCase(TestCase):
         self.cgtw.get_filebox('合成')
 
 
-@skip_if_no_cgtw
-class CGTeamWorkClientTestCase(TestCase):
-    def test_status(self):
-        from wlf.cgtwq import CGTeamWorkClient
-        CGTeamWorkClient().status
-
-    def test_refresh(self):
-        from wlf.cgtwq import CGTeamWorkClient
-        CGTeamWorkClient.refresh('proj_big', 'shot_task')
-
-    def test_refresh_selected(self):
-        from wlf.cgtwq import CGTeamWorkClient
-        CGTeamWorkClient.refresh_select('proj_big', 'shot_task')
-
-
-@skip_if_no_cgtw
-class ServerTestCase(TestCase):
-    def test_account(self):
-        from wlf.cgtwq import server
-        account = server.account()
-        account_id = server.account_id()
-        print('# account: <id: {}: {}>'.format(account_id, account))
-
-
-# mp_logging.basic_config(level=logging.DEBUG)
 if __name__ == '__main__':
     main()
