@@ -306,7 +306,10 @@ function loadResource(element, selector, isRefresh) {
         function() {
             let img = this;
             let url = $(this).data('src');
-            url = img.src && isClient ? stampedURL(url) : url;
+            if (!img.src) {
+                img.src = url;
+            }
+            url = isClient ? stampedURL(url) : url;
             imageAvailable(
                 url,
                 function() {
@@ -352,7 +355,10 @@ function updatePoster(video, isReplace) {
     let isSmall = $video.is('.small');
     let url = $(video).data('poster');
     if (url) {
-        url = video.poster && isClient ? stampedURL(url) : url;
+        if (!video.poster) {
+            video.poster = url;
+        }
+        url = isClient ? stampedURL(url) : url;
         imageAvailable(
             url,
             function(img) {
