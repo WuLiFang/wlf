@@ -52,6 +52,9 @@ class SelectionTestCase(TestCase):
                           select.get_filebox,
                           unicode(uuid.uuid4()))
 
+    def set_image(self, path):
+        pass
+
 
 class ProjectTestCase(TestCase):
     def test_names(self):

@@ -152,26 +152,25 @@ class CGTeamWorkClient(object):
 
         ret = cls.call_main_widget("get_token")
         if ret is True:
-            return None
-        return ret
+            return ''
+        assert isinstance(ret, unicode), type(ret)
+        return unicode(ret)
 
     @classmethod
     def server_ip(cls):
         """Server ip current using by client.  """
 
         ret = cls.call_main_widget("get_server_ip")
-        if ret is True:
-            return None
-        return ret
+        assert isinstance(ret, unicode), type(ret)
+        return unicode(ret)
 
     @classmethod
     def server_http(cls):
         """Server http current using by client.  """
 
         ret = cls.call_main_widget("get_server_http")
-        if ret is True:
-            return None
-        return ret
+        assert isinstance(ret, unicode), type(ret)
+        return unicode(ret)
 
     # TODO
     @classmethod
