@@ -135,38 +135,6 @@ class Selection(list):
                          os=_OS)
         return resp.data
 
-    @classmethod
-    def from_response(cls, response, module):
-        """Create selection from selection.
-
-        Args:
-            response (server.Response): Server response.
-            module (Module): Related module.
-
-        Raises:
-            TypeError: Can not parse response data.
-
-        Returns:
-            Selection: Selection from the response.
-        """
-
-        assert isinstance(response, server.Response), response
-        assert response.type == 'json', response
-        payload = response.data
-
-        def _get_id(data):
-            if isinstance(data, (unicode, int)):
-                return data
-            if isinstance(data, dict):
-                return data['id']
-            elif isinstance(data, list) and len(data) == 1:
-                return data[0]
-            raise TypeError(type(data))
-
-        id_list = [_get_id(i) for i in payload]
-        ret = cls(id_list, module)
-        return ret
-
 
 class Module(object):
     """Module(Database table) in database.    """
@@ -218,8 +186,8 @@ class Module(object):
         resp = self.call('c_orm', 'get_with_filter',
                          sign_array=[self.field('id')],
                          sign_filter_array=_filters)
-
-        return Selection.from_response(resp, self)
+        id_list = [i[0] for i in resp.data]
+        return Selection(id_list, self)
 
     def field(self, name):
         """Formatted field name for this module.
