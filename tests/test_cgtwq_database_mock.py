@@ -4,18 +4,18 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from collections import namedtuple
 from unittest import TestCase, main, skip
 
 from mock import MagicMock, call, patch
-from contextlib import contextmanager
 
 from wlf import cgtwq
 
 
 class DatabaseTestCase(TestCase):
     def test_getitem(self):
-        database = cgtwq.Database('proj_big')
-        self.assertEqual(database.name, 'proj_big')
+        database = cgtwq.Database('dummy_db')
+        self.assertEqual(database.name, 'dummy_db')
         result = database['shot_task']
         self.assertIsInstance(result, cgtwq.database.Module)
         self.assertEqual(result.name, 'shot_task')
@@ -32,7 +32,7 @@ class ModuleTestCase(TestCase):
             self.addCleanup(i.stop)
             i.start()
 
-        self.module = cgtwq.Database('proj_big')['shot_task']
+        self.module = cgtwq.Database('dummy_db')['shot_task']
 
     def test_select(self):
         module = self.module
@@ -53,7 +53,7 @@ class ModuleTestCase(TestCase):
 
         select = module.filter(cgtwq.Filter('key', 'value'))
         method.assert_called_with('c_orm', 'get_with_filter',
-                                  db='proj_big',
+                                  db='dummy_db',
                                   module='shot_task',
                                   sign_array=['shot_task.id'],
                                   sign_filter_array=[['shot_task.key', '=', 'value']])
@@ -83,21 +83,23 @@ class SelectionTestCase(TestCase):
 
         self.call_method = patcher.start()
         self.select = cgtwq.database.Selection(
-            ['1', '2'], cgtwq.Database('proj_big')['shot_task'])
+            ['1', '2'], cgtwq.Database('dummy_db')['shot_task'])
 
     def test_getter(self):
         select = self.select
         call_method = self.call_method
         call_method.return_value = cgtwq.server.Response(
-            [{"id": "1", "shot_task.artist": "monkey", 'shot_task.task_name': 'banana'}, {
-                'id': "2", "shot_task.artist": "dog", 'shot_task.task_name': 'bone'}], 1, 'json')
+            [{"id": "1", "shot_task.artist": "monkey", 'shot_task.task_name': 'banana'},
+             {'id': "2", "shot_task.artist": "dog", 'shot_task.task_name': 'bone'}],
+            1, 'json')
 
-        # Test `get_field`.
-        result = select.get_field('artist')
-        self.assertEqual(result, ('monkey', 'dog'))
+        # Test `get_fields`.
+        result = select.get_fields('artist')
+        self.assertIsInstance(result, cgtwq.database.FieldsData)
+        self.assertEqual(result.field('artist'), ('dog', 'monkey'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='proj_big', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=['1', '2'], module='shot_task',
             order_sign_array=['shot_task.artist'],
             sign_array=['shot_task.artist'])
 
@@ -107,7 +109,7 @@ class SelectionTestCase(TestCase):
         self.assertEqual(result, ('banana', 'bone'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='proj_big', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=['1', '2'], module='shot_task',
             order_sign_array=['shot_task.task_name'],
             sign_array=['shot_task.task_name'])
 
@@ -115,11 +117,11 @@ class SelectionTestCase(TestCase):
         select = self.select
         call_method = self.call_method
 
-        # Test `set_field`.
-        select.set_field('artist', 'Yuri')
+        # Test `set_fields`.
+        select.set_fields(artist='Yuri')
         call_method.assert_called_once_with(
             'c_orm', 'set_in_id',
-            db='proj_big', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=['1', '2'], module='shot_task',
             sign_data_array={'shot_task.artist': 'Yuri'})
 
         # Test `__setitem__`.
@@ -127,18 +129,19 @@ class SelectionTestCase(TestCase):
         select['artist'] = 'Monika'
         call_method.assert_called_once_with(
             'c_orm', 'set_in_id',
-            db='proj_big', id_array=['1', '2'],
+            db='dummy_db', id_array=['1', '2'],
             module='shot_task',
             sign_data_array={'shot_task.artist': 'Monika'})
 
-    @skip('TODO')
     def test_delete(self, *args):
         select = self.select
         call_method = self.call_method
 
-        # Test `delete_field`.
         select.delete()
-        call_method.assert_called_once_with()
+        call_method.assert_called_once_with(
+            'c_orm', 'del_in_id',
+            db='dummy_db', id_array=['1', '2'],
+            module='shot_task')
 
 
 if __name__ == '__main__':

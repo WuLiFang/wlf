@@ -8,6 +8,7 @@ from functools import partial
 
 from . import server
 from .filter import Filter, FilterList
+from collections import namedtuple
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
@@ -30,6 +31,31 @@ class Database(object):
         return Module(name=name, database=self)
 
 
+class FieldsData(list):
+    """List for field data.  """
+
+    def __init__(self, data, module):
+        for i in data:
+            if not isinstance(i, dict):
+                raise TypeError('Got unknown data format.', data)
+        super(FieldsData, self).__init__(data)
+        assert isinstance(module, Module)
+        self.module = module
+
+    def field(self, field):
+        """Get data for single field.
+
+        Args:
+            field (unicode): Field name.
+
+        Returns:
+            tuple: Add data matches this field.
+        """
+
+        field = self.module.field(field)
+        return tuple(sorted(set(i[field] for i in self)))
+
+
 class Selection(list):
     """Selection on a database module.   """
 
@@ -49,57 +75,50 @@ class Selection(list):
     def __getitem__(self, name):
         if isinstance(name, int):
             return super(Selection, self).__getitem__(name)
-        return self.get_field(name)
+        return self.get_fields(name).field(name)
 
     def __setitem__(self, name, value):
         assert isinstance(name, (unicode, str))
-        self.set_field(name, value)
+        self.set_fields(**{name: value})
 
-    def __delitem__(self, name):
-        assert isinstance(name, (unicode, str))
-        self.delete_field(name)
-
-    def get_field(self, field):
+    def get_fields(self, fields):
         """Get field information for the selection.
 
         Args:
-            field (unicode): Server defined field.
+            fields (list): List of server defined field sign.
 
         Returns:
-            tuple: Field data.
+            FieldData: Optimized list object contains field data.
         """
 
-        field = self.module.field(field)
-        resp = self.call("c_orm", "get_in_id",
-                         sign_array=[field],
-                         order_sign_array=[field])
-        return tuple(set(i[field] if isinstance(i, dict) else i
-                         for i in resp.data))
+        if not isinstance(fields, list):
+            fields = [fields]
 
-    def set_field(self, field, value):
+        server_fields = [self.module.field(i) for i in fields]
+        resp = self.call("c_orm", "get_in_id",
+                         sign_array=server_fields,
+                         order_sign_array=server_fields)
+        return FieldsData(resp.data, self.module)
+
+    def set_fields(self, **data):
         """Set field data for the selection.
 
         Args:
-            field (unicode): Server defined field name.
-            value (any): Value to set.
+            **data: Field name as key, Value as value.
         """
 
-        field = self.module.field(field)
+        data = {
+            self.module.field(k): v for k, v in data.items()
+        }
         resp = self.call("c_orm", "set_in_id",
-                         sign_data_array={field: value})
+                         sign_data_array=data)
         if resp.code == 0:
             raise ValueError(resp)
 
-    # TODO
-    def delete_field(self, field):
-        """Delete field data for the selection.
+    def delete(self):
+        """Delete the selected item on database.  """
 
-        Args:
-            field (unicode): Server defined field name.
-        """
-        raise NotImplementedError
-        field = self.module.field(field)
-        resp = self.call("c_orm", "del_in_id")
+        self.call("c_orm", "del_in_id", id_array=self)
 
     def get_path(self, sign_list):
         if not isinstance(sign_list, list):
