@@ -49,14 +49,14 @@ def patch_tw_local_con():
     # pylint: disable=protected-access
     @staticmethod
     def _send(T_module, T_database, T_class_name, T_method_name, T_data, T_type="get"):
-        """Wrapped function for cgtw path.  """
+        """Wrapped function for cgtw patch.  """
         # pylint: disable=invalid-name, too-many-arguments, bare-except
         try:
-            return CGTeamWorkClient.send(
+            return CGTeamWorkClient.call(
+                T_class_name,
+                T_method_name,
                 module=T_module,
                 database=T_database,
-                class_name=T_class_name,
-                method_name=T_method_name,
                 type=T_type,
                 **T_data
             )
