@@ -139,7 +139,10 @@ def response_image(uuid, role):
     try:
         generated = job.get(block=False)
         if not Path(generated).exists():
-            del image.genearated[role]
+            try:
+                del image.genearated[role]
+            except KeyError:
+                pass
             return make_response('Generated file has been moved', 503, {'Retry-After': 10})
 
         return send_file(unicode(generated), conditional=True)

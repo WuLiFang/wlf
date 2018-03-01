@@ -237,13 +237,10 @@ class HTMLImage(Image):
 
             # Skip some generation to speed up.
             if (output is None
-                    # Keep generated file update.
-                    and role not in self.genearated
                     # Ensure same memetype.
                     and _same_mimetype(source.suffix.lower(), self.file_suffix[role].lower())
-                    # Accept argument.
+                    # Check size.
                     and source.stat().st_size < self.max_skipgen_size):
-                self.genearated[role] = source
                 return source
 
             _kwargs.update(kwargs)
