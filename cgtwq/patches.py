@@ -11,6 +11,7 @@ import cgtw
 from ..path import get_unicode as u
 from .exceptions import LoginError
 from .client import CGTeamWorkClient
+from . import server
 
 LOGGER = logging.getLogger('com.wlf.cgtwq.patches')
 
@@ -64,3 +65,24 @@ def patch_tw_local_con():
             return False
 
     cgtw.tw.local_con._send = _send
+
+
+def patch_tw_con():
+    """Reimplement websocket send.  """
+
+    # pylint: disable=protected-access
+    @staticmethod
+    def _send(T_controller, T_method, T_data):
+        """Wrapped function for cgtw patch.  """
+        # pylint: disable=invalid-name, too-many-arguments, bare-except
+        try:
+            resp = server.call(
+                T_controller,
+                T_method,
+                **T_data
+            )
+            return resp.data
+        except:
+            return False
+
+    cgtw.tw.con._send = _send
