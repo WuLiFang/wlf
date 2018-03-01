@@ -133,7 +133,7 @@ class SelectionTestCase(TestCase):
             module='shot_task',
             sign_data_array={'shot_task.artist': 'Monika'})
 
-    def test_delete(self, *args):
+    def test_delete(self):
         select = self.select
         call_method = self.call_method
 
@@ -142,6 +142,40 @@ class SelectionTestCase(TestCase):
             'c_orm', 'del_in_id',
             db='dummy_db', id_array=['1', '2'],
             module='shot_task')
+
+    def test_get_dir(self):
+        select = self.select
+        call_method = self.call_method
+
+        call_method.return_value = cgtwq.server.Response(
+            data={'path': 'E:/temp'}, code=1, type='json'
+        )
+        select.get_path('test')
+        call_method.assert_called_once_with(
+            'c_folder',
+            'get_replace_path_in_sign',
+            db='dummy_db', id_array=['1', '2'],
+            module='shot_task', os=cgtwq.database._OS,
+            sign_array=['test'],
+            task_id_array=['1', '2'])
+
+    def test_get_filebox(self):
+        select = self.select
+        call_method = self.call_method
+
+        call_method.return_value = cgtwq.server.Response(
+            data={'title': 'orange'}, code=1, type='json'
+        )
+        select.get_filebox('test_fb')
+        call_method.assert_called_once_with(
+            'c_file',
+            'filebox_get_one_with_sign',
+            db='dummy_db',
+            id_array=['1', '2'],
+            module='shot_task',
+            os=cgtwq.database._OS,
+            sign='test_fb',
+            task_id='1')
 
 
 if __name__ == '__main__':

@@ -38,6 +38,7 @@ class CGTeamWorkClient(object):
     """Query from CGTeamWork GUI clients.  """
 
     url = "ws://127.0.0.1:64999"
+    qt_url = 'ws://127.0.0.1:64998'
     time_out = 1
 
     def __init__(self):

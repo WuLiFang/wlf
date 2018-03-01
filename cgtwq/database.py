@@ -118,22 +118,71 @@ class Selection(list):
     def delete(self):
         """Delete the selected item on database.  """
 
-        self.call("c_orm", "del_in_id", id_array=self)
+        self.call("c_orm", "del_in_id")
 
     def get_path(self, sign_list):
+        """Get signed folder path.
+
+        Args:
+            sign_list (unicode): Sign name defined in CGTeemWork:
+                `设置` -> `目录文件` -> `标识`
+
+        Returns:
+            dict: Server returned path dictionary.
+                id as key, path as value.
+        """
+
+        if not self:
+            raise ValueError('Empty selection.')
         if not isinstance(sign_list, list):
             sign_list = [sign_list]
         resp = self.call("c_folder", "get_replace_path_in_sign",
-                         sign_array=sign_list)
+                         sign_array=sign_list,
+                         task_id_array=self,
+                         os=_OS)
+        assert isinstance(resp.data, dict), type(resp.data)
+        return dict(resp.data)
 
-    def get_filebox(self, sign):
+    def get_filebox(self, sign=None, id_=None):
+        """Get filebox with sign or id_.
+
+        Args:
+            sign (unicode): Server defined filebox sign.
+            id_ (unicode): Server filebox id,
+                if given, will ignore `sign` value.
+
+        Raises:
+            ValueError: When selection is empty.
+            ValueError: When insufficient argument.
+            ValueError: When got empty result.
+
+        Returns:
+            dict: Filebox information.
+        """
+
         if not self:
             raise ValueError('Empty selection.')
-        resp = self.call("c_file",  "filebox_get_one_with_sign",
-                         task_id=self[0],
-                         sign=sign,
-                         os=_OS)
-        return resp.data
+
+        if id_:
+            raise NotImplementedError('TODO')
+            # pylint: disable=unreachable
+            resp = self.call("c_file", "filebox_get_one_with_id",
+                             task_id=self[0],
+                             filebox_id=id_,
+                             os=_OS)
+        elif sign:
+            resp = self.call("c_file", "filebox_get_one_with_sign",
+                             task_id=self[0],
+                             sign=sign,
+                             os=_OS)
+        else:
+            raise ValueError(
+                'Need at least one of (sign, id_) to get filebox.')
+
+        if not resp.data:
+            raise ValueError('No matched filebox.')
+        assert isinstance(resp.data, dict), resp
+        return dict(resp.data)
 
 
 class Module(object):
