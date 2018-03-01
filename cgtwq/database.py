@@ -66,7 +66,7 @@ class Selection(list):
         """
 
         assert isinstance(id_list, list), type(id_list)
-        assert all(isinstance(i, (int, unicode)) for i in id_list), id_list
+        assert all(isinstance(i, unicode) for i in id_list), id_list
         assert isinstance(module, Module)
         super(Selection, self).__init__(id_list)
         self.module = module

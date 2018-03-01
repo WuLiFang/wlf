@@ -60,12 +60,6 @@ def parse_recv(payload):
     data = resp['data']
     code = int(resp['code'])
     type_ = resp['type']
-    if type_ == 'json':
-        if isinstance(data, unicode):
-            try:
-                data = json.loads(data)
-            except ValueError:
-                pass
     return Response(data, code, type_)
 
 
