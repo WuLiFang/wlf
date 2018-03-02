@@ -12,8 +12,8 @@ from zipfile import ZipFile
 from diskcache import FanoutCache
 from flask import (Flask, Response, abort, make_response, redirect,
                    render_template, request, send_file, escape)
-from gevent import sleep, spawn, Timeout
-from gevent.queue import Queue
+from gevent import sleep, spawn
+from gevent.queue import Queue, Empty
 
 from . import __version__
 from .. import cgtwq
@@ -130,14 +130,26 @@ def response_image(uuid, role):
     folder = APP.config.get('storage')
     if folder:
         kwargs['output'] = join(folder, role, uuid)
-    job = spawn(image.generate, role,
-                is_strict=role not in ('thumb', 'full'),
-                limit_size=APP.config['preview_limit_size'],
-                **kwargs)
 
+    result = Queue(1)
+
+    def _gen():
+        try:
+            ret = image.generate(role,
+                                 is_strict=role not in ('thumb', 'full'),
+                                 limit_size=APP.config['preview_limit_size'],
+                                 **kwargs)
+            result.put(ret)
+        except Exception as ex:  # pylint: disable=broad-except
+            result.put(ex)
+    spawn(_gen)
     sleep()
+
     try:
-        generated = job.get(block=False)
+        generated = result.get(block=False)
+        if isinstance(generated, Exception):
+            u_abort(404 if isinstance(generated, ValueError) else 500, generated)
+
         if not Path(generated).exists():
             try:
                 del image.genearated[role]
@@ -146,11 +158,8 @@ def response_image(uuid, role):
             return make_response('Generated file has been moved', 503, {'Retry-After': 10})
 
         return send_file(unicode(generated), conditional=True)
-    except Timeout:
+    except Empty:
         return make_response('Image not ready.', 503, {'Retry-After': 10})
-    except Exception as ex:
-        u_abort(500, ex)
-        raise
 
 
 def get_images(shots):
