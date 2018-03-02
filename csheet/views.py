@@ -3,17 +3,16 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from functools import wraps
 from os import SEEK_END
 from os.path import join
 from tempfile import TemporaryFile, gettempdir
 from zipfile import ZipFile
 
 from diskcache import FanoutCache
-from flask import (Flask, Response, abort, make_response, redirect,
-                   render_template, request, send_file, escape)
+from flask import (Flask, Response, abort, escape, make_response, redirect,
+                   render_template, request, send_file)
 from gevent import sleep, spawn
-from gevent.queue import Queue, Empty
+from gevent.queue import Empty, Queue
 
 from . import __version__
 from .. import cgtwq
@@ -32,17 +31,6 @@ STATUS = {}
 SHOTS_CACHE = {}
 PROGRESS_EVENT_LISTENER = []
 CACHE = FanoutCache(join(gettempdir(), 'csheet_server/cache'))
-
-
-def nocache(func):
-    """(Decorator)Tell falsk make respon with no_cache.  """
-    @wraps(func)
-    def _func(*args, **kwargs):
-        resp = make_response(func(*args, **kwargs))
-        resp.cache_control.no_cache = True
-        resp.cache_control.max_age = 10
-        return resp
-    return _func
 
 
 def u_abort(status, msg):
@@ -160,7 +148,12 @@ def response_image(uuid, role):
                 pass
             return make_response('Generated file has been moved', 503, {'Retry-After': 10})
 
-        return send_file(unicode(generated), conditional=True)
+        resp = send_file(unicode(generated), conditional=True)
+        resp.cache_control.max_age = 0
+        resp.cache_control.no_cache = True
+        if request.args:
+            resp.cache_control.no_store = True
+        return resp
     except Empty:
         return make_response('Image not ready.', 503, {'Retry-After': 10})
 

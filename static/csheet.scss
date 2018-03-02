@@ -142,37 +142,30 @@ video {
     height: 200px;
     border: 1px solid black;
     box-sizing: border-box;
+    overflow: hidden; // &>a {
+    //     display: block;
+    // }
+    &:not(:hover) {
+        a.zoom .caption {
+            transform: translateY(100%)
+        }
+    }
     .caption {
         word-break: keep-all;
         text-overflow: ellipsis;
         overflow: hidden;
         margin: auto;
-        transition: inherit;
+        transition: 0.3s ease-out;
     }
-    /* loading indicator*/
-    .mark {
-        &.container {
-            position: absolute;
-            padding: 10px;
-            z-index: 1;
-            span.mark {
-                padding: 5px;
-                &[for="thumb"]:before {
-                    content: "缩略图";
-                }
-                &[for="preview"]:before {
-                    content: "动图";
-                }
-                &[for="full"]:before {
-                    content: "大图";
-                }
-                &:after {
-                    content: "读取中...";
-                    font-size: 50%;
-                    opacity: 0.5;
-                }
-            }
-        }
+    a.zoom .caption {
+        color: #EEE;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        max-height: 30%;
+        word-break: break-all;
+        transform: none;
+        background: rgba(0, 0, 0, 0.5)
     }
     .small {
         z-index: 1;
@@ -203,8 +196,6 @@ video {
             left: 50%;
             top: 50%;
             transform: translate(-50%, -52%);
-            min-width: 30%;
-            min-height: 30%;
             max-width: 90%;
             /* for animation */
             max-height: 70%;

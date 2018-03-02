@@ -1,7 +1,7 @@
 // TODO: button image loop
 let count = 0;
 let isClient = false;
-let lightboxHeight = 200;
+let videoHeight = 200;
 let updateQueueName = 'autoRefresh';
 let isHovering;
 let workerCount = 0;
@@ -366,8 +366,6 @@ function updatePoster(video, isReplace, onfinish) {
                 $lightbox.data('ratio', img.width / img.height);
                 video.poster = url;
                 expandLightbox(video);
-            } else {
-                console.log(img);
             }
         }
         url = isClient ? stampedURL(url) : url;
@@ -440,8 +438,9 @@ function shrinkLightbox(element) {
  */
 function expandLightbox(element) {
     let $lightbox = $(getLightbox(element));
-    $lightbox.height(lightboxHeight);
-    $lightbox.width($lightbox.data('ratio') * lightboxHeight);
+    $video = $lightbox.find('video.small');
+    $lightbox.height(videoHeight);
+    $lightbox.width($lightbox.data('ratio') * videoHeight);
     if ($lightbox.is('.shrink')) {
         $lightbox.removeClass('shrink');
         count -= 1;

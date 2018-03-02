@@ -111,29 +111,24 @@ video {
   height: 200px;
   border: 1px solid black;
   box-sizing: border-box;
-  /* loading indicator*/ }
+  overflow: hidden; }
+  .lightbox:not(:hover) a.zoom .caption {
+    transform: translateY(100%); }
   .lightbox .caption {
     word-break: keep-all;
     text-overflow: ellipsis;
     overflow: hidden;
     margin: auto;
-    transition: inherit; }
-  .lightbox .mark.container {
+    transition: 0.3s ease-out; }
+  .lightbox a.zoom .caption {
+    color: #EEE;
     position: absolute;
-    padding: 10px;
-    z-index: 1; }
-    .lightbox .mark.container span.mark {
-      padding: 5px; }
-      .lightbox .mark.container span.mark[for="thumb"]:before {
-        content: "缩略图"; }
-      .lightbox .mark.container span.mark[for="preview"]:before {
-        content: "动图"; }
-      .lightbox .mark.container span.mark[for="full"]:before {
-        content: "大图"; }
-      .lightbox .mark.container span.mark:after {
-        content: "读取中...";
-        font-size: 50%;
-        opacity: 0.5; }
+    bottom: 0;
+    width: 100%;
+    max-height: 30%;
+    word-break: break-all;
+    transform: none;
+    background: rgba(0, 0, 0, 0.5); }
   .lightbox .small {
     z-index: 1;
     text-align: center;
