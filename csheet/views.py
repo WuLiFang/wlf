@@ -106,7 +106,7 @@ def render_local_dir():
 
 
 @APP.route('/images/<uuid>.<role>')
-@nocache
+# @nocache
 def response_image(uuid, role):
     """Response file for a image.
 
