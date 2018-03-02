@@ -307,7 +307,7 @@ def run_server(port=5000, local_dir=None):
     from socket import gethostname, gethostbyname
     APP.config['local_dir'] = local_dir
     host_ip = gethostbyname(gethostname())
-    server = WSGIServer(('0.0.0.0', port), APP)
+    server = WSGIServer(('0.0.0.0', port), APP, log=None)
     address = 'https://{}:{}'.format(host_ip, port)
     print(address)
     LOGGER.info('服务器运行于: %s', address)

@@ -6,6 +6,7 @@ $(document).ready(
     function() {
         let $videos = $('.lightbox video');
         let $smallVideos = $videos.filter('.small');
+        let isAutoRefresh = false;
         $smallVideos.appear();
         $('html').dblclick(
             function() {
@@ -37,7 +38,9 @@ $(document).ready(
             function() {
                 $(getLightbox(this)).find('video').each(
                     function() {
-                        updatePoster(this);
+                        if (!isAutoRefresh) {
+                            updatePoster(this);
+                        }
                     }
                 );
             }
@@ -68,25 +71,31 @@ $(document).ready(
                 .removeClass('hidden').find('button');
             let spans = buttons.find('span');
             let isHovering;
-            let isAutoRefresh = false;
+            let queueName = 'autoRefresh';
             $('.images').mouseenter(function() {
                 isHovering = true;
             }).mouseleave(function() {
                 isHovering = false;
             });
-            let queueName = 'autoRefresh';
+            let workerCount = 0;
             let put = function(video) {
                 $(document).queue(queueName,
                     function() {
-                        updatePoster(
-                            video,
-                            !isHovering,
-                            function() {
-                                if (isAutoRefresh) {
-                                    $(document).dequeue(queueName);
+                        if ($(video).is(':appeared')) {
+                            updatePoster(
+                                video,
+                                !isHovering,
+                                function() {
+                                    workerCount -= 1;
+                                    while (workerCount < 3) {
+                                        $(document).dequeue(queueName);
+                                        workerCount += 1;
+                                    }
                                 }
-                            }
-                        );
+                            );
+                        } else {
+                            $(document).dequeue(queueName);
+                        }
                     }
                 );
             };
@@ -94,6 +103,7 @@ $(document).ready(
                 delay = typeof (delay) === 'undefined' ? 5000 : delay;
                 let $appearedViedos = $smallVideos.filter(':appeared');
                 if ($(document).queue(queueName).length == 0) {
+                    workerCount = 0;
                     $appearedViedos.each(
                         function() {
                             if (this.paused) {
@@ -369,12 +379,34 @@ function unloadResource(element, selector) {
 function updatePoster(video, isReplace, onfinish) {
     let $video = $(video);
     let isSmall = $video.is('.small');
-    let url = $(video).data('poster');
+    let url = $video.data('poster');
+    let $lightbox = $(getLightbox(video));
+    let addIndicator = function() {
+        if (isSmall) {
+            $lightbox.css({
+                border: '1px solid white',
+                padding: '0',
+            });
+        } else {
+            $video.css({border: '1px solid white'});
+        }
+    };
+    let removeIndicator = function() {
+        if (isSmall) {
+            $lightbox.css({
+                border: '',
+                padding: '1px',
+            });
+        } else {
+            $video.css({border: ''});
+        }
+    };
     if (url) {
         if (!video.poster) {
             video.poster = url;
         }
         url = isClient ? stampedURL(url) : url;
+        addIndicator();
         imageAvailable(
             url,
             function(img) {
@@ -388,6 +420,7 @@ function updatePoster(video, isReplace, onfinish) {
                     video.removeAttribute('src');
                     video.load();
                 }
+                removeIndicator();
                 if (onfinish) {
                     onfinish(img);
                 }
@@ -399,6 +432,7 @@ function updatePoster(video, isReplace, onfinish) {
                 if (isSmall && !video.poster) {
                     shrinkLightbox(video);
                 }
+                removeIndicator();
                 if (onfinish) {
                     onfinish();
                 }
