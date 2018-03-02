@@ -67,48 +67,60 @@ $(document).ready(
             let buttons = $('.refresh-module')
                 .removeClass('hidden').find('button');
             let spans = buttons.find('span');
-            let interval = 10000;
-            let lastRefreshTime;
             let isHovering;
+            let isAutoRefresh = false;
             $('.images').mouseenter(function() {
                 isHovering = true;
             }).mouseleave(function() {
                 isHovering = false;
             });
+            let queueName = 'autoRefresh';
+            let put = function(video) {
+                $(document).queue(queueName,
+                    function() {
+                        updatePoster(
+                            video,
+                            !isHovering,
+                            function() {
+                                if (isAutoRefresh) {
+                                    $(document).dequeue(queueName);
+                                }
+                            }
+                        );
+                    }
+                );
+            };
             let onInterval = function() {
-                let value;
-                if (lastRefreshTime === undefined) {
-                    value = 0;
-                } else {
-                    value = (1 -
-                        (new Date().getTime() - lastRefreshTime) / interval);
-                }
-                if (value <= 0) {
-                    value = 0;
-                    $smallVideos.each(
+                let $appearedViedos = $smallVideos.filter(':appeared');
+                if ($(document).queue(queueName).length == 0) {
+                    $appearedViedos.each(
                         function() {
                             if (this.paused) {
-                                updatePoster(this, !isHovering);
+                                put(this);
                             }
                         }
                     );
-                    lastRefreshTime = new Date().getTime();
+                    setTimeout(function() {
+                        $(document).dequeue(queueName);
+                    }, 2000);
                 }
+                value = $(document).queue(queueName).length
+                    / $appearedViedos.length;
                 spans.css({
-                    width: value * 100 + '%',
+                    width: Math.min(value, 1) * 100 + '%',
                 });
             };
             buttons.click(
                 function() {
-                    if (refreshInterval === undefined) {
-                        refreshInterval = setInterval(
-                            onInterval, interval / 100);
+                    if (!isAutoRefresh) {
+                        $(document).clearQueue(queueName);
+                        refreshInterval = setInterval(onInterval, 100);
+                        isAutoRefresh = true;
                         buttons.attr('status', 'on');
                     } else {
                         clearInterval(refreshInterval);
                         buttons.attr('status', 'off');
-                        refreshInterval = undefined;
-                        lastRefreshTime = undefined;
+                        isAutoRefresh = false;
                     }
                 }
             ).trigger('click');
@@ -349,8 +361,9 @@ function unloadResource(element, selector) {
  * Update video poster.
  * @param {Element} video video element.
  * @param {Boolean} isReplace force poster to display.
+ * @param {Function} onfinish Callback on finish.
  */
-function updatePoster(video, isReplace) {
+function updatePoster(video, isReplace, onfinish) {
     let $video = $(video);
     let isSmall = $video.is('.small');
     let url = $(video).data('poster');
@@ -372,6 +385,9 @@ function updatePoster(video, isReplace) {
                     video.removeAttribute('src');
                     video.load();
                 }
+                if (onfinish) {
+                    onfinish(img);
+                }
             },
             function() {
                 if (video.attributes.poster == url) {
@@ -379,6 +395,9 @@ function updatePoster(video, isReplace) {
                 }
                 if (isSmall && !video.poster) {
                     shrinkLightbox(video);
+                }
+                if (onfinish) {
+                    onfinish();
                 }
             }
         );
