@@ -3,15 +3,18 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import errno
+import hashlib
+import io
 import json
 import logging
-import hashlib
 import os
+import tempfile
 from collections import namedtuple
 from contextlib import contextmanager
 
-import websocket
 import requests
+import websocket
 
 from .client import CGTeamWorkClient
 from .exceptions import LoginError
@@ -117,10 +120,10 @@ def account_id():
     return call("c_token", "get_account_id").data
 
 
-def _get_md5(path):
+def _hash(path):
     hash_ = hashlib.md5()
     with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(2048), ''):
+        for chunk in iter(lambda: f.read(2048), b''):
             hash_.update(chunk)
     return hash_.hexdigest()
 
@@ -134,7 +137,7 @@ def post(pathname, data, ip_=None, **kwargs):
         **kwargs: kwargs for `requests.post`
 
     Returns:
-        Server execution result. 
+        Server execution result.
     """
 
     assert 'cookies' not in kwargs
@@ -148,12 +151,13 @@ def post(pathname, data, ip_=None, **kwargs):
                          data={'data': json.dumps(data)},
                          cookies=cookies,
                          **kwargs)
-    result = json.loads(resp.content)
+    json_ = resp.json()
+    result = json_.get('data', json_)
+    if (isinstance(json_, dict)
+            and (json_.get('code'), json_.get('type')) == ('0', 'msg')):
+        raise ValueError(result)
 
-    if result['code'] == '1':
-        return result['data']
-
-    raise ValueError(result)
+    return result
 
 
 def get(pathname, token=None, ip_=None, **kwargs):
@@ -173,22 +177,43 @@ def get(pathname, token=None, ip_=None, **kwargs):
     ip_ = ip_ or CGTeamWorkClient.server_ip()
     cookies = {'token': token}
 
-    resp = requests.post('http://{}/{}'.format(ip_, pathname.lstrip('\\/')),
-                         cookies=cookies,
-                         **kwargs)
+    LOGGER.debug('GET: kwargs: %s', kwargs)
+    resp = requests.get('http://{}/{}'.format(ip_, pathname.lstrip('\\/')),
+                        cookies=cookies,
+                        **kwargs)
+    try:
+        result = json.loads(resp.content)
+    except ValueError:
+        result = None
+    if (isinstance(result, dict)
+            and (result.get('code'), result.get('type')) == ('0', 'msg')):
+        raise ValueError(result.get('data', result))
+    LOGGER.debug('GET: %s', result)
     return resp
 
 
-def upload(path,
-           server_path,
-           is_backup=True,
-           is_continue=True,
-           is_replace=True,
-           chunk_size=2*2**20):
-    hash_ = _get_md5(path)
-    LOGGER.debug(hash_)
+def upload(path, pathname, is_backup=True, is_continue=True, is_replace=False):
+    """Upload file to server.
+
+    Args:
+        path (unicode): Local file path.
+        pathname (unicode): Server pathname.
+        is_backup (bool, optional): Defaults to True.
+            Tell server backup to history or not.
+        is_continue (bool, optional): Defaults to True.
+            If `is_continue` is True, will continue previous upload(if exists).
+        is_replace (bool, optional): Defaults to False.
+            If `is_replace` is Ture, will replace exsited server file.
+
+    Raises:
+        ValueError: When server file exists and `is_replace` is False.
+        ValueError: When local file is empty.
+    """
+
+    chunk_size = 2*2**20  # 2MB
+    hash_ = _hash(path)
     result = post('/file.php', {'file_md5': hash_,
-                                'upload_des_path': server_path,
+                                'upload_des_path': pathname,
                                 'action': 'pre_upload'})
     LOGGER.debug('POST: result: %s', result)
     assert isinstance(result, dict)
@@ -205,7 +230,7 @@ def upload(path,
             f.seek(file_pos)
         data = {'file_md5': hash_,
                 'file_size': file_size,
-                'upload_des_path': server_path,
+                'upload_des_path': pathname,
                 'is_backup_to_history': 'Y' if is_backup else 'N',
                 'no_continue_upload': 'N' if is_continue else 'Y'}
         for chunk in iter(lambda: f.read(chunk_size), ''):
@@ -215,70 +240,163 @@ def upload(path,
 
 
 def download(pathname, dest):
+    """Download file from server.
+
+    Args:
+        pathname (unicode): Server host pathname. (e.g. `/upload/somefile.txt`)
+        dest (unicode): Local destination path.
+            if `dest` ends with `\\` or `/`, will treat dest as directory.
+
+    Raises:
+        ValueError: When server file not exists.
+        ValueError: Local file already exists.
+        RuntimeError: Dowanload fail.
+
+    Returns:
+        unicode: Path of downloaded file.
+    """
+
     info = stat(pathname)
-    T_server_path = T_result['server_path']
     if not info.file_md5:
-        raise ValueError('File not exists.', pathname)
-    if os.path.isfile(dest) and _get_md5(dest) == info.file_md5:
-        return dest
+        raise ValueError('Server file not exists.', pathname)
 
-    # T_cookies = {'token': G_tw_token}
-    # T_headers = {'Range': 'byte=' + str(T_file_size) + '-'}
-    # requests.get('http://' + G_tw_server_ip + '/' + T_server_path,
-    #              stream=True, verify=False, headers=T_headers, cookies=T_cookies)
-    # if not os.path.exists(os.path.dirname(T_save_tmp_path)):
-    #     os.makedirs(os.path.dirname(T_save_tmp_path))
-    # T_f = open(T_save_tmp_path, 'ab')
-    # for T_chunk in T_r.iter_content(chunk_size=1048576):
-    #     if T_chunk:
-    #         T_f.write(T_chunk)
-    #         T_file_size += len(T_chunk)
-    #         T_f.flush()
-    #         sys.stdout.write(
-    #             '\x08' * 64 + str(T_file_size * 100 / int(T_result['file_size'])) + '%')
-    #         sys.stdout.flush()
+    # Convert diraname as dest.
+    if unicode(dest).endswith(('\\', '/')):
+        dest = os.path.abspath(
+            os.path.join(
+                dest, os.path.basename(info.server_path)
+            )
+        )
 
-    # T_f.close()
-    # if twfs.get_md5(T_save_tmp_path) == T_result['file_md5']:
-    #     if os.path.isfile(T_local_path) == True and T_is_backup_to_history == True:
-    #         if twfs.l_move_to_history(T_local_path) == False:
-    #             print 'move file to history fail(' + T_local_path + ')'
-    #             return False
-    #     return twfs.l_move_file(T_save_tmp_path, T_local_path)
-    # os.remove(T_save_tmp_path)
-    # print 'check file fail\xef\xbc\x81\xef\xbc\x81--'.T_save_tmp_path
-    # return False
+    # Skip if already downloaded.
+    if os.path.exists(dest):
+        if os.path.isfile(dest) and _hash(dest) == info.file_md5:
+            return dest
+        else:
+            raise ValueError('Local file already exists.', dest)
+
+    # Create dest_dir.
+    dest_dir = os.path.dirname(dest)
+    try:
+        os.makedirs(dest_dir)
+    except OSError as ex:
+        if ex.errno not in (errno.EEXIST, errno.EACCES):
+            raise
+
+    # Download to tempfile.
+    headers = {'Range': 'byte={}-'.format(info.file_size)}
+    resp = get(info.server_path, stream=True, verify=False, headers=headers)
+    fd, filename = tempfile.mkstemp('.cgtwqdownload', dir=dest_dir)
+    with io.open(fd, 'wb') as f:
+        for chunk in resp.iter_content():
+            f.write(chunk)
+
+    # Check hash of downloaded file.
+    if _hash(filename) != info.file_md5:
+        os.remove(filename)
+        raise RuntimeError('Downloaded content not match server md5.')
+
+    os.rename(filename, dest)
+    return dest
 
 
 def file_operation(action, **kwargs):
+    """Do file operation on server.
+
+    Args:
+        action (unicode): Server defined action name.
+
+    Returns:
+        Server execution result.
+    """
+
+    LOGGER.debug('%s: %s', action, kwargs)
     kwargs['action'] = action
     result = post('/file.php', kwargs)
-    if result is not True:
-        raise ValueError(result)
+    LOGGER.debug('%s: result: %s', action, result)
     return result
 
 
 def delete(pathname):
+    """Delete file on server.
+
+    Args:
+        pathname (unicode): Server pathname.
+
+    Returns:
+        bool: Is deletion successed.
+    """
+
     return file_operation('delete', server_path=pathname)
 
 
 def rename(src, dst):
+    """Rename(move) file on server.
+
+    Args:
+        src (unicode): Source server pathname.
+        dst (unicode): Destnation server pathname.
+
+    Returns:
+        bool: Is deletion successed.
+    """
+
     return file_operation('rename', old_path=src, new_path=dst)
 
 
 def mkdir(pathname):
+    """Make directory on server.
+
+    Args:
+        pathname (unicode): Server pathname.
+
+    Returns:
+        bool: Is directory created.
+    """
+
     return file_operation('create_dir', server_path=pathname)
 
 
+DirInfo = namedtuple('DirInfo', ('dir', 'file'))
+
+
 def listdir(pathname):
-    return file_operation('list_dir', server_path=pathname)
+    """List directory contents on server.
+
+    Args:
+        pathname (unicode): Server pathname
+
+    Returns:
+        DirInfo: namedtuple of directory info.
+    """
+
+    result = file_operation('list_dir', server_path=pathname)
+    return DirInfo(**result)
 
 
 def isdir(pathname):
+    """Check if pathname is directory.
+
+    Args:
+        pathname (unicode): Server pathname.
+
+    Returns:
+        bool: True if `pathname` is directory.
+    """
+
     return file_operation('is_dir', server_path=pathname)
 
 
 def exists(pathname):
+    """Check if pathname exists on server.
+
+    Args:
+        pathname (unicode): Server pathname.
+
+    Returns:
+        bool: True if `pathname` exists on server.
+    """
+
     return file_operation('file_exists', server_path=pathname)
 
 
@@ -286,6 +404,15 @@ FileInfo = namedtuple('FileInfo', ('file_md5', 'file_size', 'server_path'))
 
 
 def stat(pathname):
+    """Get server file status.
+
+    Args:
+        pathname (unicode): Server pathname.
+
+    Returns:
+        FileInfo: Server file information.
+    """
+
     result = file_operation('file_info', server_path=pathname)
     assert isinstance(result, dict), type(result)
     return FileInfo(**result)
