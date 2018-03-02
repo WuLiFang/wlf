@@ -90,7 +90,8 @@ $(document).ready(
                     }
                 );
             };
-            let onInterval = function() {
+            let onInterval = function(delay) {
+                delay = typeof (delay) === 'undefined' ? 5000 : delay;
                 let $appearedViedos = $smallVideos.filter(':appeared');
                 if ($(document).queue(queueName).length == 0) {
                     $appearedViedos.each(
@@ -102,17 +103,19 @@ $(document).ready(
                     );
                     setTimeout(function() {
                         $(document).dequeue(queueName);
-                    }, 2000);
+                    }, delay);
                 }
-                value = $(document).queue(queueName).length
-                    / $appearedViedos.length;
                 spans.css({
-                    width: Math.min(value, 1) * 100 + '%',
+                    width: Math.min(
+                        $(document).queue(queueName).length
+                        / $appearedViedos.length,
+                        1) * 100 + '%',
                 });
             };
             buttons.click(
                 function() {
                     if (!isAutoRefresh) {
+                        onInterval(0);
                         refreshInterval = setInterval(onInterval, 100);
                         isAutoRefresh = true;
                         buttons.attr('status', 'on');
