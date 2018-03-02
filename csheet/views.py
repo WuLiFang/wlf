@@ -3,7 +3,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from functools import update_wrapper
+from functools import wraps
 from os import SEEK_END
 from os.path import join
 from tempfile import TemporaryFile, gettempdir
@@ -36,13 +36,13 @@ CACHE = FanoutCache(join(gettempdir(), 'csheet_server/cache'))
 
 def nocache(func):
     """(Decorator)Tell falsk make respon with no_cache.  """
-
+    @wraps(func)
     def _func(*args, **kwargs):
         resp = make_response(func(*args, **kwargs))
         resp.cache_control.no_cache = True
         resp.cache_control.max_age = 10
         return resp
-    return update_wrapper(_func, func)
+    return _func
 
 
 def u_abort(status, msg):
@@ -106,6 +106,7 @@ def render_local_dir():
 
 
 @APP.route('/images/<uuid>.<role>')
+@nocache
 def response_image(uuid, role):
     """Response file for a image.
 
@@ -147,8 +148,10 @@ def response_image(uuid, role):
 
     try:
         generated = result.get(block=False)
+        if isinstance(generated, ValueError):
+            raise Empty
         if isinstance(generated, Exception):
-            u_abort(404 if isinstance(generated, ValueError) else 500, generated)
+            u_abort(500, generated)
 
         if not Path(generated).exists():
             try:
