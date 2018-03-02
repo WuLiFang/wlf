@@ -2,11 +2,17 @@
 let count = 0;
 let isClient = false;
 let lightboxHeight = 200;
+let updateQueueName = 'autoRefresh';
+let isHovering;
+let workerCount = 0;
+let workerNumber = 20;
+let lastRefreshTime;
 $(document).ready(
     function() {
         let $videos = $('.lightbox video');
         let $smallVideos = $videos.filter('.small');
         let isAutoRefresh = false;
+
         $smallVideos.appear();
         $('html').dblclick(
             function() {
@@ -38,11 +44,10 @@ $(document).ready(
             function() {
                 $(getLightbox(this)).find('video').each(
                     function() {
-                        if (!isAutoRefresh) {
-                            updatePoster(this);
-                        }
+                        putUpdateQueue(this, true);
                     }
                 );
+                startUpdateWorker();
             }
         );
         $('.lightbox a.zoom').click(
@@ -70,68 +75,37 @@ $(document).ready(
             let buttons = $('.refresh-module')
                 .removeClass('hidden').find('button');
             let spans = buttons.find('span');
-            let isHovering;
-            let queueName = 'autoRefresh';
             $('.images').mouseenter(function() {
                 isHovering = true;
             }).mouseleave(function() {
                 isHovering = false;
             });
-            let workerCount = 0;
-            let put = function(video) {
-                $(document).queue(queueName,
-                    function() {
-                        if ($(video).is(':appeared')) {
-                            updatePoster(
-                                video,
-                                !isHovering,
-                                function() {
-                                    workerCount -= 1;
-                                    while (workerCount < 3) {
-                                        $(document).dequeue(queueName);
-                                        workerCount += 1;
-                                    }
-                                }
-                            );
-                        } else {
-                            $(document).dequeue(queueName);
-                        }
-                    }
-                );
-            };
-            let onInterval = function(delay) {
-                delay = typeof (delay) === 'undefined' ? 5000 : delay;
+            let onInterval = function() {
                 let $appearedViedos = $smallVideos.filter(':appeared');
-                if ($(document).queue(queueName).length == 0) {
-                    workerCount = 0;
+                if ($(document).queue(updateQueueName).length == 0 &&
+                    new Date().getTime() - lastRefreshTime > 5000) {
                     $appearedViedos.each(
                         function() {
                             if (this.paused) {
-                                put(this);
+                                putUpdateQueue(this);
                             }
                         }
                     );
-                    setTimeout(function() {
-                        $(document).dequeue(queueName);
-                    }, delay);
+                    startUpdateWorker();
                 }
                 spans.css({
-                    width: Math.min(
-                        $(document).queue(queueName).length
-                        / $appearedViedos.length,
-                        1) * 100 + '%',
+                    width: workerCount / workerNumber * 100 + '%',
                 });
             };
             buttons.click(
                 function() {
                     if (!isAutoRefresh) {
-                        onInterval(0);
                         refreshInterval = setInterval(onInterval, 100);
                         isAutoRefresh = true;
                         buttons.attr('status', 'on');
                     } else {
                         clearInterval(refreshInterval);
-                        $(document).clearQueue(queueName);
+                        $(document).clearQueue(updateQueueName);
                         buttons.attr('status', 'off');
                         isAutoRefresh = false;
                     }
@@ -283,12 +257,13 @@ $(document).ready(
         $('video').removeClass('hidden');
         $smallVideos.each(
             function() {
-                shrinkLightbox(this);
-                if (!isClient) {
-                    updatePoster(this);
+                if ($(this).is(':appeared')) {
+                    putUpdateQueue(this);
                 }
+                shrinkLightbox(this);
             }
         );
+        startUpdateWorker();
     }
 );
 
@@ -381,38 +356,28 @@ function updatePoster(video, isReplace, onfinish) {
     let isSmall = $video.is('.small');
     let url = $video.data('poster');
     let $lightbox = $(getLightbox(video));
-    let addIndicator = function() {
-        if (isSmall) {
-            $lightbox.css({
-                border: '1px solid white',
-                padding: '0',
-            });
-        } else {
-            $video.css({border: '1px solid white'});
-        }
-    };
-    let removeIndicator = function() {
-        if (isSmall) {
-            $lightbox.css({
-                border: '',
-                padding: '1px',
-            });
-        } else {
-            $video.css({border: ''});
-        }
-    };
+    let updatingClass = isSmall ? 'updating-thumb' : 'updating-full';
+    let failedClass = isSmall ? 'failed-thumb' : 'failed-full';
     if (url) {
         if (!video.poster) {
-            video.poster = url;
+            let img = new Image();
+            img.src = url;
+            if (img.complete) {
+                $lightbox.data('ratio', img.width / img.height);
+                video.poster = url;
+                expandLightbox(video);
+            } else {
+                console.log(img);
+            }
         }
         url = isClient ? stampedURL(url) : url;
-        addIndicator();
+        $lightbox.removeClass(failedClass);
+        $lightbox.addClass(updatingClass);
         imageAvailable(
             url,
             function(img) {
                 if (isSmall) {
-                    getLightbox(video).dataset.ratio =
-                        img.width / img.height;
+                    $lightbox.data('ratio', img.width / img.height);
                 }
                 expandLightbox(video);
                 video.poster = url;
@@ -420,7 +385,7 @@ function updatePoster(video, isReplace, onfinish) {
                     video.removeAttribute('src');
                     video.load();
                 }
-                removeIndicator();
+                $lightbox.removeClass(updatingClass);
                 if (onfinish) {
                     onfinish(img);
                 }
@@ -432,7 +397,8 @@ function updatePoster(video, isReplace, onfinish) {
                 if (isSmall && !video.poster) {
                     shrinkLightbox(video);
                 }
-                removeIndicator();
+                $lightbox.removeClass(updatingClass);
+                $lightbox.addClass(failedClass);
                 if (onfinish) {
                     onfinish();
                 }
@@ -508,4 +474,40 @@ function imageAvailable(url, onload, onerror) {
     };
     temp.onerror = onerror;
     temp.src = url;
+}
+
+/**
+ * Use queue to update video poster.
+ * @param {element} video Video element to update.
+ * @param {Boolean} isSkipLoaded Will skip update loaded poster if ture.
+ */
+function putUpdateQueue(video, isSkipLoaded) {
+    $(document).queue(updateQueueName,
+        function() {
+            if (!(isSkipLoaded && video.poster) &&
+                !location.hash.startsWith('#image') &&
+                $(video).is(':appeared')) {
+                updatePoster(
+                    video, !isHovering,
+                    function() {
+                        lastRefreshTime = new Date().getTime();
+                        workerCount -= 1;
+                        startUpdateWorker();
+                    }
+                );
+            } else {
+                workerCount -= 1;
+                startUpdateWorker();
+            }
+        }
+    );
+}
+
+/** Start run update queue. */
+function startUpdateWorker() {
+    while (workerCount < workerNumber &&
+        $(document).queue(updateQueueName).length > 0) {
+        workerCount += 1;
+        $(document).dequeue(updateQueueName);
+    }
 }

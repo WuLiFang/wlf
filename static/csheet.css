@@ -109,6 +109,8 @@ video {
   transition: 0.5s ease-in-out;
   position: relative;
   height: 200px;
+  border: 1px solid black;
+  box-sizing: border-box;
   /* loading indicator*/ }
   .lightbox .caption {
     word-break: keep-all;
@@ -218,6 +220,14 @@ video {
     background: linear-gradient(black, grey 33%, black); }
     .lightbox.shrink .caption {
       visibility: hidden; }
+  .lightbox.updating-thumb {
+    border: 1px solid white; }
+  .lightbox.updating-full video.full {
+    border: 1px solid white; }
+  .lightbox.failed-thumb {
+    border: 1px solid red; }
+  .lightbox.failed-full video.full {
+    border: 1px solid red; }
   .lightbox:target .viewer {
     visibility: visible;
     transform: none; }

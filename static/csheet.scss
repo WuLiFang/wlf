@@ -140,6 +140,8 @@ video {
     transition: 0.5s ease-in-out;
     position: relative;
     height: 200px;
+    border: 1px solid black;
+    box-sizing: border-box;
     .caption {
         word-break: keep-all;
         text-overflow: ellipsis;
@@ -201,6 +203,8 @@ video {
             left: 50%;
             top: 50%;
             transform: translate(-50%, -52%);
+            min-width: 30%;
+            min-height: 30%;
             max-width: 90%;
             /* for animation */
             max-height: 70%;
@@ -278,6 +282,22 @@ video {
         background: linear-gradient(black, grey 33%, black);
         .caption {
             visibility: hidden;
+        }
+    }
+    &.updating-thumb {
+        border: 1px solid white;
+    }
+    &.updating-full {
+        video.full {
+            border: 1px solid white;
+        }
+    }
+    &.failed-thumb {
+        border: 1px solid red;
+    }
+    &.failed-full {
+        video.full {
+            border: 1px solid red;
         }
     }
     &:target {
