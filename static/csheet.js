@@ -113,12 +113,12 @@ $(document).ready(
             buttons.click(
                 function() {
                     if (!isAutoRefresh) {
-                        $(document).clearQueue(queueName);
                         refreshInterval = setInterval(onInterval, 100);
                         isAutoRefresh = true;
                         buttons.attr('status', 'on');
                     } else {
                         clearInterval(refreshInterval);
+                        $(document).clearQueue(queueName);
                         buttons.attr('status', 'off');
                         isAutoRefresh = false;
                     }
