@@ -269,8 +269,7 @@ video {
         }
     }
     &.shrink {
-        overflow: hidden;
-        background: linear-gradient(black, grey 33%, black);
+        background: rgba(255, 255, 255, 0.2);
         .caption {
             visibility: hidden;
         }

@@ -211,8 +211,7 @@ video {
         .lightbox .viewer button.refresh:after {
           content: "刷新"; }
   .lightbox.shrink {
-    overflow: hidden;
-    background: linear-gradient(black, grey 33%, black); }
+    background: rgba(255, 255, 255, 0.2); }
     .lightbox.shrink .caption {
       visibility: hidden; }
   .lightbox.updating-thumb {
