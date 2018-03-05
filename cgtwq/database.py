@@ -4,11 +4,12 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import logging
+import uuid
+from collections import namedtuple
 from functools import partial
 
 from . import server
 from .filter import Filter, FilterList
-from collections import namedtuple
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
@@ -53,6 +54,9 @@ class FieldsData(list):
         return tuple(sorted(set(
             i[field] if isinstance(i, dict) else i
             for i in self)))
+
+
+ImageInfo = namedtuple('ImageInfo', ['max', 'min'])
 
 
 class Selection(list):
@@ -183,6 +187,18 @@ class Selection(list):
             raise ValueError('No matched filebox.')
         assert isinstance(resp.data, dict), resp
         return dict(resp.data)
+
+    def set_image(self, field, path, http_server=None):
+        # TODO: Generate thumb.
+        pathname = "/upload/image/{}/{}".format(
+            self.module.database.name,
+            uuid.uuid4()
+        )
+        server.upload(path, pathname, ip=http_server)
+        self.set_fields(**{field: {'max': pathname, 'min': pathname}})
+
+    def get_image(self, field):
+        return tuple(ImageInfo(**i) for i in self[field])
 
 
 class Module(object):

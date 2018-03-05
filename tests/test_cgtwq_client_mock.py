@@ -152,7 +152,7 @@ class CGTeamWorkClientTestCase(TestCase):
         # Running but not logged in.
         conn.recv.return_value = server_dumps(1, True)
         result = cgtwq.CGTeamWorkClient.token()
-        self.assertIs(result, None)
+        self.assertEqual(result, '')
 
         # Not running.
         self.create_connection.side_effect = socket.timeout

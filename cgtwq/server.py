@@ -21,6 +21,10 @@ from .exceptions import LoginError
 
 LOGGER = logging.getLogger('wlf.cgtwq.server')
 
+BACKUP = 1 << 0
+COUNTINUE = 1 << 1
+REPLACE = 1 << 2
+
 
 @contextmanager
 def connection(ip=None, port=8888):
@@ -128,10 +132,10 @@ def _hash(path):
     return hash_.hexdigest()
 
 
-def post(pathname, data, ip_=None, **kwargs):
+def post(pathname, data, ip=None, **kwargs):
     """Post data to CGTeamWork server.
         pathname (str unicode): Pathname for http host.
-        ip_ (str unicode, optional): Defaults to None. If `ip_` is None,
+        ip (str unicode, optional): Defaults to None. If `ip` is None,
             will use ip from CGTeamWorkClient.
         data: Data to post.
         **kwargs: kwargs for `requests.post`
@@ -144,10 +148,10 @@ def post(pathname, data, ip_=None, **kwargs):
     assert 'data' not in kwargs
     token = data.get('token', CGTeamWorkClient.token())
     data['token'] = token
-    ip_ = ip_ or CGTeamWorkClient.server_ip()
+    ip = ip or CGTeamWorkClient.server_ip()
     cookies = {'token': token}
 
-    resp = requests.post('http://{}/{}'.format(ip_, pathname.lstrip('\\/')),
+    resp = requests.post('http://{}/{}'.format(ip, pathname.lstrip('\\/')),
                          data={'data': json.dumps(data)},
                          cookies=cookies,
                          **kwargs)
@@ -160,11 +164,11 @@ def post(pathname, data, ip_=None, **kwargs):
     return result
 
 
-def get(pathname, token=None, ip_=None, **kwargs):
+def get(pathname, token=None, ip=None, **kwargs):
     """Get request to CGTeamWork server.
         token (str unicode, optional): Defaults to None. If `token` is None,
             will use token from CGTeamWorkClient.
-        ip_ (str unicode, optional): Defaults to None. If `ip_` is None,
+        ip (str unicode, optional): Defaults to None. If `ip` is None,
             will use ip from CGTeamWorkClient.
         **kwargs: kwargs for `requests.get`
 
@@ -174,11 +178,11 @@ def get(pathname, token=None, ip_=None, **kwargs):
 
     assert 'cookies' not in kwargs
     token = token or CGTeamWorkClient.token()
-    ip_ = ip_ or CGTeamWorkClient.server_ip()
+    ip = ip or CGTeamWorkClient.server_ip()
     cookies = {'token': token}
 
     LOGGER.debug('GET: kwargs: %s', kwargs)
-    resp = requests.get('http://{}/{}'.format(ip_, pathname.lstrip('\\/')),
+    resp = requests.get('http://{}/{}'.format(ip, pathname.lstrip('\\/')),
                         cookies=cookies,
                         **kwargs)
     try:
@@ -192,32 +196,37 @@ def get(pathname, token=None, ip_=None, **kwargs):
     return resp
 
 
-def upload(path, pathname, is_backup=True, is_continue=True, is_replace=False):
+def upload(path, pathname, ip=None, flags=BACKUP | COUNTINUE):
     """Upload file to server.
 
     Args:
         path (unicode): Local file path.
         pathname (unicode): Server pathname.
-        is_backup (bool, optional): Defaults to True.
-            Tell server backup to history or not.
-        is_continue (bool, optional): Defaults to True.
-            If `is_continue` is True, will continue previous upload(if exists).
-        is_replace (bool, optional): Defaults to False.
-            If `is_replace` is Ture, will replace exsited server file.
+        flags(BACKUP, COUNTINUE, REPLACE):
+            Defaults to `BACKUP | COUNTINUE`.
+            `BACKUP`: Tell server backup to history or not.
+            `COUNTINUE`: If set, will continue previous upload(if exists).
+            `REPLACE`: If set, will replace exsited server file.
 
     Raises:
-        ValueError: When server file exists and `is_replace` is False.
+        ValueError: When server file exists and `REPLACE` flag is not set.
         ValueError: When local file is empty.
+
+    Returns:
+        str: Upload path.
     """
 
     chunk_size = 2*2**20  # 2MB
     hash_ = _hash(path)
+    pathname = '/{}'.format(unicode(pathname).lstrip('\\/'))
+    ip = ip or CGTeamWorkClient.server_ip()
     result = post('/file.php', {'file_md5': hash_,
                                 'upload_des_path': pathname,
-                                'action': 'pre_upload'})
+                                'action': 'pre_upload'},
+                  ip=ip)
     LOGGER.debug('POST: result: %s', result)
     assert isinstance(result, dict)
-    if result['is_exist'] and not is_replace:
+    if result['is_exist'] and not flags & REPLACE:
         raise ValueError('File already exists.')
 
     file_size = os.path.getsize(path)
@@ -231,12 +240,14 @@ def upload(path, pathname, is_backup=True, is_continue=True, is_replace=False):
         data = {'file_md5': hash_,
                 'file_size': file_size,
                 'upload_des_path': pathname,
-                'is_backup_to_history': 'Y' if is_backup else 'N',
-                'no_continue_upload': 'N' if is_continue else 'Y'}
+                'is_backup_to_history': 'Y' if flags & BACKUP else 'N',
+                'no_continue_upload': 'N' if flags & COUNTINUE else 'Y'}
         for chunk in iter(lambda: f.read(chunk_size), ''):
             data['read_pos'] = file_pos
             post('/upload_file', data, files={'files': chunk})
             file_pos += chunk_size
+
+    return 'http://{}{}'.format(ip, pathname)
 
 
 def download(pathname, dest):
