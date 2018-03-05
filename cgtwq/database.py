@@ -15,15 +15,122 @@ _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
 LOGGER = logging.getLogger('wlf.cgtwq.database')
 
+FileBox = namedtuple('FileBox', ('id', 'pipeline_id', 'title'))
+FileBoxInfo = namedtuple(
+    'FileBoxInfo',
+    ('path',
+     'classify', 'title',
+     'sign', 'color', 'rule', 'rule_view',
+     'is_submit', 'is_move_old_to_history',
+     'is_move_same_to_history', 'is_in_history_add_version',
+     'is_in_history_add_datetime', 'is_cover_disable',
+     'is_msg_to_first_qc')
+)
+Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
+
 
 class Database(object):
     """Database on server.    """
 
     def __init__(self, name):
         self.name = name
+        self.call = partial(server.call,
+                            db=self.name)
 
     def __getitem__(self, name):
         return Module(name=name, database=self)
+
+    def get_filebox(self, id_=None, filters=None):
+        """Get filebox in this database.
+            id_ (unicode, optional): Defaults to None. Filebox id.
+            filters (FilterList, optional): Defaults to None. Filters to get filebox.
+
+        Raises:
+            ValueError: Not enough arguments.
+            ValueError: No matched filebox.
+
+        Returns:
+            tuple[Filebox]: namedtuple for ('id', 'pipeline_id', 'title')
+        """
+
+        if id_:
+            resp = self.call("c_file", "get_one_with_id",
+                             id=id_,
+                             field_array=['#id', '#pipeline_id', 'title'])
+            ret = [resp.data]
+        elif filters:
+            resp = self.call("c_file", "get_with_filter",
+                             filter_array=FilterList(filters),
+                             field_array=['#id', '#pipeline_id', 'title'])
+            ret = resp.data
+        else:
+            raise ValueError(
+                'Need at least one of (sign, filters) to get filebox.')
+
+        if not resp.data:
+            raise ValueError('No matched filebox.')
+        assert all(isinstance(i, list) for i in ret), resp
+        return tuple(FileBox(*i) for i in ret)
+
+    def get_pipline(self, filters):
+        """Get pipline in this database.
+
+        Args:
+            filters (FilterList): Filter to get pipeline.
+
+        Returns:
+            tuple[Pipeline]: namedtuple for ('id', 'name', 'module')
+        """
+
+        resp = self.call(
+            "c_pipeline", "get_with_filter",
+            field_array=('#id', 'name', 'module'),
+            filter_array=FilterList(filters))
+        return tuple(Pipeline(*i) for i in resp.data)
+
+    def get_software(self, name):
+        """Get software path for this database.
+
+        Args:
+            name (unicode): Software name.
+
+        Returns:
+            path: Path set in `设置` -> `软件`.
+        """
+
+        resp = self.call("c_software", "get_path", name=name)
+        return resp.data
+
+    def set_data(self, key, value, is_user=True):
+        """Set addtional data in this database.
+
+        Args:
+            key (unicode): Data key.
+            value (unicode): Data value
+            is_user (bool, optional): Defaults to True. 
+                If `is_user` is True, this data will be user specific.
+        """
+
+        self.call("c_api_data",
+                  'set_user' if is_user else 'set_common',
+                  key=key, value=value)
+
+    def get_data(self, key, is_user=True):
+        """Get addional data set in this database.
+
+        Args:
+            key (unicode): Data key.
+            is_user (bool, optional): Defaults to True. 
+                If `is_user` is True, this data will be user specific.
+
+        Returns:
+            Unicode: Data value.
+        """
+
+        resp = self.call("c_api_data",
+                         'get_user' if is_user else 'get_common',
+                         key=key)
+        return resp.data
 
 
 class FieldsData(list):
@@ -186,7 +293,7 @@ class Selection(list):
         if not resp.data:
             raise ValueError('No matched filebox.')
         assert isinstance(resp.data, dict), resp
-        return dict(resp.data)
+        return FileBoxInfo(**resp.data)
 
     def set_image(self, field, path, http_server=None):
         # TODO: Generate thumb.
@@ -199,6 +306,55 @@ class Selection(list):
 
     def get_image(self, field):
         return tuple(ImageInfo(**i) for i in self[field])
+
+    def get_note(self, fields):
+        if not self:
+            raise ValueError('Empty selection.')
+
+        fields = list(fields) + ['#id']
+        resp = self.call("c_note", "get_with_task_id",
+                         task_id=self[0],
+                         field_array=fields)
+        return resp
+
+    def submit(self, filelist, note="", pathlist=None):
+        if not self:
+            raise ValueError('Empty selection.')
+
+        resp = self.call(
+            "c_work_flow", "submit",
+            task_id=self[0],
+            account_id=server.account_id(),
+            submit_file_path_array={
+                'path': pathlist or [], 'file_path': filelist},
+            text=note)
+        return resp
+
+    def get_filebox_submit(self):
+        resp = self.call(
+            'c_file', 'filebox_get_submit_data',
+            task_id=self[0],
+            os=_OS)
+        return resp
+
+    def link(self, id_list):
+        resp = self.call(
+            "c_link", "set_link_id",
+            id_array=self, link_id_array=id_list)
+        return resp
+
+    def unlink(self, id_list):
+        for id_ in self:
+            self.call(
+                "c_link", "remove_link_id",
+                id=id_, link_id_array=id_list)
+
+    def get_linked(self):
+        ret = set()
+        for id_ in self:
+            resp = self.call("c_link", "get_link_id", id=id_)
+            ret.add(resp)
+        return ret
 
 
 class Module(object):
@@ -214,8 +370,7 @@ class Module(object):
         if name:
             self.name = name
         self.database = database
-        self.call = partial(server.call,
-                            db=self.database.name,
+        self.call = partial(self.database.call,
                             module=self.name)
 
     def __getitem__(self, name):
@@ -298,6 +453,30 @@ class Module(object):
             content=content,
             from_account_id=from_
         )
+
+    def pipeline(self):
+        """All pipeline in this module.
+
+        Returns:
+            tuple[Pipeline]: namedtuple for ('id', 'name', 'module').
+        """
+
+        return self.database.get_pipline(Filter('module', self.name))
+
+    def get_history(self, filters):
+        fields = ['#task_id', '#account_id', 'file',
+                  'step', 'text', 'module', 'time']
+        resp = self.call(
+            "c_pipeline", "get_with_filter",
+            field_array=fields,
+            filter_array=filters)
+        return resp
+
+    def count_history(self, filters):
+        resp = self.call(
+            "c_pipeline", "count_with_filter",
+            filter_array=filters)
+        return resp
 
 
 class PublicModule(Module):

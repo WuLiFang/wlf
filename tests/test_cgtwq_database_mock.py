@@ -164,7 +164,16 @@ class SelectionTestCase(TestCase):
         call_method = self.call_method
 
         call_method.return_value = cgtwq.server.Response(
-            data={'title': 'orange'}, code=1, type='json'
+            data={'title': 'orange',
+                  "path": "E:/test", "classify": "测试", "title": "测试box",
+                  "sign": "test_fb", "color": "#005500",
+                  "rule": [], "rule_view": [], "is_submit": "N",
+                  "is_move_old_to_history": "",
+                  "is_move_same_to_history": "Y",
+                  "is_in_history_add_version": "Y",
+                  "is_in_history_add_datetime": "",
+                  "is_cover_disable": "",
+                  "is_msg_to_first_qc": ""}, code=1, type='json'
         )
         select.get_filebox('test_fb')
         call_method.assert_called_once_with(

@@ -9,7 +9,8 @@ class Filter(list):
     """CGteamwork style filter.  """
 
     def __init__(self, key, value):
-        super(Filter, self).__init__([key, '=', value])
+        super(Filter, self).__init__(
+            [key, 'in' if isinstance(value, list) else '=', value])
 
     def __and__(self, other):
         return FilterList(self) & FilterList(other)
