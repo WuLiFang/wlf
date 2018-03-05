@@ -6,8 +6,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 import json
 import os
 
-from .base import CGTeamWork
 from wlf.decorators import deprecated
+
+from .base import CGTeamWork
 
 
 @deprecated('Public')
@@ -61,6 +62,7 @@ class _Project(_Public):
                 return i
 
 
+@deprecated
 def proj_info(shot_name=None, database=None):
     """Return current project info by @shot_name or by @database.  """
 
