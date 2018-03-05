@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
 from os import SEEK_END
 from os.path import join
 from tempfile import TemporaryFile, gettempdir
@@ -26,7 +27,6 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
 APP.config['version'] = __version__
 APP.config['preview_limit_size'] = 10 * 2 ** 20  # 10MB
 STATUS = {}
-SHOTS_CACHE = {}
 PROGRESS_EVENT_LISTENER = []
 CACHE = FanoutCache(join(gettempdir(), 'csheet_server/cache'))
 
@@ -156,14 +156,47 @@ def response_image(uuid, role):
         return make_response('Image not ready.', 503, {'Retry-After': 10})
 
 
-def get_images(shots):
+def get_images(database, pipeline, prefix):
     """Get all images relate @shots.  """
 
-    assert isinstance(shots, cgtwq.Shots)
-    images = shots.shots
-    images = [get_html_image(shots.database, shots.pipeline, shots.prefix, i)
-              for i in images]
-    return images
+    related_pipeline = {'灯光':  '渲染'}.get(pipeline)
+    database = cgtwq.Database(database)
+    module = database['shot_task']
+    select = module.filter(cgtwq.Filter('pipeline', pipeline))
+    field_data = select.get_fields('id', 'shot.shot', 'image')
+    ret = []
+
+    fileboxes = database.get_filebox(
+        cgtwq.Filter(
+            '#pipeline_id',
+            database.get_pipline(cgtwq.Filter('name', pipeline))[0].id) &
+        cgtwq.Filter('title', ['单帧图', '检查单帧图']))
+    if related_pipeline:
+        related_shots = module.filter(
+            cgtwq.Filter('pipeline', related_pipeline))
+        previews = {i[0]: i[1]
+                    for i in related_shots.get_fields('shot.shot', 'submit_file_path')}
+    for i in field_data:
+        id_, shot, image_data = i
+        if shot and shot.startswith(prefix):
+            _select = module.select(id_)
+
+            try:
+                path = json.loads(image_data)['image_path']
+            except (TypeError, KeyError):
+                path = '{}/{}.jpg'.format(
+                    _select.get_filebox(id_=fileboxes[0].id).path, shot)
+
+            img = HTMLImage(path)
+            if related_pipeline:
+                try:
+                    data = previews.get(shot)
+                    if data:
+                        img.source['preview'] = json.loads(data)['path']
+                except (TypeError, IndexError):
+                    pass
+            ret.append(img)
+    return ret
 
 
 def get_csheet_config(project, pipeline, prefix):
@@ -176,7 +209,7 @@ def get_csheet_config(project, pipeline, prefix):
         'database': database,
         'pipeline': pipeline,
         'prefix': prefix,
-        'images': get_images(get_shots(database, pipeline=pipeline, prefix=prefix)),
+        'images': get_images(database, pipeline=pipeline, prefix=prefix),
         'title': '{}色板'.format('_'.join(
             i for i in
             (project, prefix.strip(get_project_code(project)).strip('_'), pipeline) if i)),
@@ -276,39 +309,6 @@ def packed_page(**config):
     })
     pack_progress(-1)
     return resp
-
-
-def get_shots(database, pipeline, prefix):
-    """Get shots, try from cache.  """
-
-    key = (database, pipeline, prefix)
-    if not SHOTS_CACHE.has_key(key):
-        SHOTS_CACHE[key] = cgtwq.Shots(
-            database, prefix=prefix, pipeline=pipeline)
-    return SHOTS_CACHE[key]
-
-
-# @CACHE.memoize(tag='htmlimage', expire=3600)
-def get_html_image(database, pipeline, prefix, name):
-    """Get HTMLImage object.  """
-
-    related_pipeline = {'灯光':  '渲染'}
-
-    shots = get_shots(database, pipeline=pipeline, prefix=prefix)
-    if pipeline in related_pipeline:
-        _pipeline = related_pipeline[pipeline]
-        video_shots = get_shots(database, pipeline=_pipeline, prefix=prefix)
-    else:
-        video_shots = None
-
-    path = shots.get_shot_image(name)
-    if path is None:
-        raise ValueError
-    image = HTMLImage(path)
-    preview_source = (video_shots or shots).get_shot_submit_path(name)
-    if preview_source:
-        image.source['preview'] = preview_source
-    return image
 
 
 @APP.route('/project_code/<project>')
