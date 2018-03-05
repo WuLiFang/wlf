@@ -11,10 +11,12 @@ from ..path import Path, PurePath
 from .base import CGTeamWork
 from .exceptions import AccountError, IDError, PrefixError, SignError
 from .public import proj_info
+from wlf.decorators import deprecated
 
 LOGGER = logging.getLogger('com.wlf.cgtwq.shottask')
 
 
+@deprecated
 class ShotTask(CGTeamWork):
     """Shot task base class.  """
 
@@ -28,6 +30,7 @@ class ShotTask(CGTeamWork):
              'submit_path': 'shot_task.submit_file_path'}
 
 
+@deprecated
 class Shots(ShotTask):
     """Deal multple shot at once.  """
     _epsodes = []
@@ -174,6 +177,7 @@ class Shots(ShotTask):
                                current=self.current_account())
 
 
+@deprecated
 class Shot(ShotTask):
     """Methods for single shot action."""
 
@@ -200,7 +204,7 @@ class Shot(ShotTask):
                     if self.task_module.get(['shot_task.artist'])[0]['shot_task.artist']:
                         id_list = [i]
                         break
-                except (TypeError,KeyError):
+                except (TypeError, KeyError):
                     continue
         self._id = id_list[0]['id']
 

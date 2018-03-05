@@ -11,6 +11,7 @@ from functools import wraps
 from subprocess import PIPE, Popen
 
 import cgtw
+from wlf.decorators import deprecated
 
 from ..path import get_unicode
 from .client import CGTeamWorkClient
@@ -22,6 +23,7 @@ Filebox = namedtuple('Filebox', ['id', 'title'])
 Pipeline = namedtuple('Pipeline', ['id', 'name'])
 
 
+@deprecated
 class CGTeamWork(object):
     """Base class for cgtw action."""
 
