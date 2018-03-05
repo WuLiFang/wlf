@@ -275,7 +275,7 @@ video {
         }
     }
     &.updating-thumb {
-        border: 1px solid white;
+        border: 1px solid gray;
     }
     &.updating-full {
         video.full {
@@ -283,11 +283,12 @@ video {
         }
     }
     &.failed-thumb {
-        border: 1px solid red;
+        border: 1px solid darkred;
+        opacity: 0.5;
     }
     &.failed-full {
         video.full {
-            border: 1px solid red;
+            border: 1px solid darkred;
         }
     }
     &:target {

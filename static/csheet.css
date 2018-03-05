@@ -215,13 +215,14 @@ video {
     .lightbox.shrink .caption {
       visibility: hidden; }
   .lightbox.updating-thumb {
-    border: 1px solid white; }
+    border: 1px solid gray; }
   .lightbox.updating-full video.full {
     border: 1px solid white; }
   .lightbox.failed-thumb {
-    border: 1px solid red; }
+    border: 1px solid darkred;
+    opacity: 0.5; }
   .lightbox.failed-full video.full {
-    border: 1px solid red; }
+    border: 1px solid darkred; }
   .lightbox:target .viewer {
     visibility: visible;
     transform: none; }
