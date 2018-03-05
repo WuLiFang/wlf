@@ -156,7 +156,7 @@ class SelectionTestCase(TestCase):
             'get_replace_path_in_sign',
             db='dummy_db', id_array=['1', '2'],
             module='shot_task', os=cgtwq.database._OS,
-            sign_array=['test'],
+            sign_array=('test',),
             task_id_array=['1', '2'])
 
     def test_get_filebox(self):

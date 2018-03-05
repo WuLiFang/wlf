@@ -92,6 +92,15 @@ class SelectionTestCase(TestCase):
                           select.get_filebox,
                           unicode(uuid.uuid4()))
 
+    def test_get_fields(self):
+        result = self.select.get_fields('id', 'shot.shot')
+        for i in result:
+            self.assertEqual(len(i), 2)
+
+    def test_get_image(self):
+        result = self.select.get_fields('image')
+        print(result)
+
 
 class ProjectTestCase(TestCase):
     def test_names(self):

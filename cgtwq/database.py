@@ -7,6 +7,7 @@ import logging
 import uuid
 from collections import namedtuple
 from functools import partial
+import json
 
 from . import server
 from .filter import Filter, FilterList
@@ -40,10 +41,10 @@ class Database(object):
     def __getitem__(self, name):
         return Module(name=name, database=self)
 
-    def get_filebox(self, id_=None, filters=None):
+    def get_filebox(self,  filters=None, id_=None):
         """Get filebox in this database.
-            id_ (unicode, optional): Defaults to None. Filebox id.
             filters (FilterList, optional): Defaults to None. Filters to get filebox.
+            id_ (unicode, optional): Defaults to None. Filebox id.
 
         Raises:
             ValueError: Not enough arguments.
@@ -136,16 +137,17 @@ class Database(object):
 class FieldsData(list):
     """List for field data.  """
 
-    def __init__(self, data, module):
-        if not all(isinstance(i, dict)for i in data):
-            if all(isinstance(i, list) and len(i) == 1 for i in data):
-                # Unpack data.
-                data = [i[0] for i in data]
-            else:
-                raise TypeError('Got unknown data format.', data)
-        super(FieldsData, self).__init__(data)
+    def __init__(self, fields, data, module):
         assert isinstance(module, Module)
         self.module = module
+        self.fields = fields
+        if all(isinstance(i, dict)for i in data):
+            data = [[i[j] for j in fields] for i in data]
+        elif all(isinstance(i, list) and len(i) == len(fields) for i in data):
+            pass
+        else:
+            raise TypeError('Got unknown data format.', data)
+        super(FieldsData, self).__init__(data)
 
     def field(self, field):
         """Get data for single field.
@@ -158,9 +160,8 @@ class FieldsData(list):
         """
 
         field = self.module.field(field)
-        return tuple(sorted(set(
-            i[field] if isinstance(i, dict) else i
-            for i in self)))
+        index = self.fields.index(field)
+        return tuple(sorted(set(i[index] for i in self)))
 
 
 ImageInfo = namedtuple('ImageInfo', ['max', 'min'])
@@ -192,7 +193,7 @@ class Selection(list):
         assert isinstance(name, (unicode, str))
         self.set_fields(**{name: value})
 
-    def get_fields(self, fields):
+    def get_fields(self, *fields):
         """Get field information for the selection.
 
         Args:
@@ -202,14 +203,11 @@ class Selection(list):
             FieldData: Optimized list object contains field data.
         """
 
-        if not isinstance(fields, list):
-            fields = [fields]
-
         server_fields = [self.module.field(i) for i in fields]
         resp = self.call("c_orm", "get_in_id",
                          sign_array=server_fields,
                          order_sign_array=server_fields)
-        return FieldsData(resp.data, self.module)
+        return FieldsData(server_fields, resp.data, self.module)
 
     def set_fields(self, **data):
         """Set field data for the selection.
@@ -231,7 +229,7 @@ class Selection(list):
 
         self.call("c_orm", "del_in_id")
 
-    def get_path(self, sign_list):
+    def get_path(self, *sign_list):
         """Get signed folder path.
 
         Args:
@@ -245,8 +243,7 @@ class Selection(list):
 
         if not self:
             raise ValueError('Empty selection.')
-        if not isinstance(sign_list, list):
-            sign_list = [sign_list]
+
         resp = self.call("c_folder", "get_replace_path_in_sign",
                          sign_array=sign_list,
                          task_id_array=self,
@@ -275,8 +272,6 @@ class Selection(list):
             raise ValueError('Empty selection.')
 
         if id_:
-            raise NotImplementedError('TODO')
-            # pylint: disable=unreachable
             resp = self.call("c_file", "filebox_get_one_with_id",
                              task_id=self[0],
                              filebox_id=id_,
@@ -305,7 +300,15 @@ class Selection(list):
         self.set_fields(**{field: {'max': pathname, 'min': pathname}})
 
     def get_image(self, field):
-        return tuple(ImageInfo(**i) for i in self[field])
+        ret = set()
+        for i in self[field]:
+            try:
+                if ret:
+                    data = json.loads(i)
+                    ret.add(ImageInfo(max=data['max'], min=data['min']))
+            except (TypeError, KeyError):
+                continue
+        return tuple(sorted(ret))
 
     def get_note(self, fields):
         if not self:
