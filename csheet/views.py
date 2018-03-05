@@ -25,8 +25,6 @@ APP.secret_key = ('}w\xb7\xa3]\xfaI\x94Z\x14\xa9\xa5}\x16\xb3'
                   '\xf7\xd6\xb2R\xb0\xf5\xc6*.\xb3I\xb7\x066V\xd6\x8d')
 APP.config['version'] = __version__
 APP.config['preview_limit_size'] = 10 * 2 ** 20  # 10MB
-if cgtwq.MODULE_ENABLE:
-    PROJECT = cgtwq.Project()
 STATUS = {}
 SHOTS_CACHE = {}
 PROGRESS_EVENT_LISTENER = []
@@ -52,7 +50,7 @@ def render_main():
 
     args = request.args
     if not args:
-        return render_template('index.html', projects=PROJECT.names())
+        return render_template('index.html', projects=cgtwq.PROJECT.names())
 
     try:
         project = args['project']
@@ -171,7 +169,8 @@ def get_images(shots):
 def get_csheet_config(project, pipeline, prefix):
     """Provide infos a csheet needed.  """
 
-    database = PROJECT.get_info(project, 'database')
+    database = cgtwq.PROJECT.filter(
+        cgtwq.Filter('full_name', project))['database'][0]
     config = {
         'project': project,
         'database': database,
@@ -316,4 +315,7 @@ def get_html_image(database, pipeline, prefix, name):
 def get_project_code(project):
     """Get proejct code for @project.  """
 
-    return PROJECT.get_info(project, 'code')
+    try:
+        return cgtwq.PROJECT.filter(cgtwq.Filter('full_name', project))['code'][0]
+    except IndexError:
+        u_abort(404, 'No such project.')
