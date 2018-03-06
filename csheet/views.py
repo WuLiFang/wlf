@@ -172,11 +172,14 @@ def get_images(database, pipeline, prefix):
             '#pipeline_id',
             database.get_pipline(cgtwq.Filter('name', pipeline))[0].id) &
         cgtwq.Filter('title', ['单帧图', '检查单帧图']))
+
+    related_shots = None
     if related_pipeline:
         related_shots = module.filter(
             cgtwq.Filter('pipeline', related_pipeline))
-        previews = {i[0]: i[1]
-                    for i in related_shots.get_fields('shot.shot', 'submit_file_path')}
+    previews = {i[0]: i[1]
+                for i in (related_shots or select).get_fields('shot.shot', 'submit_file_path')}
+
     for i in field_data:
         id_, shot, image_data = i
         if shot and shot.startswith(prefix):
@@ -189,13 +192,12 @@ def get_images(database, pipeline, prefix):
                     _select.get_filebox(id_=fileboxes[0].id).path, shot)
 
             img = HTMLImage(path)
-            if related_pipeline:
-                try:
-                    data = previews.get(shot)
-                    if data:
-                        img.source['preview'] = json.loads(data)['path']
-                except (TypeError, IndexError):
-                    pass
+            try:
+                data = previews.get(shot)
+                if data:
+                    img.source['preview'] = json.loads(data)['path'][0]
+            except (TypeError, IndexError):
+                pass
             ret.append(img)
     return ret
 
