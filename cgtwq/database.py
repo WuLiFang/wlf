@@ -406,7 +406,10 @@ class Module(object):
         resp = self.call('c_orm', 'get_with_filter',
                          sign_array=[self.field('id')],
                          sign_filter_array=_filters)
-        id_list = [i[0] for i in resp.data]
+        if resp.data:
+            id_list = [i[0] for i in resp.data]
+        else:
+            id_list = []
         return Selection(id_list, self)
 
     def field(self, name):
