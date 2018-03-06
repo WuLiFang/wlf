@@ -381,18 +381,16 @@ class Module(object):
             return self.filter(name)
         return self.select(name)
 
-    def select(self, id_list):
+    def select(self, *id_list):
         """Create selection on this module.
 
         Args:
-            id_list (list, unicode): Id list to select.
+            *id_list (unicode): Id list to select.
 
         Returns:
             Selection: Created selection.
         """
 
-        if not isinstance(id_list, list):
-            id_list = [id_list]
         return Selection(id_list, self)
 
     def filter(self, filters):
