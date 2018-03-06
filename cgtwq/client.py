@@ -29,6 +29,7 @@ PluginData = namedtuple(
      'id_list',
      'folder',
      'file_path_list',
+     'argv',
      )
 )
 LOGGER = logging.getLogger('wlf.cgtwq.client')

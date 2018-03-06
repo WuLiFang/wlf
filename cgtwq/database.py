@@ -177,7 +177,6 @@ class Selection(list):
             module (Module): Related module.
         """
 
-        assert isinstance(id_list, list), type(id_list)
         assert all(isinstance(i, unicode) for i in id_list), id_list
         assert isinstance(module, Module)
         super(Selection, self).__init__(id_list)
@@ -340,13 +339,13 @@ class Selection(list):
             os=_OS)
         return resp
 
-    def link(self, id_list):
+    def link(self, *id_list):
         resp = self.call(
             "c_link", "set_link_id",
             id_array=self, link_id_array=id_list)
         return resp
 
-    def unlink(self, id_list):
+    def unlink(self, *id_list):
         for id_ in self:
             self.call(
                 "c_link", "remove_link_id",
@@ -421,7 +420,8 @@ class Module(object):
         """
 
         assert isinstance(name, (str, unicode))
-        if '.' in name:
+        if ('.' in name
+            or '#' in name):
             return name
         return '{}.{}'.format(self.name, name)
 
