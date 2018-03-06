@@ -165,6 +165,7 @@ def get_images(database, pipeline, prefix):
     select = module.filter(cgtwq.Filter('pipeline', pipeline))
     field_data = select.get_fields('id', 'shot.shot', 'image')
     ret = []
+    field_data.sort(key=lambda x: x[1])
 
     fileboxes = database.get_filebox(
         cgtwq.Filter(
