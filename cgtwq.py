@@ -278,8 +278,32 @@ class Shots(ShotTask):
         shots_info = self.task_module.get(self.signs.values())
         if shots_info is False:
             raise IDError(self.database, filters)
-        self._infos = dict((i['shot.shot'], i) for i in shots_info
-                           if i['shot.shot'])
+
+        def _test_artist_id(item):
+            id_ = item['id']
+            try:
+                self.task_module.init_with_id(id_)
+                account_id = self.task_module.get(['shot_task.account_id'])[
+                    0]['shot_task.account_id']
+                if not account_id:
+                    return 2
+                if account_id == self.current_account_id():
+                    return 0
+                return 1
+            except CGTeamWorkException:
+                return 3
+        shots_info = [i for i in shots_info if i['shot.shot']]
+
+        def _first(iterable):
+            iterable = list(iterable)
+            if len(iterable) <= 1:
+                return iterable[0]
+            return sorted(iterable, key=_test_artist_id)[0]
+        infos = {i['shot.shot']:
+                 _first(
+                     j for j in shots_info if j['shot.shot'] == i['shot.shot'])
+                 for i in shots_info}
+        self._infos = infos
         self._shots = sorted(
             i for i in self._infos if not prefix or i.startswith(prefix))
         if not self._shots:

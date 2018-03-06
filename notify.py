@@ -19,7 +19,7 @@ LOGGER = logging.getLogger('com.wlf.notify')
 if HAS_NUKE:
     import nuke
 
-if HAS_GUI:
+try:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
 
@@ -77,7 +77,7 @@ if HAS_GUI:
             dummy = self
             event.ignore()
 
-else:
+except ImportError:
     def do_nothing(*args, **kwargs):
         pass
 
