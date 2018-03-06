@@ -70,6 +70,18 @@ $(document).ready(
                     },
                 })
             );
+            // Controls.
+            $('#control').removeClass('hidden');
+            let captions = $('.lightbox a.zoom .caption');
+            $('#caption-switch').change(
+                function() {
+                    if (this.checked) {
+                        captions.css({transform: 'none'});
+                    } else {
+                        captions.css({transform: ''});
+                    }
+                }
+            );
             // Auto refresh button.
             let refreshInterval;
             let buttons = $('.refresh-module')
