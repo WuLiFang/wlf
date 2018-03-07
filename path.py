@@ -38,6 +38,7 @@ def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
                 return unicode(input_str, i)
             except UnicodeDecodeError:
                 continue
+    raise UnicodeDecodeError(input_str)
 
 
 def get_encoded(input_str, encoding=None):
@@ -451,6 +452,7 @@ def _split_version(f):
     path = PurePath(f)
     return path.shot, path.version
 
+
 @deprecated('remove_version')
 def _remove_version(path):
     return get_unicode(PurePath(path).as_no_version())
@@ -480,6 +482,3 @@ def _get_layer(filename, layers=None):
 @deprecated('get_footage_name')
 def _get_footage_name(path):
     return PurePath(path).footage_name
-
-
-
