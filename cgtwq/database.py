@@ -272,6 +272,15 @@ class Project(PublicModule):
 
     name = 'project'
 
+    def all(self):
+        """All active project.
+
+        Returns:
+            Selection: Projects.
+        """
+
+        return self.filter(Filter('status', 'Active'))
+
     def names(self):
         """All actived project names.
 
@@ -279,7 +288,7 @@ class Project(PublicModule):
             tuple
         """
 
-        return self.filter(Filter('status', 'Active'))['full_name']
+        return self.all()['full_name']
 
 
 PROJECT = Project()
@@ -290,6 +299,15 @@ class Account(PublicModule):
 
     name = 'account'
 
+    def all(self):
+        """All active user  .
+
+        Returns:
+            Selection: Users.
+        """
+
+        return self.filter(Filter('status', 'Y'))
+
     def names(self):
         """All user names.
 
@@ -297,7 +315,7 @@ class Account(PublicModule):
             tuple
         """
 
-        return self[Filter('status', 'Y')]['name']
+        return self.all()['name']
 
 
 ACCOUNT = Account()
