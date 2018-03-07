@@ -1,6 +1,6 @@
 # -*- coding=UTF-8 -*-
 """Run as web app.  """
-
+# TODO: Add image info display.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
@@ -167,10 +167,10 @@ def get_images(database, pipeline, prefix):
     ret = []
     field_data.sort(key=lambda x: x[1])
 
-    fileboxes = database.get_filebox(
+    fileboxes = database.get_fileboxes(
         cgtwq.Filter(
             '#pipeline_id',
-            database.get_pipline(cgtwq.Filter('name', pipeline))[0].id) &
+            database.get_piplines(cgtwq.Filter('name', pipeline))[0].id) &
         cgtwq.Filter('title', ['单帧图', '检查单帧图']))
 
     related_shots = None
