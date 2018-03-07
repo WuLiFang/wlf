@@ -28,6 +28,7 @@ FileBoxInfo = namedtuple(
      'is_msg_to_first_qc')
 )
 Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
+ImageInfo = namedtuple('ImageInfo', ['max', 'min'])
 
 
 class Database(object):
@@ -134,37 +135,170 @@ class Database(object):
         return resp.data
 
 
-class FieldsData(list):
-    """List for field data.  """
+class Module(object):
+    """Module(Database table) in database.    """
 
-    def __init__(self, fields, data, module):
-        assert isinstance(module, Module)
-        self.module = module
-        self.fields = fields
-        if all(isinstance(i, dict)for i in data):
-            data = [[i[j] for j in fields] for i in data]
-        elif all(isinstance(i, list) and len(i) == len(fields) for i in data):
-            pass
-        else:
-            raise TypeError('Got unknown data format.', data)
-        super(FieldsData, self).__init__(data)
-
-    def field(self, field):
-        """Get data for single field.
-
+    def __init__(self, name, database):
+        """
         Args:
-            field (unicode): Field name.
-
-        Returns:
-            tuple: Add data matches this field.
+            name (unicode): Server defined module name.
+            database (Database): Parent database.
         """
 
-        field = self.module.field(field)
-        index = self.fields.index(field)
-        return tuple(sorted(set(i[index] for i in self)))
+        if name:
+            self.name = name
+        self.database = database
+        self.call = partial(self.database.call,
+                            module=self.name)
+
+    def __getitem__(self, name):
+        if isinstance(name, (Filter, FilterList)):
+            return self.filter(name)
+        return self.select(name)
+
+    def select(self, *id_list):
+        """Create selection on this module.
+
+        Args:
+            *id_list (unicode): Id list to select.
+
+        Returns:
+            Selection: Created selection.
+        """
+
+        return Selection(id_list, self)
+
+    def filter(self, filters):
+        """Create selection with filter on this module.
+
+        Args:
+            filters (FilterList, Filter): Filters for server.
+
+        Returns:
+            Selection: Created selection.
+        """
+
+        _filters = self.format_filters(filters)
+        resp = self.call('c_orm', 'get_with_filter',
+                         sign_array=[self.field('id')],
+                         sign_filter_array=_filters)
+        if resp.data:
+            id_list = [i[0] for i in resp.data]
+        else:
+            id_list = []
+        return Selection(id_list, self)
+
+    def field(self, name):
+        """Formatted field name for this module.
+
+        Args:
+            name (unicode): Short field name.
+
+        Returns:
+            unicode: Full field name, for server.
+        """
+
+        assert isinstance(name, (str, unicode))
+        if ('.' in name
+                or '#' in name):
+            return name
+        return '{}.{}'.format(self.name, name)
+
+    def format_filters(self, filters):
+        """Format field name in filters.
+
+        Args:
+            filters (FilterList, Filter): Format target.
+
+        Returns:
+            FilterList: Formatted filters.
+        """
+        assert isinstance(filters, (Filter, FilterList)), type(filters)
+        ret = FilterList(filters)
+        for i in ret:
+            if isinstance(i, Filter):
+                i[0] = self.field(i[0])
+        return ret
+
+    def send_message(self, to, title, content, task_id, from_=None):
+        """Send message to users.  """
+        # pylint: disable=invalid-name
+
+        from_ = server.account() if from_ is None else from_
+        return self.call(
+            'c_msg', 'send_task',
+            task_id=task_id,
+            account_id_array=to,
+            title=title,
+            content=content,
+            from_account_id=from_
+        )
+
+    def pipelines(self):
+        """All pipeline in this module.
+
+        Returns:
+            tuple[Pipeline]: namedtuple for ('id', 'name', 'module').
+        """
+
+        return self.database.get_pipline(Filter('module', self.name))
+
+    def get_history(self, filters):
+        fields = ['#task_id', '#account_id', 'file',
+                  'step', 'text', 'module', 'time']
+        resp = self.call(
+            "c_pipeline", "get_with_filter",
+            field_array=fields,
+            filter_array=filters)
+        return resp
+
+    def count_history(self, filters):
+        resp = self.call(
+            "c_pipeline", "count_with_filter",
+            filter_array=filters)
+        return resp
 
 
-ImageInfo = namedtuple('ImageInfo', ['max', 'min'])
+class PublicModule(Module):
+    """Module in special `public` database.    """
+
+    def __init__(self):
+        database = Database('public')
+        super(PublicModule, self).__init__(self.name, database)
+
+
+class Project(PublicModule):
+    """Module to keep project information.   """
+
+    name = 'project'
+
+    def names(self):
+        """All actived project names.
+
+        Returns:
+            tuple
+        """
+
+        return self.filter(Filter('status', 'Active'))['full_name']
+
+PROJECT = Project()
+
+class Account(PublicModule):
+    """Module to keep account information.   """
+
+    name = 'account'
+
+    def names(self):
+        """All user names.
+
+        Returns:
+            tuple
+        """
+
+        return self[Filter('status', 'Y')]['name']
+
+
+ACCOUNT = Account()
 
 
 class Selection(list):
@@ -368,170 +502,34 @@ class Selection(list):
         return ret
 
 
-class Module(object):
-    """Module(Database table) in database.    """
+class FieldsData(list):
+    """List for field data.  """
 
-    def __init__(self, name, database):
-        """
-        Args:
-            name (unicode): Server defined module name.
-            database (Database): Parent database.
-        """
-
-        if name:
-            self.name = name
-        self.database = database
-        self.call = partial(self.database.call,
-                            module=self.name)
-
-    def __getitem__(self, name):
-        if isinstance(name, (Filter, FilterList)):
-            return self.filter(name)
-        return self.select(name)
-
-    def select(self, *id_list):
-        """Create selection on this module.
-
-        Args:
-            *id_list (unicode): Id list to select.
-
-        Returns:
-            Selection: Created selection.
-        """
-
-        return Selection(id_list, self)
-
-    def filter(self, filters):
-        """Create selection with filter on this module.
-
-        Args:
-            filters (FilterList, Filter): Filters for server.
-
-        Returns:
-            Selection: Created selection.
-        """
-
-        _filters = self.format_filters(filters)
-        resp = self.call('c_orm', 'get_with_filter',
-                         sign_array=[self.field('id')],
-                         sign_filter_array=_filters)
-        if resp.data:
-            id_list = [i[0] for i in resp.data]
+    def __init__(self, fields, data, module):
+        assert isinstance(module, Module)
+        self.module = module
+        self.fields = fields
+        if all(isinstance(i, dict)for i in data):
+            data = [[i[j] for j in fields] for i in data]
+        elif all(isinstance(i, list) and len(i) == len(fields) for i in data):
+            pass
         else:
-            id_list = []
-        return Selection(id_list, self)
+            raise TypeError('Got unknown data format.', data)
+        super(FieldsData, self).__init__(data)
 
-    def field(self, name):
-        """Formatted field name for this module.
-
-        Args:
-            name (unicode): Short field name.
-
-        Returns:
-            unicode: Full field name, for server.
-        """
-
-        assert isinstance(name, (str, unicode))
-        if ('.' in name
-                or '#' in name):
-            return name
-        return '{}.{}'.format(self.name, name)
-
-    def format_filters(self, filters):
-        """Format field name in filters.
+    def field(self, field):
+        """Get data for single field.
 
         Args:
-            filters (FilterList, Filter): Format target.
+            field (unicode): Field name.
 
         Returns:
-            FilterList: Formatted filters.
-        """
-        assert isinstance(filters, (Filter, FilterList)), type(filters)
-        ret = FilterList(filters)
-        for i in ret:
-            if isinstance(i, Filter):
-                i[0] = self.field(i[0])
-        return ret
-
-    def send_message(self, to, title, content, task_id, from_=None):
-        """Send message to users.  """
-        # pylint: disable=invalid-name
-
-        from_ = server.account() if from_ is None else from_
-        return self.call(
-            'c_msg', 'send_task',
-            task_id=task_id,
-            account_id_array=to,
-            title=title,
-            content=content,
-            from_account_id=from_
-        )
-
-    def pipelines(self):
-        """All pipeline in this module.
-
-        Returns:
-            tuple[Pipeline]: namedtuple for ('id', 'name', 'module').
+            tuple: Add data matches this field.
         """
 
-        return self.database.get_pipline(Filter('module', self.name))
-
-    def get_history(self, filters):
-        fields = ['#task_id', '#account_id', 'file',
-                  'step', 'text', 'module', 'time']
-        resp = self.call(
-            "c_pipeline", "get_with_filter",
-            field_array=fields,
-            filter_array=filters)
-        return resp
-
-    def count_history(self, filters):
-        resp = self.call(
-            "c_pipeline", "count_with_filter",
-            filter_array=filters)
-        return resp
-
-
-class PublicModule(Module):
-    """Module in special `public` database.    """
-
-    def __init__(self):
-        database = Database('public')
-        super(PublicModule, self).__init__(self.name, database)
-
-
-class Project(PublicModule):
-    """Module to keep project information.   """
-
-    name = 'project'
-
-    def names(self):
-        """All actived project names.
-
-        Returns:
-            tuple
-        """
-
-        return self.filter(Filter('status', 'Active'))['full_name']
-
-
-class Account(PublicModule):
-    """Module to keep account information.   """
-
-    name = 'account'
-
-    def names(self):
-        """All user names.
-
-        Returns:
-            tuple
-        """
-
-        return self[Filter('status', 'Y')]['name']
-
-
-ACCOUNT = Account()
-PROJECT = Project()
+        field = self.module.field(field)
+        index = self.fields.index(field)
+        return tuple(sorted(set(i[index] for i in self)))
 
 
 def account_name():
