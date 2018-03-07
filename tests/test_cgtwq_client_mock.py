@@ -205,7 +205,7 @@ class CGTeamWorkClientTestCase(TestCase):
                          cgtwq.client.PluginData(
                              plugin_id=None, filebox_id=None, database=None,
                              module=None, id_list=['1', '2'], folder=None,
-                             file_path_list=None))
+                             file_path_list=None, argv=None))
         conn.send.assert_called_once_with(
             dumps(
                 {

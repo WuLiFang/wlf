@@ -241,7 +241,7 @@ class Module(object):
             tuple[Pipeline]: namedtuple for ('id', 'name', 'module').
         """
 
-        return self.database.get_pipline(Filter('module', self.name))
+        return self.database.get_piplines(Filter('module', self.name))
 
     def get_history(self, filters):
         fields = ['#task_id', '#account_id', 'file',
