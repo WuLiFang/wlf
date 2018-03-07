@@ -20,13 +20,13 @@ class DataBaseTestCase(TestCase):
     def test_get_filebox(self):
         Filter = database.Filter
         # filters.
-        self.database.get_filebox(filters=Filter('title', '检查MOV'))
+        self.database.get_fileboxes(filters=Filter('title', '检查MOV'))
         # id
-        self.database.get_filebox(id_='271')
+        self.database.get_fileboxes(id_='271')
 
     def test_get_pipline(self):
         Filter = database.Filter
-        result = self.database.get_pipline(Filter('name', '合成'))
+        result = self.database.get_piplines(Filter('name', '合成'))
         self.assertIsInstance(result[0], database.Pipeline)
 
     def test_get_software(self):
@@ -52,7 +52,7 @@ class ModuleTestCase(TestCase):
         self.module = database.Database('proj_big')['shot_task']
 
     def test_pipeline(self):
-        result = self.module.pipeline()
+        result = self.module.pipelines()
         for i in result:
             self.assertIsInstance(i, database.Pipeline)
 

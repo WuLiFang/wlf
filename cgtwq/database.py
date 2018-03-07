@@ -41,8 +41,8 @@ class Database(object):
     def __getitem__(self, name):
         return Module(name=name, database=self)
 
-    def get_filebox(self,  filters=None, id_=None):
-        """Get filebox in this database.
+    def get_fileboxes(self, filters=None, id_=None):
+        """Get fileboxes in this database.
             filters (FilterList, optional): Defaults to None. Filters to get filebox.
             id_ (unicode, optional): Defaults to None. Filebox id.
 
@@ -66,15 +66,15 @@ class Database(object):
             ret = resp.data
         else:
             raise ValueError(
-                'Need at least one of (sign, filters) to get filebox.')
+                'Need at least one of (id_, filters) to get filebox.')
 
         if not resp.data:
             raise ValueError('No matched filebox.')
         assert all(isinstance(i, list) for i in ret), resp
         return tuple(FileBox(*i) for i in ret)
 
-    def get_pipline(self, filters):
-        """Get pipline in this database.
+    def get_piplines(self, filters):
+        """Get piplines from database.
 
         Args:
             filters (FilterList): Filter to get pipeline.
@@ -108,7 +108,7 @@ class Database(object):
         Args:
             key (unicode): Data key.
             value (unicode): Data value
-            is_user (bool, optional): Defaults to True. 
+            is_user (bool, optional): Defaults to True.
                 If `is_user` is True, this data will be user specific.
         """
 
@@ -121,7 +121,7 @@ class Database(object):
 
         Args:
             key (unicode): Data key.
-            is_user (bool, optional): Defaults to True. 
+            is_user (bool, optional): Defaults to True.
                 If `is_user` is True, this data will be user specific.
 
         Returns:
@@ -251,7 +251,7 @@ class Selection(list):
         return dict(resp.data)
 
     def get_filebox(self, sign=None, id_=None):
-        """Get filebox with sign or id_.
+        """Get one filebox with sign or id_.
 
         Args:
             sign (unicode): Server defined filebox sign.
@@ -264,7 +264,7 @@ class Selection(list):
             ValueError: When got empty result.
 
         Returns:
-            dict: Filebox information.
+            FileBoxInfo: Filebox information.
         """
 
         if not self:
@@ -433,7 +433,7 @@ class Module(object):
 
         assert isinstance(name, (str, unicode))
         if ('.' in name
-            or '#' in name):
+                or '#' in name):
             return name
         return '{}.{}'.format(self.name, name)
 
@@ -467,7 +467,7 @@ class Module(object):
             from_account_id=from_
         )
 
-    def pipeline(self):
+    def pipelines(self):
         """All pipeline in this module.
 
         Returns:
