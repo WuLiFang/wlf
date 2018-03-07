@@ -263,8 +263,8 @@ class PublicModule(Module):
     """Module in special `public` database.    """
 
     def __init__(self):
-        database = Database('public')
-        super(PublicModule, self).__init__(self.name, database)
+        self.database = Database('public')
+        super(PublicModule, self).__init__(self.name, self.database)
 
 
 class Project(PublicModule):
@@ -281,7 +281,9 @@ class Project(PublicModule):
 
         return self.filter(Filter('status', 'Active'))['full_name']
 
+
 PROJECT = Project()
+
 
 class Account(PublicModule):
     """Module to keep account information.   """
