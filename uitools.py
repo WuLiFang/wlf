@@ -2,15 +2,19 @@
 """For build UI faster.  """
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
 import sys
+from functools import wraps
 
+import pyblish.api
+from pyblish.plugin import discover
 from Qt import QtCompat, QtCore, QtWidgets
 from Qt.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QMenu
 
+from . import mp_logging
 from .config import Config
 from .decorators import deprecated
 from .env import has_gui as _has_gui
-from . import mp_logging
 from .path import Path
 
 
@@ -163,6 +167,40 @@ def main_show_dialog(dialog):
     frame = dialog()
     QtProgressBar.default_parent = frame
     sys.exit(frame.exec_())
+
+
+def translate_pyblish_plugin(plugins):
+    """Translate plugin infos.
+
+    Args:
+        plugins (list): Pyblish plugin list.
+    """
+
+    with (Path(__file__).parent / 'pyblish_translate.json').open(encoding='utf-8') as f:
+        tr_dict = json.load(f)
+
+    def _tr(obj, attr):
+        value = getattr(obj, attr)
+        if value:
+            tr_value = tr_dict.get(value)
+            if tr_value:
+                setattr(obj, attr, tr_value)
+
+    for i in plugins:
+        _tr(i, 'label')
+        _tr(i, '__doc__')
+
+
+def patch_pyblish_discover():
+    """Add translate after discover.   """
+
+    @wraps(discover)
+    def _func(*args, **kwargs):
+        ret = discover(*args, **kwargs)
+        translate_pyblish_plugin(ret)
+        return ret
+
+    pyblish.api.discover = _func
 
 # Deprecated functions.
 
