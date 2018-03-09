@@ -147,6 +147,7 @@ class Module(object):
 
         if name:
             self.name = name
+        assert isinstance(database, Database)
         self.database = database
         self.call = partial(self.database.call,
                             module=self.name)
