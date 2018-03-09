@@ -7,11 +7,13 @@ import logging
 import os
 import re
 
+from wlf.decorators import deprecated
+
 from ..path import Path, PurePath
 from .base import CGTeamWork
-from .exceptions import AccountError, IDError, PrefixError, SignError
+from .exceptions import (AccountError, CGTeamWorkException, IDError,
+                         PrefixError, SignError, LoginError)
 from .public import proj_info
-from wlf.decorators import deprecated
 
 LOGGER = logging.getLogger('com.wlf.cgtwq.shottask')
 
@@ -54,8 +56,32 @@ class Shots(ShotTask):
         shots_info = self.task_module.get(self.signs.values())
         if shots_info is False:
             raise IDError(self.database, filters)
-        self._infos = dict((i['shot.shot'], i) for i in shots_info
-                           if i['shot.shot'])
+
+        def _test_artist_id(item):
+            id_ = item['id']
+            try:
+                self.task_module.init_with_id(id_)
+                account_id = self.task_module.get(['shot_task.account_id'])[
+                    0]['shot_task.account_id']
+                if not account_id:
+                    return 2
+                if account_id == self.current_account_id():
+                    return 0
+                return 1
+            except CGTeamWorkException:
+                return 3
+        shots_info = [i for i in shots_info if i['shot.shot']]
+
+        def _first(iterable):
+            iterable = list(iterable)
+            if len(iterable) <= 1:
+                return iterable[0]
+            return sorted(iterable, key=_test_artist_id)[0]
+        infos = {i['shot.shot']:
+                 _first(
+                     j for j in shots_info if j['shot.shot'] == i['shot.shot'])
+                 for i in shots_info}
+        self._infos = infos
         self._shots = sorted(
             i for i in self._infos if not prefix or i.startswith(prefix))
         if not self._shots:
@@ -95,14 +121,14 @@ class Shots(ShotTask):
                 return
 
         field_sign = self.signs['image']
-        field_info = self._infos[shot][field_sign]
+        filed_info = self._infos[shot][field_sign]
         key = self.image_path_key
 
-        # Try use field info first
-        if field_info:
-            field_info = json.loads(field_info)
-            if key in field_info:
-                return field_info[key]
+        # Try use filed info first
+        if filed_info:
+            filed_info = json.loads(filed_info)
+            if key in filed_info:
+                return filed_info[key]
 
         image = PurePath(shot).with_suffix('.jpg')
 
@@ -116,9 +142,9 @@ class Shots(ShotTask):
         image = unicode(image)
 
         # Record result for accelerate next run.
-        field_info = field_info or {}
-        field_info[key] = image
-        self.task_module.set({field_sign: json.dumps(field_info)})
+        filed_info = filed_info or {}
+        filed_info[key] = image
+        self.task_module.set({field_sign: json.dumps(filed_info)})
 
         return image
 
@@ -196,16 +222,26 @@ class Shot(ShotTask):
         if not id_list:
             raise IDError(self.database, self.module,
                           self.pipeline, self.name)
-        elif len(id_list) > 1:
-            LOGGER.warning('Multiple match %s', id_list)
-            for i in list(id_list):
-                self.task_module.init_with_id(i['id'])
+        elif len(id_list) != 1:
+            if ''.join(i['id'] for i in id_list) == 'please login!!!':
+                raise LoginError
+
+            def _test_artist_id(item):
+                id_ = item['id']
                 try:
-                    if self.task_module.get(['shot_task.artist'])[0]['shot_task.artist']:
-                        id_list = [i]
-                        break
-                except (TypeError, KeyError):
-                    continue
+                    self.task_module.init_with_id(id_)
+                    account_id = self.task_module.get(['shot_task.account_id'])[
+                        0]['shot_task.account_id']
+                    if not account_id:
+                        return 2
+                    if account_id == self.current_account_id():
+                        return 0
+                    return 1
+                except CGTeamWorkException:
+                    return 3
+
+            id_list.sort(key=_test_artist_id)
+            LOGGER.debug(id_list)
         self._id = id_list[0]['id']
 
         self.task_module.init_with_id(self.shot_id)
