@@ -344,9 +344,6 @@ function unloadResource(element, selector) {
         function() {
             this.controls = false;
             this.removeAttribute('src');
-            if (!$(this).is('.small')) {
-                this.removeAttribute('poster');
-            }
             this.load();
         }
     );
@@ -498,12 +495,15 @@ function putUpdateQueue(video, isSkipLoaded) {
             if (!(isSkipLoaded && video.poster) &&
                 !location.hash.startsWith('#image') &&
                 $(video).is(':appeared')) {
-                updatePoster(
-                    video, !isHovering,
+                let onFinish = function() {
+                    lastRefreshTime = new Date().getTime();
+                    workerCount -= 1;
+                    startUpdateWorker();
+                };
+                updatePoster(video, !isHovering, onFinish);
+                $(getLightbox(video)).find('video.full').each(
                     function() {
-                        lastRefreshTime = new Date().getTime();
-                        workerCount -= 1;
-                        startUpdateWorker();
+                        updatePoster(this, false);
                     }
                 );
             } else {
