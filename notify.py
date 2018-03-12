@@ -11,7 +11,7 @@ import time
 from datetime import timedelta
 
 from .decorators import run_in_main_thread
-from .env import has_gui, has_nuke, HAS_QT
+from .env import has_gui, has_nuke
 from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
@@ -102,7 +102,7 @@ class CLIProgressHandler(BaseProgressHandler):
         return '[{}/{}]{}%{}'.format(self.count, self.total, self.count * 100 / self.total, item)
 
 
-if HAS_QT:
+try:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
 
@@ -195,6 +195,8 @@ if HAS_QT:
             super(QtProgressHandler, self).on_finished()
             self.progress_bar.hide()
             self.progress_bar.deleteLater()
+except ImportError:
+    pass
 
 
 class NukeProgressHandler(BaseProgressHandler):
@@ -344,7 +346,7 @@ def traytip(title, text, seconds=3, icon='Information', **kwargs):
 
 # TODO: deprecated api, remove at next major version.
 
-if HAS_QT:
+try:
     from Qt import QtCompat, QtWidgets
     from Qt.QtCore import Signal
 
@@ -402,7 +404,7 @@ if HAS_QT:
             dummy = self
             event.ignore()
 
-else:
+except ImportError:
     def do_nothing(*args, **kwargs):
         pass
 
