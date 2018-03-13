@@ -3,7 +3,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from tempfile import mktemp
-from unittest import TestCase, main, skipUnless
+from unittest import TestCase, main
 import pickle
 
 from wlf.csheet.html import HTMLImage
@@ -44,24 +44,20 @@ class CSheetTestCase(TestCase):
         self.assertIsInstance(image_a, HTMLImage)
         self.assertEqual(image_a, image_b)
 
-# TODO: Remove cgtw require.
 
-
-@skipUnless(CGTeamWorkClient.is_logged_in(), 'CGTeamWork not logged in.')
 class WSGICsheetTestCase(TestCase):
     def setUp(self):
         from wlf.csheet.views import APP
-        import wlf.cgtwq
-        self.dummy_projects = ['test1', '测试项目2', '测试项目 3']
-        for _ in xrange(20):
-            self.dummy_projects.append(mktemp(dir=''))
 
-        wlf.cgtwq.Project.names = lambda *args: self.dummy_projects
         APP.testing = True
         self.app = APP.test_client()
 
-    def tearDown(self):
-        pass
+    def test_main(self):
+        recv = self.app.get('/')
+        if CGTeamWorkClient.is_logged_in():
+            self.assertEqual(recv.status_code, 200)
+        else:
+            self.assertEqual(recv.status_code, 503)
 
 
 if __name__ == '__main__':
