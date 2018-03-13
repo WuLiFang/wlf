@@ -71,7 +71,7 @@
     </header>
     <ul class="images">
         {% for image in images %}
-        <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}">
+        <li class="lightbox" id="image{{ loop.index }}" data-drag="{{ image.get_drag(**config) }}" data-uuid="{{ image.uuid }}">
             <a href="#image{{ loop.index }}" class="zoom" draggable="false">
                 <video class='small hidden' data-poster="{{ image.get('thumb', **config) }}" data-src="{{ image.get('preview', **config) }}"
                     muted loop>

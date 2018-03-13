@@ -330,6 +330,26 @@ function loadResource(element, selector, isRefresh) {
             );
         }
     );
+    if (isClient) {
+        loadImageInfo(element);
+    }
+}
+
+/**
+ * Load image information
+ * @param {element} element in lightbox.
+ */
+function loadImageInfo(element) {
+    let $lightbox = $(getLightbox(element));
+    $.get('images/' + $lightbox.data('uuid') + '.info',
+        function(data) {
+            $lightbox.find('.detail').each(
+                function() {
+                    this.innerHTML = data;
+                }
+            );
+        }
+    );
 }
 
 /**

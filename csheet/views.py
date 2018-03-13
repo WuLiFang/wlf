@@ -192,6 +192,8 @@ def get_images(database, pipeline, prefix):
                     _select.get_filebox(id_=fileboxes[0].id).path, shot)
 
             img = HTMLImage(path)
+            img.cgteamwork_select = cgtwq.database.Selection([
+                id_], module)
             try:
                 data = previews.get(shot)
                 if data:
@@ -200,6 +202,24 @@ def get_images(database, pipeline, prefix):
                 pass
             ret.append(img)
     return ret
+
+
+@APP.route('/images/<uuid>.info')
+def image_info(uuid):
+    """Get image related information.   """
+    try:
+        image = HTMLImage.from_uuid(uuid)
+        assert isinstance(image, HTMLImage)
+    except (KeyError, ValueError):
+        abort(404, 'No image match this uuid.')
+
+    try:
+        select = image.cgteamwork_select
+        assert isinstance(select, cgtwq.database.Selection)
+    except AttributeError:
+        abort(404, 'No related task found.')
+
+    return render_template('image_info.html', data=select.get_fields('artist', 'leader_status')[0])
 
 
 def get_csheet_config(project, pipeline, prefix):
