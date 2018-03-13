@@ -191,6 +191,8 @@ video {
       max-width: 90%;
       /* for animation */
       max-height: 70%; }
+      .lightbox .viewer .full:hover {
+        z-index: 3; }
     .lightbox .viewer .bottom {
       z-index: 3;
       position: absolute;

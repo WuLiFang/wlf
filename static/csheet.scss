@@ -245,6 +245,9 @@ video {
             max-width: 90%;
             /* for animation */
             max-height: 70%;
+            &:hover{
+                z-index: 3
+            }
         }
         .bottom {
             z-index: 3;
