@@ -238,7 +238,7 @@ def image_info(uuid):
             select = getattr(image, attr)
             assert isinstance(select, cgtwq.database.Selection)
             data.append(select.get_fields(
-                'pipeline', 'artist', 'leader_status')[0])
+                'pipeline', 'artist', 'leader_status', 'director_status', 'client_status')[0])
 
     if not data:
         abort(404, 'No related task found.')

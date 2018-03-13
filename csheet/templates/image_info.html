@@ -1,18 +1,25 @@
-{% for i in data %}
 <table>
     <thead>
         <tr>
-            <th rowspan="2">{{ i[0] | e}}</th>
+            <th>流程</th>
+            <th>制作者</th>
+            <th>组长状态</th>
+            <th>导演状态</th>
+            <th>客户状态</th>
         </tr>
     </thead>
     <tbody>
+        {% for i in data %}
         <tr>
-            <td>制作者</td>
+            <td>{{ i[0] | e }}</td>
             <td>{{ i[1] | e }}</td>
+            <td class="status" status="{{ i[2] | e }}">
+            </td>
+            <td class="status" status="{{ i[3] | e }}">
+            </td>
+            <td class="status" status="{{ i[4] | e }}">
+            </td>
         </tr>
-        <tr>
-            <td>组长状态</td>
-            <td>{{ i[2] | e }}</td>
-        </tr>
-        <tbody>
-</table>{% endfor %}
+        {% endfor %}
+    </tbody>
+</table>
