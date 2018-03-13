@@ -150,6 +150,14 @@ video {
     visibility: hidden;
     transition: inherit;
     transform: translate(0, -100%); }
+    .lightbox .viewer .detail {
+      z-index: 3;
+      display: block;
+      position: fixed;
+      left: 0;
+      top: 0;
+      margin: 5px;
+      background: rgba(0, 0, 0, 0.4); }
     .lightbox .viewer .full {
       z-index: 2;
       position: absolute;
@@ -174,7 +182,7 @@ video {
           background: rgba(0, 0, 0, 0.5);
           padding: 0.5em; }
     .lightbox .viewer a.prev, .lightbox .viewer a.next {
-      z-index: 3;
+      z-index: 4;
       position: fixed;
       text-decoration: none;
       font-size: 3em;
