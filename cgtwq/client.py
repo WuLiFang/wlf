@@ -7,9 +7,10 @@ import json
 import logging
 import os
 import socket
+import time
 from collections import namedtuple
-from subprocess import Popen
 from functools import partial
+from subprocess import Popen
 
 from websocket import create_connection
 
@@ -41,6 +42,7 @@ class CGTeamWorkClient(object):
     url = "ws://127.0.0.1:64999"
     qt_url = 'ws://127.0.0.1:64998'
     time_out = 1
+    cache = {}
 
     def __init__(self):
         self.start()
@@ -148,7 +150,21 @@ class CGTeamWorkClient(object):
         )
 
     @classmethod
-    def token(cls):
+    def _cached(cls, key, func, max_age):
+        now = time.time()
+        if (key not in cls.cache
+                or cls.cache[key][1] + max_age < now):
+            cls.cache[key] = (func(), now)
+        return cls.cache[key][0]
+
+    @classmethod
+    def token(cls, max_age=2):
+        """Cached client token.  """
+
+        return cls._cached('token', cls._token, max_age)
+
+    @classmethod
+    def _token(cls):
         """Client token.  """
 
         ret = cls.call_main_widget("get_token")
@@ -158,7 +174,13 @@ class CGTeamWorkClient(object):
         return unicode(ret)
 
     @classmethod
-    def server_ip(cls):
+    def server_ip(cls, max_age=5):
+        """Cached server ip.  """
+
+        return cls._cached('server_ip', cls._server_ip, max_age)
+
+    @classmethod
+    def _server_ip(cls):
         """Server ip current using by client.  """
 
         ret = cls.call_main_widget("get_server_ip")
@@ -173,7 +195,6 @@ class CGTeamWorkClient(object):
         assert isinstance(ret, unicode), type(ret)
         return unicode(ret)
 
-    # TODO
     @classmethod
     def get_plugin_data(cls, uuid=''):
         """Get plugin data for uuid.
