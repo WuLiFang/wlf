@@ -167,7 +167,7 @@ class Module(object):
             Selection: Created selection.
         """
 
-        return Selection(id_list, self)
+        return Selection(self, *id_list)
 
     def filter(self, filters):
         """Create selection with filter on this module.
@@ -187,7 +187,7 @@ class Module(object):
             id_list = [i[0] for i in resp.data]
         else:
             id_list = []
-        return Selection(id_list, self)
+        return Selection(self, *id_list)
 
     def field(self, name):
         """Formatted field name for this module.
@@ -325,11 +325,11 @@ ACCOUNT = Account()
 class Selection(list):
     """Selection on a database module.   """
 
-    def __init__(self, id_list, module):
+    def __init__(self, module, *id_list):
         """
         Args:
-            id_list (list): Selected id.
             module (Module): Related module.
+            *id_list: Selected id.
         """
 
         assert all(isinstance(i, unicode) for i in id_list), id_list
@@ -521,6 +521,56 @@ class Selection(list):
             resp = self.call("c_link", "get_link_id", id=id_)
             ret.add(resp)
         return ret
+
+    def to_task(self):
+        """Convert selection to one task.
+
+        Raises:
+            ValueError: Not exactly one selected item.
+
+        Returns:
+            Task: Task.
+        """
+
+        if len(self) != 1:
+            raise ValueError('Need exactly one selected item.')
+
+        return Task(self.module, self[0])
+
+    def to_tasks(self):
+        """Convert selection to tasks.
+
+        Returns:
+            tuple[Task]: Tasks.
+        """
+
+        return tuple(Task(self.module, i) for i in self)
+
+
+class Task(Selection):
+    """One item select for task.  """
+
+    def __init__(self, module, id_):
+        super(Task, self).__init__(module, id_)
+        assert len(self) == 1, self
+
+    def __getitem__(self, name):
+        if isinstance(name, int):
+            return super(Task, self).__getitem__(name)
+        return self.get_fields(name)[0]
+
+    def get_fields(self, *fields):
+        """Get multiple fields.
+
+        Returns:
+            tuple: Result fields with exactly same order with `fields`.
+        """
+
+        ret = super(Task, self).get_fields(*fields)
+        assert len(ret) == 1, ret
+        ret = ret[0]
+        assert isinstance(ret, list), ret
+        return tuple(ret)
 
 
 class FieldsData(list):

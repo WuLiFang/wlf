@@ -65,13 +65,13 @@ class ModuleTestCase(TestCase):
         assert isinstance(select, MagicMock)
         assert isinstance(filter_, MagicMock)
         module = self.module
-        select.return_value = filter_.return_value = cgtwq.database.Selection([
-        ], module)
+        select.return_value = filter_.return_value = cgtwq.database.Selection(
+            module)
 
-        module['abc']
+        _ = module['abc']
         select.assert_called_once_with('abc')
         filters = cgtwq.Filter('dce', 'fgh')
-        module[filters]
+        _ = module[filters]
         filter_.assert_called_once_with(filters)
 
 
@@ -83,7 +83,8 @@ class SelectionTestCase(TestCase):
 
         self.call_method = patcher.start()
         self.select = cgtwq.database.Selection(
-            ['1', '2'], cgtwq.Database('dummy_db')['shot_task'])
+            cgtwq.Database('dummy_db')['shot_task'],
+            '1', '2')
 
     def test_getter(self):
         select = self.select
@@ -160,6 +161,7 @@ class SelectionTestCase(TestCase):
             task_id_array=['1', '2'])
 
     def test_get_filebox(self):
+        # pylint: disable=protected-access
         select = self.select
         call_method = self.call_method
 
@@ -185,6 +187,53 @@ class SelectionTestCase(TestCase):
             os=cgtwq.database._OS,
             sign='test_fb',
             task_id='1')
+
+    def test_to_task(self):
+        from wlf.cgtwq import Database, database
+        self.assertRaises(ValueError, self.select.to_task)
+        result = Database('test')['m'].select('1').to_task()
+        self.assertIsInstance(result, database.Task)
+
+
+class TaskTestCase(TestCase):
+    def setUp(self):
+        patcher = patch('wlf.cgtwq.server.call',
+                        return_value=cgtwq.server.Response('Testing', 1, 'json'))
+        self.addCleanup(patcher.stop)
+
+        self.call_method = patcher.start()
+        self.task = cgtwq.database.Task(
+            cgtwq.Database('dummy_db')['shot_task'], '1')
+
+    def test_getter(self):
+        task = self.task
+        call_method = self.call_method
+        call_method.return_value = cgtwq.server.Response(
+            [['1', "unity"]],
+            1, 'json')
+
+        # Test `get_fields`.
+        result = task.get_fields('id', 'artist')
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(result, ('1', 'unity'))
+        call_method.assert_called_once_with(
+            'c_orm', 'get_in_id',
+            db='dummy_db', id_array=['1'], module='shot_task',
+            order_sign_array=['shot_task.id', 'shot_task.artist'],
+            sign_array=['shot_task.id', 'shot_task.artist'])
+
+        # Test `__getitem__`.
+        call_method.return_value = cgtwq.server.Response(
+            [["build"]],
+            1, 'json')
+        call_method.reset_mock()
+        result = task['task_name']
+        self.assertEqual(result, 'build')
+        call_method.assert_called_once_with(
+            'c_orm', 'get_in_id',
+            db='dummy_db', id_array=['1'], module='shot_task',
+            order_sign_array=['shot_task.task_name'],
+            sign_array=['shot_task.task_name'])
 
 
 if __name__ == '__main__':

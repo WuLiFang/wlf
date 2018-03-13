@@ -92,7 +92,7 @@ class CGTeamWorkClient(object):
         """
 
         try:
-            cls.token()
+            cls.token(0)
             return True
         except (socket.error, socket.timeout):
             pass
@@ -108,7 +108,7 @@ class CGTeamWorkClient(object):
         """
 
         try:
-            if cls.token():
+            if cls.token(0):
                 return True
         except (socket.error, socket.timeout):
             pass

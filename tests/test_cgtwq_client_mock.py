@@ -134,35 +134,36 @@ class CGTeamWorkClientTestCase(TestCase):
         uuid_ = unicode(uuid.uuid4())
         conn.recv.return_value = server_dumps(1, uuid_)
 
+        # pylint: disable=protected-access
         # Logged in.
-        cgtwq.CGTeamWorkClient.token()
+        cgtwq.CGTeamWorkClient._token()
         conn.send.assert_called_once_with(
             dumps({
                 'class_name': 'main_widget',
                 'method_name': 'get_token',
                 'database': 'main_widget',
                 'module': 'main_widget',
-                'type': 'get'}
-            )
+                'type': 'get'})
         )
 
-        result = cgtwq.CGTeamWorkClient.token()
+        result = cgtwq.CGTeamWorkClient._token()
         self.assertEqual(result, uuid_)
 
         # Running but not logged in.
         conn.recv.return_value = server_dumps(1, True)
-        result = cgtwq.CGTeamWorkClient.token()
+        result = cgtwq.CGTeamWorkClient._token()
         self.assertEqual(result, '')
 
         # Not running.
         self.create_connection.side_effect = socket.timeout
-        self.assertRaises(socket.timeout, cgtwq.CGTeamWorkClient.token)
+        self.assertRaises(socket.timeout, cgtwq.CGTeamWorkClient._token)
 
     def test_server_ip(self):
+        # pylint: disable=protected-access
         dummy_ip = '192.168.55.55'
         conn = self.conn
         conn.recv.return_value = server_dumps(1, dummy_ip)
-        result = cgtwq.CGTeamWorkClient.server_ip()
+        result = cgtwq.CGTeamWorkClient._server_ip()
         conn.send.assert_called_once_with(
             dumps(
                 {
