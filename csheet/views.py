@@ -159,14 +159,10 @@ def response_image(uuid, role):
 def get_images(database, pipeline, prefix):
     """Get all images in specifc range.  """
 
-    related_pipeline = {'灯光':  '渲染'}.get(pipeline)
-    upstream_pipeline = {'灯光': '动画', '合成': '灯光'}.get(pipeline)
     database = cgtwq.Database(database)
     module = database['shot_task']
     select = module.filter(cgtwq.Filter('pipeline', pipeline))
-    field_data = select.get_fields('id', 'shot.shot', 'image')
-    ret = []
-    field_data.sort(key=lambda x: x[1])
+    shots = [i for i in select['shot.shot'] if i and i.startswith(prefix)]
 
     # Filebox for non-existed image.
     fileboxes = database.get_fileboxes(
@@ -175,51 +171,42 @@ def get_images(database, pipeline, prefix):
             database.get_piplines(cgtwq.Filter('name', pipeline))[0].id) &
         cgtwq.Filter('title', ['单帧图', '检查单帧图']))
 
-    # Related shots for video source.
-    related_shots = None
-    if related_pipeline:
-        related_shots = module.filter(
-            cgtwq.Filter('pipeline', related_pipeline))
-    previews = {i[0]: i[1]
-                for i in (related_shots or select).get_fields('shot.shot', 'submit_file_path')}
+    # Related task for image info and preview.
+    related_select = module.filter(cgtwq.Filter('shot.shot', shots))
+    related_data = related_select.get_fields(
+        'id', 'pipeline', 'shot.shot', 'image', 'submit_file_path')
+    related_data.sort(key=lambda x: x[2])
 
-    # Upstream id for image info.
-    upstream_ids = {}
-    if upstream_pipeline:
-        upstream_select = module.filter(
-            cgtwq.Filter('pipeline', upstream_pipeline)
-            & cgtwq.Filter('shot.shot', select['shot.shot'])
-        )
-        upstream_ids = {i[0]: i[1]
-                        for i in upstream_select.get_fields('shot.shot', 'id')}
+    previews = {i[2]: i[4]
+                for i in related_data
+                if i[1] == {'灯光':  '渲染'}.get(pipeline, pipeline)}
 
-    for i in field_data:
-        id_, shot, image_data = i
-        if shot and shot.startswith(prefix):
+    ret = []
+    for i in related_data:
+        id_, _pipeline, shot, image_data, _ = i
+        if _pipeline != pipeline:
+            continue
+
+        try:
+            path = json.loads(image_data)['image_path']
+        except (TypeError, KeyError):
             _select = module.select(id_)
+            path = '{}/{}.jpg'.format(
+                _select.get_filebox(id_=fileboxes[0].id).path, shot)
 
-            try:
-                path = json.loads(image_data)['image_path']
-            except (TypeError, KeyError):
-                path = '{}/{}.jpg'.format(
-                    _select.get_filebox(id_=fileboxes[0].id).path, shot)
+        img = HTMLImage(path)
+        img.cgteamwork_select = module.select(
+            *[i[0] for i in related_data if i[2] == shot]
+        )
 
-            img = HTMLImage(path)
-            img.cgteamwork_select = cgtwq.database.Selection([
-                id_], module)
-            try:
-                img.upstream_select = cgtwq.database.Selection(
-                    [upstream_ids[shot]], module
-                )
-            except KeyError:
-                pass
-            try:
-                data = previews.get(shot)
-                if data:
-                    img.source['preview'] = json.loads(data)['path'][0]
-            except (TypeError, IndexError):
-                pass
-            ret.append(img)
+        # Set image preview source.
+        try:
+            data = previews.get(shot)
+            if data:
+                img.source['preview'] = json.loads(data)['path'][0]
+        except (TypeError, IndexError):
+            pass
+        ret.append(img)
     return ret
 
 
@@ -232,17 +219,23 @@ def image_info(uuid):
     except (KeyError, ValueError):
         abort(404, 'No image match this uuid.')
 
-    data = []
-    for attr in ('cgteamwork_select', 'upstream_select'):
-        if hasattr(image, attr):
-            select = getattr(image, attr)
-            assert isinstance(select, cgtwq.database.Selection)
-            data.append(select.get_fields(
-                'pipeline', 'artist', 'leader_status', 'director_status', 'client_status')[0])
-
-    if not data:
+    try:
+        select = image.cgteamwork_select
+    except AttributeError:
         abort(404, 'No related task found.')
 
+    assert isinstance(select, cgtwq.database.Selection)
+    data = select.get_fields(
+        'pipeline', 'artist', 'leader_status', 'director_status', 'client_status')
+    data.sort(key=lambda i: (
+        i[0] == '合成',
+        i[0] == '渲染',
+        i[0] == '灯光',
+        i[0] == '特效',
+        i[0] == '解算',
+        i[0] == '动画',
+        i[0] == 'Layout',
+    ))
     return render_template('image_info.html', data=data)
 
 
