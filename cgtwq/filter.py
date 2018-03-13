@@ -10,7 +10,7 @@ class Filter(list):
 
     def __init__(self, key, value):
         super(Filter, self).__init__(
-            [key, 'in' if isinstance(value, list) else '=', value])
+            [key, 'in' if isinstance(value, (list, tuple)) else '=', value])
 
     def __and__(self, other):
         return FilterList(self) & FilterList(other)
