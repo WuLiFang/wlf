@@ -60,10 +60,10 @@ class ModuleTestCase(TestCase):
 @skip_if_not_logged_in
 class SelectionTestCase(TestCase):
     def setUp(self):
-        Filter = database.Filter
         module = database.Database('proj_big')['shot_task']
-        select = module.filter(Filter('pipeline', '合成') &
-                               Filter('shot.shot', ['SNJYW_EP26_01_sc032', 'SNJYW_EP26_01_sc033']))
+        select = module.filter(database.Filter('pipeline', '合成') &
+                               database.Filter('shot.shot', ['SNJYW_EP26_06_sc349', 'SNJYW_EP26_06_sc350']))
+        assert isinstance(select, database.Selection)
         if not select:
             raise ValueError('No selection to test.')
         self.assertEqual(len(select), 2)
@@ -100,6 +100,15 @@ class SelectionTestCase(TestCase):
     def test_get_image(self):
         result = self.select.get_fields('image')
         print(result)
+
+    def test_get_notes(self):
+        result = self.select.get_notes()
+        print(result)
+
+
+class TaskTestCase(TestCase):
+    def test_get_note(self):
+        pass
 
 
 class ProjectTestCase(TestCase):

@@ -28,7 +28,9 @@ FileBoxInfo = namedtuple(
      'is_msg_to_first_qc')
 )
 Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
-ImageInfo = namedtuple('ImageInfo', ['max', 'min'])
+ImageInfo = namedtuple('ImageInfo', ('max', 'min'))
+NoteInfo = namedtuple('NoteInfo', ('id', 'task_id',
+                                   'account_id', 'html', 'time', 'account_name', 'module'))
 
 
 class Database(object):
@@ -464,15 +466,25 @@ class Selection(list):
                 continue
         return tuple(sorted(ret))
 
-    def get_note(self, fields):
+    def get_notes(self):
+        """Get notes on first item in the selection.
+
+        Raises:
+            ValueError: When no item selected.
+
+        Returns:
+            tuple[NoteInfo]: namedtuple about note information.
+        """
+
         if not self:
             raise ValueError('Empty selection.')
 
-        fields = list(fields) + ['#id']
+        fields = ('#id', '#task_id', '#from_account_id',
+                  'text', 'time', 'create_by', 'module')
         resp = self.call("c_note", "get_with_task_id",
                          task_id=self[0],
                          field_array=fields)
-        return resp
+        return tuple(NoteInfo(*i) for i in resp.data)
 
     def submit(self, filelist, note="", pathlist=None):
         if not self:
