@@ -4,10 +4,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from collections import namedtuple
-from unittest import TestCase, main, skip
+from unittest import TestCase, main
 
-from mock import MagicMock, call, patch
+from mock import MagicMock, patch
 
 from wlf import cgtwq
 
@@ -166,8 +165,7 @@ class SelectionTestCase(TestCase):
         call_method = self.call_method
 
         call_method.return_value = cgtwq.server.Response(
-            data={'title': 'orange',
-                  "path": "E:/test", "classify": "测试", "title": "测试box",
+            data={"path": "E:/test", "classify": "测试", "title": "测试box",
                   "sign": "test_fb", "color": "#005500",
                   "rule": [], "rule_view": [], "is_submit": "N",
                   "is_move_old_to_history": "",

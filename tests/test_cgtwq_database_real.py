@@ -18,9 +18,8 @@ class DataBaseTestCase(TestCase):
         self.database = database.Database('proj_big')
 
     def test_get_filebox(self):
-        Filter = database.Filter
         # filters.
-        self.database.get_fileboxes(filters=Filter('title', '检查MOV'))
+        self.database.get_fileboxes(filters=database.Filter('title', '检查MOV'))
         # id
         self.database.get_fileboxes(id_='271')
 
@@ -61,7 +60,8 @@ class SelectionTestCase(TestCase):
     def setUp(self):
         module = database.Database('proj_big')['shot_task']
         select = module.filter(database.Filter('pipeline', '合成') &
-                               database.Filter('shot.shot', ['SNJYW_EP26_06_sc349', 'SNJYW_EP26_06_sc350']))
+                               database.Filter('shot.shot',
+                                               ['SNJYW_EP26_06_sc349', 'SNJYW_EP26_06_sc350']))
         assert isinstance(select, database.Selection)
         if not select:
             raise ValueError('No selection to test.')
