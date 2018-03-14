@@ -89,21 +89,26 @@ class SelectionTestCase(TestCase):
         select = self.select
         call_method = self.call_method
         call_method.return_value = cgtwq.server.Response(
-            [{"id": "1", "shot_task.artist": "monkey", 'shot_task.task_name': 'banana'},
-             {'id': "2", "shot_task.artist": "dog", 'shot_task.task_name': 'bone'}],
+            [["1", "monkey", 'banana'],
+             ["2", "dog", 'bone']],
             1, 'json')
 
         # Test `get_fields`.
-        result = select.get_fields('artist')
-        self.assertIsInstance(result, cgtwq.database.FieldsData)
-        self.assertEqual(result.field('artist'), ('dog', 'monkey'))
+        result = select.get_fields('id', 'artist', 'task_name')
+        self.assertIsInstance(result, cgtwq.database.ResultSet)
+        self.assertEqual(result.column('artist'), ('dog', 'monkey'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
             db='dummy_db', id_array=('1', '2'), module='shot_task',
-            order_sign_array=['shot_task.artist'],
-            sign_array=['shot_task.artist'])
+            order_sign_array=['shot_task.id',
+                              'shot_task.artist', 'shot_task.task_name'],
+            sign_array=['shot_task.id', 'shot_task.artist', 'shot_task.task_name'])
 
         # Test `__getitem__`.
+        call_method.return_value = cgtwq.server.Response(
+            [['banana'],
+             ['bone']],
+            1, 'json')
         call_method.reset_mock()
         result = select['task_name']
         self.assertEqual(result, ('banana', 'bone'))
@@ -186,21 +191,21 @@ class SelectionTestCase(TestCase):
             sign='test_fb',
             task_id='1')
 
-    def test_to_task(self):
+    def test_to_entry(self):
         from wlf.cgtwq import Database, database
-        self.assertRaises(ValueError, self.select.to_task)
-        result = Database('test')['m'].select('1').to_task()
-        self.assertIsInstance(result, database.Task)
+        self.assertRaises(ValueError, self.select.to_entry)
+        result = Database('test')['m'].select('1').to_entry()
+        self.assertIsInstance(result, database.Entry)
 
 
-class TaskTestCase(TestCase):
+class EntryTestCase(TestCase):
     def setUp(self):
         patcher = patch('wlf.cgtwq.server.call',
                         return_value=cgtwq.server.Response('Testing', 1, 'json'))
         self.addCleanup(patcher.stop)
 
         self.call_method = patcher.start()
-        self.task = cgtwq.database.Task(
+        self.task = cgtwq.database.Entry(
             cgtwq.Database('dummy_db')['shot_task'], '1')
 
     def test_getter(self):

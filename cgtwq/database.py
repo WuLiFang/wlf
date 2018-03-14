@@ -216,6 +216,7 @@ class Module(object):
         Returns:
             FilterList: Formatted filters.
         """
+
         assert isinstance(filters, (Filter, FilterList)), type(filters)
         ret = FilterList(filters)
         for i in ret:
@@ -332,7 +333,7 @@ class Selection(tuple):
     def __getitem__(self, name):
         if isinstance(name, int):
             return super(Selection, self).__getitem__(name)
-        return self.get_fields(name).field(name)
+        return self.get_fields(name).column(name)
 
     def __setitem__(self, name, value):
         assert isinstance(name, (unicode, str))
@@ -342,17 +343,17 @@ class Selection(tuple):
         """Get field information for the selection.
 
         Args:
-            fields (list): List of server defined field sign.
+            *fields: Server defined field sign.
 
         Returns:
-            FieldData: Optimized list object contains field data.
+            ResultSet: Optimized tuple object contains fields data.
         """
 
         server_fields = [self.module.field(i) for i in fields]
         resp = self.call("c_orm", "get_in_id",
                          sign_array=server_fields,
                          order_sign_array=server_fields)
-        return FieldsData(server_fields, resp.data, self.module)
+        return ResultSet(server_fields, resp.data, self.module)
 
     def set_fields(self, **data):
         """Set field data for the selection.
@@ -597,33 +598,32 @@ class Entry(Selection):
         return tuple(ret)
 
 
-class FieldsData(list):
-    """List for field data.  """
+class ResultSet(tuple):
+    """Database query result.  """
 
-    def __init__(self, fields, data, module):
+    def __new__(cls, roles, data, module):
         assert isinstance(module, Module)
-        self.module = module
-        self.fields = fields
-        if all(isinstance(i, dict)for i in data):
-            data = [[i[j] for j in fields] for i in data]
-        elif all(isinstance(i, list) and len(i) == len(fields) for i in data):
-            pass
-        else:
-            raise TypeError('Got unknown data format.', data)
-        super(FieldsData, self).__init__(data)
+        assert all(isinstance(i, list) and len(i) == len(roles)
+                   for i in data), data
+        return super(ResultSet, cls).__new__(cls, data)
 
-    def field(self, field):
-        """Get data for single field.
+    def __init__(self, roles, data, module):
+        super(ResultSet, self).__init__(data)
+        self.module = module
+        self.roles = roles
+
+    def column(self, field):
+        """Get a column from field name.
 
         Args:
             field (unicode): Field name.
 
         Returns:
-            tuple: Add data matches this field.
+            tuple: Column data.
         """
 
         field = self.module.field(field)
-        index = self.fields.index(field)
+        index = self.roles.index(field)
         return tuple(sorted(set(i[index] for i in self)))
 
 
