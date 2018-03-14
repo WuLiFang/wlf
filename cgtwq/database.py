@@ -29,8 +29,10 @@ FileBoxInfo = namedtuple(
 )
 Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
 ImageInfo = namedtuple('ImageInfo', ('max', 'min', 'path'))
-NoteInfo = namedtuple('NoteInfo', ('id', 'task_id',
-                                   'account_id', 'html', 'time', 'account_name', 'module'))
+NoteInfo = namedtuple('NoteInfo',
+                      ('id', 'task_id', 'account_id',
+                       'html', 'time', 'account_name',
+                       'module'))
 
 
 class Database(object):
@@ -466,7 +468,7 @@ class Selection(tuple):
             field (unicode): Defaults to 'image', Server defined field name,
             path (unicode): File path.
             http_server (unicode, optional): Defaults to None. Http server address,
-                if `http_server` is None, will use value from client. 
+                if `http_server` is None, will use value from client.
         """
 
         pathname = "/upload/image/{}/".format(

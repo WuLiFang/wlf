@@ -1,6 +1,5 @@
 # -*- coding=UTF-8 -*-
 """Run as web app.  """
-# TODO: Add image info display.
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
