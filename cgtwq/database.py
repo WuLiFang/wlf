@@ -257,7 +257,7 @@ class Module(object):
 
     def get_history(self, filters):
         """Get history record from the module.
-            filters (Filter or FilterList): History filter.
+            filters (Filter or FilterList): History filters.
 
         Returns:
             tuple[HistoryInfo]: History records.
@@ -270,10 +270,20 @@ class Module(object):
         return tuple(HistoryInfo(*i) for i in resp.data)
 
     def count_history(self, filters):
+        """Count history records in the module.
+
+        Args:
+            filters (Filter or FilterList):
+                History filters.
+
+        Returns:
+            int: Records count.
+        """
+
         resp = self.call(
             "c_history", "count_with_filter",
-            filter_array=filters)
-        return resp
+            filter_array=FilterList(filters))
+        return int(resp.data)
 
 
 class PublicModule(Module):
@@ -558,7 +568,7 @@ class Selection(tuple):
     def get_history(self, filters=None):
         """Get selection related history.
             filters (Filter or FilterList, optional): Defaults to None.
-                Addtional filters.
+                Addtional history filters.
 
         Returns:
             tuple[HistoryInfo]: History records.
@@ -568,6 +578,22 @@ class Selection(tuple):
         if filters:
             _filters &= filters
         return self.module.get_history(_filters)
+
+    def count_history(self, filters=None):
+        """Count selection related history records.
+
+        Args:
+            filters (Filter or FilterList):
+                Addtional history filters.
+
+        Returns:
+            int: Records count.
+        """
+
+        _filters = Filter('#task_id', self)
+        if filters:
+            _filters &= filters
+        return self.module.count_history(_filters)
 
     def submit(self, filelist, note="", pathlist=None):
         if not self:

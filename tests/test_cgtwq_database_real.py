@@ -60,6 +60,11 @@ class ModuleTestCase(TestCase):
         for i in result:
             assert isinstance(i, database.HistoryInfo)
 
+    def test_count_history(self):
+        from wlf.cgtwq import Filter
+        result = self.module.count_history(Filter('status', 'Approve'))
+        self.assertIsInstance(result, int)
+
 
 @skip_if_not_logged_in
 class SelectionTestCase(TestCase):
@@ -125,6 +130,10 @@ class SelectionTestCase(TestCase):
         result = self.select.get_history()
         for i in result:
             assert isinstance(i, database.HistoryInfo)
+
+    def test_count_history(self):
+        result = self.select.count_history()
+        self.assertIsInstance(result, int)
 
 
 class TaskTestCase(TestCase):
