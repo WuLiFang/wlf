@@ -153,7 +153,7 @@ def generate_jpg(filename, output=None, **kwargs):
 
     # Generate.
     cmd = ('ffmpeg -y -hide_banner '
-           '{} -i "{}" -vframes 1 '
+           '{} -i "{}" -q:v 1 -vframes 1 '
            '-vf {} "{}"').format(
                ' '.join(input_options), filename, _filters, ret)
     start_time = time.clock()
