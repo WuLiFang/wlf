@@ -4,7 +4,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import errno
-import hashlib
 import io
 import json
 import logging
@@ -18,6 +17,7 @@ import websocket
 
 from .client import CGTeamWorkClient
 from .exceptions import LoginError
+from .util import file_md5
 
 LOGGER = logging.getLogger('wlf.cgtwq.server')
 
@@ -124,14 +124,6 @@ def account_id():
     return call("c_token", "get_account_id").data
 
 
-def _hash(path):
-    hash_ = hashlib.md5()
-    with open(path, 'rb') as f:
-        for chunk in iter(lambda: f.read(2048), b''):
-            hash_.update(chunk)
-    return hash_.hexdigest()
-
-
 def post(pathname, data, ip=None, **kwargs):
     """Post data to CGTeamWork server.
         pathname (str unicode): Pathname for http host.
@@ -217,15 +209,22 @@ def upload(path, pathname, ip=None, flags=BACKUP | COUNTINUE):
     """
 
     chunk_size = 2*2**20  # 2MB
-    hash_ = _hash(path)
+    hash_ = file_md5(path)
     pathname = '/{}'.format(unicode(pathname).lstrip('\\/'))
     ip = ip or CGTeamWorkClient.server_ip()
+    ret = 'http://{}{}'.format(ip, pathname)
+
+    LOGGER.debug('upload: %s -> %s', path, pathname)
     result = post('/file.php', {'file_md5': hash_,
                                 'upload_des_path': pathname,
                                 'action': 'pre_upload'},
                   ip=ip)
     LOGGER.debug('POST: result: %s', result)
+
     assert isinstance(result, dict)
+    if result.get('upload'):
+        # Same file alreay uploaded.
+        return ret
     if result['is_exist'] and not flags & REPLACE:
         raise ValueError('File already exists.')
 
@@ -242,12 +241,12 @@ def upload(path, pathname, ip=None, flags=BACKUP | COUNTINUE):
                 'upload_des_path': pathname,
                 'is_backup_to_history': 'Y' if flags & BACKUP else 'N',
                 'no_continue_upload': 'N' if flags & COUNTINUE else 'Y'}
-        for chunk in iter(lambda: f.read(chunk_size), ''):
+        for chunk in iter(lambda: f.read(chunk_size), b''):
             data['read_pos'] = file_pos
             post('/upload_file', data, files={'files': chunk})
             file_pos += chunk_size
 
-    return 'http://{}{}'.format(ip, pathname)
+    return ret
 
 
 def download(pathname, dest):
@@ -281,7 +280,7 @@ def download(pathname, dest):
 
     # Skip if already downloaded.
     if os.path.exists(dest):
-        if os.path.isfile(dest) and _hash(dest) == info.file_md5:
+        if os.path.isfile(dest) and file_md5(dest) == info.file_md5:
             return dest
         else:
             raise ValueError('Local file already exists.', dest)
@@ -303,7 +302,7 @@ def download(pathname, dest):
             f.write(chunk)
 
     # Check hash of downloaded file.
-    if _hash(filename) != info.file_md5:
+    if file_md5(filename) != info.file_md5:
         os.remove(filename)
         raise RuntimeError('Downloaded content not match server md5.')
 

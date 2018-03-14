@@ -2,15 +2,15 @@
 """Database in cgtw server.  """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
+import os
+import json
 import logging
-import uuid
 from collections import namedtuple
 from functools import partial
-import json
 
 from . import server
 from .filter import Filter, FilterList
+from .util import genreate_thumb, file_md5
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
@@ -28,7 +28,7 @@ FileBoxInfo = namedtuple(
      'is_msg_to_first_qc')
 )
 Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
-ImageInfo = namedtuple('ImageInfo', ('max', 'min'))
+ImageInfo = namedtuple('ImageInfo', ('max', 'min', 'path'))
 NoteInfo = namedtuple('NoteInfo', ('id', 'task_id',
                                    'account_id', 'html', 'time', 'account_name', 'module'))
 
@@ -459,22 +459,53 @@ class Selection(tuple):
             from_account_id=from_
         )
 
-    def set_image(self, field, path, http_server=None):
-        # TODO: Generate thumb.
-        pathname = "/upload/image/{}/{}".format(
-            self.module.database.name,
-            uuid.uuid4()
-        )
-        server.upload(path, pathname, ip=http_server)
-        self.set_fields(**{field: {'max': pathname, 'min': pathname}})
+    def set_image(self, path, field='image', http_server=None):
+        """Set image for the field.
 
-    def get_image(self, field):
+        Args:
+            field (unicode): Defaults to 'image', Server defined field name,
+            path (unicode): File path.
+            http_server (unicode, optional): Defaults to None. Http server address,
+                if `http_server` is None, will use value from client. 
+        """
+
+        pathname = "/upload/image/{}/".format(
+            self.module.database.name
+        )
+
+        data = {'path': path}
+        # Exactly same with CGTeamwork UI resolution.
+        for key, width, height in (('min', 160, 120), ('max', 308, 186)):
+            thumb = genreate_thumb(path, width, height)
+            try:
+                thumb_pathname = '{}{}.jpg'.format(pathname, file_md5(thumb))
+                server.upload(thumb, thumb_pathname, ip=http_server)
+            finally:
+                os.remove(thumb)
+            data[key] = thumb_pathname
+
+        self.set_fields(**{field: data})
+
+    def get_image(self, field='image'):
+        """Get imageinfo used on the field.
+
+        Args:
+            field (unicode): Defaults to 'image', Server defined field name,
+
+        Returns:
+            set[ImageInfo]: Image information.
+        """
+
         ret = set()
         for i in self[field]:
             try:
-                if ret:
-                    data = json.loads(i)
-                    ret.add(ImageInfo(max=data['max'], min=data['min']))
+                data = json.loads(i)
+                assert isinstance(data, dict)
+                # TODO: Remove `image_path` support at next major version.
+                info = ImageInfo(max=data['max'],
+                                 min=data['min'],
+                                 path=data.get('path', data.get('image_path')))
+                ret.add(info)
             except (TypeError, KeyError):
                 continue
         return tuple(sorted(ret))
@@ -596,6 +627,27 @@ class Entry(Selection):
         ret = ret[0]
         assert isinstance(ret, list), ret
         return tuple(ret)
+
+    def get_image(self, field='image'):
+        """Get imageinfo used on the field.
+
+        Args:
+            field (unicode): Defaults to 'image', Server defined field name,
+
+        Raises:
+            ValueError: when no image in the field.
+
+        Returns:
+            ImageInfo: Image information.
+        """
+
+        try:
+            return self._to_selection().get_image(field)[0]
+        except IndexError:
+            raise ValueError('No image in this field.', field)
+
+    def _to_selection(self):
+        return Selection(self.module, *self)
 
 
 class ResultSet(tuple):

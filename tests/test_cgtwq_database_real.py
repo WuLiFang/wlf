@@ -97,8 +97,15 @@ class SelectionTestCase(TestCase):
             self.assertEqual(len(i), 2)
 
     def test_get_image(self):
-        result = self.select.get_fields('image')
-        print(result)
+        result = self.select.get_image('image')
+        for i in result:
+            self.assertIsInstance(i, database.ImageInfo)
+
+    def test_set_image(self):
+        for i in self.select.to_entries():
+            assert isinstance(i, database.Entry)
+            path = i.get_image().path
+            i.set_image(path)
 
     def test_get_notes(self):
         result = self.select.get_notes()
