@@ -33,6 +33,13 @@ NoteInfo = namedtuple('NoteInfo',
                       ('id', 'task_id', 'account_id',
                        'html', 'time', 'account_name',
                        'module'))
+FIELDS_HISTORY = ('#id', '#task_id', '#account_id',
+                  'step', 'status', 'file',
+                  'text', 'create_by', 'time')
+HistoryInfo = namedtuple('HistoryInfo',
+                         ('id', 'task_id', 'account_id',
+                          'step', 'status', 'file',
+                          'text', 'create_by', 'time'))
 
 
 class Database(object):
@@ -236,17 +243,22 @@ class Module(object):
         return self.database.get_piplines(Filter('module', self.name))
 
     def get_history(self, filters):
-        fields = ['#task_id', '#account_id', 'file',
-                  'step', 'text', 'module', 'time']
+        """Get history record from the module.
+            filters (Filter or FilterList): History filter.
+
+        Returns:
+            tuple[HistoryInfo]: History records.
+        """
+
         resp = self.call(
-            "c_pipeline", "get_with_filter",
-            field_array=fields,
-            filter_array=filters)
-        return resp
+            "c_history", "get_with_filter",
+            field_array=FIELDS_HISTORY,
+            filter_array=FilterList(filters))
+        return tuple(HistoryInfo(*i) for i in resp.data)
 
     def count_history(self, filters):
         resp = self.call(
-            "c_pipeline", "count_with_filter",
+            "c_history", "count_with_filter",
             filter_array=filters)
         return resp
 
@@ -531,6 +543,20 @@ class Selection(tuple):
                          task_id=self[0],
                          field_array=fields)
         return tuple(NoteInfo(*i) for i in resp.data)
+
+    def get_history(self, filters=None):
+        """Get selection related history.
+            filters (Filter or FilterList, optional): Defaults to None.
+                Addtional filters.
+
+        Returns:
+            tuple[HistoryInfo]: History records.
+        """
+
+        _filters = Filter('#task_id', self)
+        if filters:
+            _filters &= filters
+        return self.module.get_history(_filters)
 
     def submit(self, filelist, note="", pathlist=None):
         if not self:

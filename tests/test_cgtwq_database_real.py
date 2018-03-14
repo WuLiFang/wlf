@@ -54,6 +54,12 @@ class ModuleTestCase(TestCase):
         for i in result:
             self.assertIsInstance(i, database.Pipeline)
 
+    def test_get_history(self):
+        from wlf.cgtwq import Filter
+        result = self.module.get_history(Filter('status', 'Approve'))
+        for i in result:
+            assert isinstance(i, database.HistoryInfo)
+
 
 @skip_if_not_logged_in
 class SelectionTestCase(TestCase):
@@ -116,6 +122,11 @@ class SelectionTestCase(TestCase):
         self.select.send_message('test',
                                  'test <b>message</b>',
                                  server.account_id())
+
+    def test_get_history(self):
+        result = self.select.get_history()
+        for i in result:
+            assert isinstance(i, database.HistoryInfo)
 
 
 class TaskTestCase(TestCase):
