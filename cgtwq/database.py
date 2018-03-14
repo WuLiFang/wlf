@@ -563,8 +563,8 @@ class Task(Selection):
     """One item select for task.  """
 
     def __init__(self, module, id_):
+        assert isinstance(id_, unicode), type(id_)
         super(Task, self).__init__(module, id_)
-        assert len(self) == 1, self
 
     def __getitem__(self, name):
         if isinstance(name, int):
