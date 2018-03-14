@@ -223,20 +223,6 @@ class Module(object):
                 i[0] = self.field(i[0])
         return ret
 
-    def send_message(self, to, title, content, task_id, from_=None):
-        """Send message to users.  """
-        # pylint: disable=invalid-name
-
-        from_ = server.account() if from_ is None else from_
-        return self.call(
-            'c_msg', 'send_task',
-            task_id=task_id,
-            account_id_array=to,
-            title=title,
-            content=content,
-            from_account_id=from_
-        )
-
     def pipelines(self):
         """All pipeline in this module.
 
@@ -449,6 +435,29 @@ class Selection(tuple):
         assert isinstance(resp.data, dict), resp
         return FileBoxInfo(**resp.data)
 
+    def send_message(self, title, content, *to, **kwargs):
+        """Send message to users.
+
+        Args:
+            title (unicode): Message title.
+            content (unicode): Message content, support html.
+            *to: Users that will recives message, use account_id.
+            **kwargs:
+                from_: Unknown effect. used in `cgtw` module.
+        """
+        # pylint: disable=invalid-name
+
+        from_ = kwargs.get('from_')
+
+        return self.call(
+            'c_msg', 'send_task',
+            task_id=self[0],
+            account_id_array=to,
+            title=title,
+            content=content,
+            from_account_id=from_
+        )
+
     def set_image(self, field, path, http_server=None):
         # TODO: Generate thumb.
         pathname = "/upload/image/{}/{}".format(
@@ -537,41 +546,41 @@ class Selection(tuple):
             ret.add(resp)
         return ret
 
-    def to_task(self):
-        """Convert selection to one task.
+    def to_entry(self):
+        """Convert selection to one entry.
 
         Raises:
             ValueError: Not exactly one selected item.
 
         Returns:
-            Task: Task.
+            Entry: Entry.
         """
 
         if len(self) != 1:
             raise ValueError('Need exactly one selected item.')
 
-        return Task(self.module, self[0])
+        return Entry(self.module, self[0])
 
-    def to_tasks(self):
-        """Convert selection to tasks.
+    def to_entries(self):
+        """Convert selection to entries.
 
         Returns:
-            tuple[Task]: Tasks.
+            tuple[Entry]: Entries.
         """
 
-        return tuple(Task(self.module, i) for i in self)
+        return tuple(Entry(self.module, i) for i in self)
 
 
-class Task(Selection):
-    """One item select for task.  """
+class Entry(Selection):
+    """A selection that only has one item.  """
 
     def __init__(self, module, id_):
         assert isinstance(id_, unicode), type(id_)
-        super(Task, self).__init__(module, id_)
+        super(Entry, self).__init__(module, id_)
 
     def __getitem__(self, name):
         if isinstance(name, int):
-            return super(Task, self).__getitem__(name)
+            return super(Entry, self).__getitem__(name)
         return self.get_fields(name)[0]
 
     def get_fields(self, *fields):
@@ -581,7 +590,7 @@ class Task(Selection):
             tuple: Result fields with exactly same order with `fields`.
         """
 
-        ret = super(Task, self).get_fields(*fields)
+        ret = super(Entry, self).get_fields(*fields)
         assert len(ret) == 1, ret
         ret = ret[0]
         assert isinstance(ret, list), ret

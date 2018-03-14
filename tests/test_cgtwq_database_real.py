@@ -9,7 +9,7 @@ import uuid
 from unittest import TestCase, main
 
 from util import skip_if_not_logged_in
-from wlf.cgtwq import database
+from wlf.cgtwq import database, server
 
 
 @skip_if_not_logged_in
@@ -104,6 +104,11 @@ class SelectionTestCase(TestCase):
         result = self.select.get_notes()
         for i in result:
             self.assertIsInstance(i, database.NoteInfo)
+
+    def test_send_message(self):
+        self.select.send_message('test',
+                                 'test <b>message</b>',
+                                 server.account_id())
 
 
 class TaskTestCase(TestCase):
