@@ -650,16 +650,13 @@ class Entry(Selection):
         return Selection(self.module, *self)
 
 
-class ResultSet(tuple):
+class ResultSet(list):
     """Database query result.  """
 
-    def __new__(cls, roles, data, module):
+    def __init__(self, roles, data, module):
         assert isinstance(module, Module)
         assert all(isinstance(i, list) and len(i) == len(roles)
                    for i in data), data
-        return super(ResultSet, cls).__new__(cls, data)
-
-    def __init__(self, roles, data, module):
         super(ResultSet, self).__init__(data)
         self.module = module
         self.roles = roles
