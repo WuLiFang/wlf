@@ -25,7 +25,7 @@ class DataBaseTestCase(TestCase):
 
     def test_get_pipline(self):
         result = self.database.get_piplines(database.Filter('name', '合成'))
-        self.assertIsInstance(result[0], database.Pipeline)
+        self.assertIsInstance(result[0], database.PipelineInfo)
 
     def test_get_software(self):
         result = self.database.get_software('maya')
@@ -52,7 +52,7 @@ class ModuleTestCase(TestCase):
     def test_pipeline(self):
         result = self.module.pipelines()
         for i in result:
-            self.assertIsInstance(i, database.Pipeline)
+            self.assertIsInstance(i, database.PipelineInfo)
 
     def test_get_history(self):
         from wlf.cgtwq import Filter
@@ -84,11 +84,9 @@ class SelectionTestCase(TestCase):
                           unicode(uuid.uuid4()))
 
     def test_get_filebox(self):
-        import wlf
-        wlf.mp_logging.basic_config(level=10)
         select = self.select
         result = select.get_filebox('submit')
-        self.assertIsInstance(result, database.FileBoxInfo)
+        self.assertIsInstance(result, database.FileBoxDetail)
         path = result.path
         self.assert_(os.path.exists(path))
 

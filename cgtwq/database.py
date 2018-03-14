@@ -16,9 +16,11 @@ _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
 LOGGER = logging.getLogger('wlf.cgtwq.database')
 
-FileBox = namedtuple('FileBox', ('id', 'pipeline_id', 'title'))
-FileBoxInfo = namedtuple(
-    'FileBoxInfo',
+# Filebox
+FIELDS_FILEBOX = ('#id', '#pipeline_id', 'title')
+FileBoxInfo = namedtuple('FileBoxInfo', ('id', 'pipeline_id', 'title'))
+FileBoxDetail = namedtuple(
+    'FileBoxDetail',
     ('path',
      'classify', 'title',
      'sign', 'color', 'rule', 'rule_view',
@@ -27,12 +29,23 @@ FileBoxInfo = namedtuple(
      'is_in_history_add_datetime', 'is_cover_disable',
      'is_msg_to_first_qc')
 )
-Pipeline = namedtuple('Pipeline', ('id', 'name', 'module'))
+
+# Pipeline
+FIELDS_PIPELINE = ('#id', 'name', 'module')
+PipelineInfo = namedtuple('PipelineInfo', ('id', 'name', 'module'))
+
+# Image
 ImageInfo = namedtuple('ImageInfo', ('max', 'min', 'path'))
+
+# Note
+FIELDS_NOTE = ('#id', '#task_id', '#from_account_id',
+               'text', 'time', 'create_by',
+               'module')
 NoteInfo = namedtuple('NoteInfo',
                       ('id', 'task_id', 'account_id',
                        'html', 'time', 'account_name',
                        'module'))
+# History
 FIELDS_HISTORY = ('#id', '#task_id', '#account_id',
                   'step', 'status', 'file',
                   'text', 'create_by', 'time')
@@ -69,12 +82,12 @@ class Database(object):
         if id_:
             resp = self.call("c_file", "get_one_with_id",
                              id=id_,
-                             field_array=['#id', '#pipeline_id', 'title'])
+                             field_array=FIELDS_FILEBOX)
             ret = [resp.data]
         elif filters:
             resp = self.call("c_file", "get_with_filter",
                              filter_array=FilterList(filters),
-                             field_array=['#id', '#pipeline_id', 'title'])
+                             field_array=FIELDS_FILEBOX)
             ret = resp.data
         else:
             raise ValueError(
@@ -83,7 +96,7 @@ class Database(object):
         if not resp.data:
             raise ValueError('No matched filebox.')
         assert all(isinstance(i, list) for i in ret), resp
-        return tuple(FileBox(*i) for i in ret)
+        return tuple(FileBoxInfo(*i) for i in ret)
 
     def get_piplines(self, filters):
         """Get piplines from database.
@@ -97,9 +110,9 @@ class Database(object):
 
         resp = self.call(
             "c_pipeline", "get_with_filter",
-            field_array=('#id', 'name', 'module'),
+            field_array=FIELDS_PIPELINE,
             filter_array=FilterList(filters))
-        return tuple(Pipeline(*i) for i in resp.data)
+        return tuple(PipelineInfo(*i) for i in resp.data)
 
     def get_software(self, name):
         """Get software path for this database.
@@ -448,7 +461,7 @@ class Selection(tuple):
         if not resp.data:
             raise ValueError('No matched filebox.')
         assert isinstance(resp.data, dict), resp
-        return FileBoxInfo(**resp.data)
+        return FileBoxDetail(**resp.data)
 
     def send_message(self, title, content, *to, **kwargs):
         """Send message to users.
@@ -537,11 +550,9 @@ class Selection(tuple):
         if not self:
             raise ValueError('Empty selection.')
 
-        fields = ('#id', '#task_id', '#from_account_id',
-                  'text', 'time', 'create_by', 'module')
         resp = self.call("c_note", "get_with_task_id",
                          task_id=self[0],
-                         field_array=fields)
+                         field_array=FIELDS_NOTE)
         return tuple(NoteInfo(*i) for i in resp.data)
 
     def get_history(self, filters=None):

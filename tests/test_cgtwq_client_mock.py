@@ -12,7 +12,7 @@ from unittest import TestCase, main, skip
 
 from mock import patch
 
-from wlf import cgtwq, mp_logging
+from wlf import cgtwq
 from functools import partial
 
 # Same argument with json.dumps used in `CGTeamWorkClient.call`.
@@ -27,7 +27,6 @@ def server_dumps(code, data):
 
 class CGTeamWorkClientTestCase(TestCase):
     def setUp(self):
-        mp_logging.basic_config()
         patcher = patch('wlf.cgtwq.client.create_connection')
         self.addCleanup(patcher.stop)
         self.create_connection = patcher.start()

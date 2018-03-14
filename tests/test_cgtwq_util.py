@@ -12,7 +12,7 @@ import os
 class UtilTestCase(TestCase):
     def test_generate_thumb(self):
         from wlf.cgtwq.util import genreate_thumb
-        result = genreate_thumb(r'E:\test\images\autoComper.0112.jpg')
+        result = genreate_thumb(r'E:\test\images\autoComper.0112.jpg', 100, 75)
         self.addCleanup(os.unlink, result)
 
 
