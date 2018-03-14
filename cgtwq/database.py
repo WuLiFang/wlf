@@ -324,8 +324,13 @@ class Account(PublicModule):
 ACCOUNT = Account()
 
 
-class Selection(list):
+class Selection(tuple):
     """Selection on a database module.   """
+
+    def __new__(cls, module, *id_list):
+        assert all(isinstance(i, unicode) for i in id_list), id_list
+        assert isinstance(module, Module)
+        return super(Selection, cls).__new__(cls, id_list)
 
     def __init__(self, module, *id_list):
         """
@@ -334,8 +339,6 @@ class Selection(list):
             *id_list: Selected id.
         """
 
-        assert all(isinstance(i, unicode) for i in id_list), id_list
-        assert isinstance(module, Module)
         super(Selection, self).__init__(id_list)
         self.module = module
         self.call = partial(self.module.call, id_array=self)

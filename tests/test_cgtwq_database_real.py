@@ -25,8 +25,7 @@ class DataBaseTestCase(TestCase):
         self.database.get_fileboxes(id_='271')
 
     def test_get_pipline(self):
-        Filter = database.Filter
-        result = self.database.get_piplines(Filter('name', '合成'))
+        result = self.database.get_piplines(database.Filter('name', '合成'))
         self.assertIsInstance(result[0], database.Pipeline)
 
     def test_get_software(self):
@@ -103,7 +102,8 @@ class SelectionTestCase(TestCase):
 
     def test_get_notes(self):
         result = self.select.get_notes()
-        print(result)
+        for i in result:
+            self.assertIsInstance(i, database.NoteInfo)
 
 
 class TaskTestCase(TestCase):

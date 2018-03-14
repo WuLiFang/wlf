@@ -100,7 +100,7 @@ class SelectionTestCase(TestCase):
         self.assertEqual(result.field('artist'), ('dog', 'monkey'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='dummy_db', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=('1', '2'), module='shot_task',
             order_sign_array=['shot_task.artist'],
             sign_array=['shot_task.artist'])
 
@@ -110,7 +110,7 @@ class SelectionTestCase(TestCase):
         self.assertEqual(result, ('banana', 'bone'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='dummy_db', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=('1', '2'), module='shot_task',
             order_sign_array=['shot_task.task_name'],
             sign_array=['shot_task.task_name'])
 
@@ -122,7 +122,7 @@ class SelectionTestCase(TestCase):
         select.set_fields(artist='Yuri')
         call_method.assert_called_once_with(
             'c_orm', 'set_in_id',
-            db='dummy_db', id_array=['1', '2'], module='shot_task',
+            db='dummy_db', id_array=('1', '2'), module='shot_task',
             sign_data_array={'shot_task.artist': 'Yuri'})
 
         # Test `__setitem__`.
@@ -130,7 +130,7 @@ class SelectionTestCase(TestCase):
         select['artist'] = 'Monika'
         call_method.assert_called_once_with(
             'c_orm', 'set_in_id',
-            db='dummy_db', id_array=['1', '2'],
+            db='dummy_db', id_array=('1', '2'),
             module='shot_task',
             sign_data_array={'shot_task.artist': 'Monika'})
 
@@ -141,7 +141,7 @@ class SelectionTestCase(TestCase):
         select.delete()
         call_method.assert_called_once_with(
             'c_orm', 'del_in_id',
-            db='dummy_db', id_array=['1', '2'],
+            db='dummy_db', id_array=('1', '2'),
             module='shot_task')
 
     def test_get_dir(self):
@@ -155,10 +155,10 @@ class SelectionTestCase(TestCase):
         call_method.assert_called_once_with(
             'c_folder',
             'get_replace_path_in_sign',
-            db='dummy_db', id_array=['1', '2'],
-            module='shot_task', os=cgtwq.database._OS,
+            db='dummy_db', id_array=('1', '2'),
+            module='shot_task', os=cgtwq.database._OS,  # pylint: disable=protected-access
             sign_array=('test',),
-            task_id_array=['1', '2'])
+            task_id_array=('1', '2'))
 
     def test_get_filebox(self):
         # pylint: disable=protected-access
@@ -182,7 +182,7 @@ class SelectionTestCase(TestCase):
             'c_file',
             'filebox_get_one_with_sign',
             db='dummy_db',
-            id_array=['1', '2'],
+            id_array=('1', '2'),
             module='shot_task',
             os=cgtwq.database._OS,
             sign='test_fb',
@@ -218,7 +218,7 @@ class TaskTestCase(TestCase):
         self.assertEqual(result, ('1', 'unity'))
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='dummy_db', id_array=['1'], module='shot_task',
+            db='dummy_db', id_array=('1',), module='shot_task',
             order_sign_array=['shot_task.id', 'shot_task.artist'],
             sign_array=['shot_task.id', 'shot_task.artist'])
 
@@ -231,7 +231,7 @@ class TaskTestCase(TestCase):
         self.assertEqual(result, 'build')
         call_method.assert_called_once_with(
             'c_orm', 'get_in_id',
-            db='dummy_db', id_array=['1'], module='shot_task',
+            db='dummy_db', id_array=('1',), module='shot_task',
             order_sign_array=['shot_task.task_name'],
             sign_array=['shot_task.task_name'])
 
