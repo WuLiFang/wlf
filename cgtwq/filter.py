@@ -8,9 +8,10 @@ from __future__ import (absolute_import, division, print_function,
 class Filter(list):
     """CGteamwork style filter.  """
 
-    def __init__(self, key, value):
-        super(Filter, self).__init__(
-            [key, 'in' if isinstance(value, (list, tuple)) else '=', value])
+    def __init__(self, key, value, operator=None):
+        if operator is None:
+            operator = 'in' if isinstance(value, (list, tuple)) else '='
+        super(Filter, self).__init__((key, operator, value))
 
     def __and__(self, other):
         return FilterList(self) & FilterList(other)
@@ -39,3 +40,24 @@ class FilterList(list):
         ret.append('or')
         ret += FilterList(other)
         return ret
+
+
+class Field(unicode):
+    """Data base field name for filter.  """
+
+    def __or__(self, value):
+        if isinstance(value, (str, unicode)):
+            value = [value]
+        return Filter(self, value, 'in')
+
+    def __and__(self, value):
+        return Filter(self, value, 'has')
+
+    def __eq__(self, value):
+        return Filter(self, value, '=')
+
+    def __gt__(self, value):
+        return Filter(self, value, '>')
+
+    def __lt__(self, value):
+        return Filter(self, value, '<')
