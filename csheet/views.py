@@ -266,7 +266,7 @@ def image_notes(uuid, pipeline):
     assert isinstance(select, cgtwq.database.Selection)
     select = select.filter(cgtwq.Field('pipeline') == pipeline)
     notes = select.get_notes()
-    return render_template('image_notes.html', notes=notes)
+    return render_template('image_notes.html', notes=notes, server_ip=cgtwq.CGTeamWorkClient.server_ip())
 
 
 def get_csheet_config(project, pipeline, prefix):

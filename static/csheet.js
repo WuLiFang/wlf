@@ -559,7 +559,13 @@ function getNote(element) {
                 function() {
                     let $data = $(data);
                     let content = $data.find('.note-html p').html();
+                    let serverIP = $data.find('.note-html').data('serverIp');
                     $data.find('.note-html').replaceWith(content);
+                    $data.find('img').each(
+                        function() {
+                            this.src = $(this).attr('src').replace('/upload', 'http://' + serverIP + '/upload');
+                        }
+                    );
                     this.innerHTML = $data.html();
                 }
             );
