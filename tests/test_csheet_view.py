@@ -44,6 +44,12 @@ class CGTeamworkTestCase(TestCase):
             recv = self.app.get(url)
             self.assertEqual(recv.status_code, 200)
 
+    def test_image_note(self):
+        for i in self.uuid_list:
+            url = b'/images/{}.notes/合成'.format(i)
+            recv = self.app.get(quote(url))
+            self.assertEqual(recv.status_code, 200)
+
 
 if __name__ == '__main__':
     main()

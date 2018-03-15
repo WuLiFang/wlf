@@ -6,6 +6,7 @@
             <th>组长状态</th>
             <th>导演状态</th>
             <th>客户状态</th>
+            <th>备注</th>
         </tr>
     </thead>
     <tbody>
@@ -18,6 +19,9 @@
             <td class="status" status="{{ i[3] | e }}">
             </td>
             <td class="status" status="{{ i[4] | e }}">
+            </td>
+            <td class="notes" data-pipeline="{{ i[0] | e }}" onclick="getNote(this)">
+                {{ i[5] | e }}
             </td>
         </tr>
         {% endfor %}
@@ -39,3 +43,4 @@
         {% endfor %}
     </tbody>
 </table>
+<div class="note-container"></div>

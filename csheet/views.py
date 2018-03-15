@@ -228,7 +228,7 @@ def image_info(uuid):
 
     assert isinstance(select, cgtwq.database.Selection)
     data = select.get_fields(
-        'pipeline', 'artist', 'leader_status', 'director_status', 'client_status')
+        'pipeline', 'artist', 'leader_status', 'director_status', 'client_status', 'note_num')
     data.sort(key=lambda i: (
         i[0] == '合成',
         i[0] == '渲染',
@@ -259,9 +259,14 @@ def image_info(uuid):
     return render_template('image_info.html', data=data, metadata=metadata)
 
 
-@APP.route('/images/<uuid>.note')
-def image_notes(self, uuid):
-    pass
+@APP.route('/images/<uuid>.notes/<pipeline>')
+def image_notes(uuid, pipeline):
+    image = get_image(uuid)
+    select = image.cgteamwork_select
+    assert isinstance(select, cgtwq.database.Selection)
+    select = select.filter(cgtwq.Field('pipeline') == pipeline)
+    notes = select.get_notes()
+    return render_template('image_notes.html', notes=notes)
 
 
 def get_csheet_config(project, pipeline, prefix):

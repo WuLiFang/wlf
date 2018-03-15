@@ -182,6 +182,10 @@ video {
               content: "通过"; }
           .lightbox .viewer .detail table td.status[status=Close]::before {
             content: "<关闭>"; }
+        .lightbox .viewer .detail table td.notes {
+          transition: 0.3s ease-out; }
+          .lightbox .viewer .detail table td.notes:hover {
+            background: rgba(255, 255, 255, 0.2); }
     .lightbox .viewer .full {
       z-index: 2;
       position: absolute;

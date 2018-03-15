@@ -9,7 +9,7 @@ from collections import namedtuple
 from functools import partial
 
 from . import server
-from .filter import Filter, FilterList
+from .filter import Filter, FilterList, Field
 from .util import genreate_thumb, file_md5
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
@@ -375,6 +375,18 @@ class Selection(tuple):
     def __setitem__(self, name, value):
         assert isinstance(name, (unicode, str))
         self.set_fields(**{name: value})
+
+    def filter(self, filters):
+        """Filter selection again.
+
+        Args:
+            filters (Filter,FilterList): Addtional filters.
+
+        Returns:
+            Selction: Filtered selection.
+        """
+
+        return self.module.filter((Field('id') | self) & filters)
 
     def get_fields(self, *fields):
         """Get field information for the selection.

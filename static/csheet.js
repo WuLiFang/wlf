@@ -542,3 +542,27 @@ function startUpdateWorker() {
         $(document).dequeue(updateQueueName);
     }
 }
+
+/**
+ * Get notes data then display.
+ * @param {element} element Note element with pipline data.
+ */
+function getNote(element) {
+    let pipeline = $(element).data('pipeline');
+    let lightbox = getLightbox(element);
+    let $lightbox = $(lightbox);
+    let uuid = $lightbox.data('uuid');
+
+    $.get('/images/' + uuid + '.notes/' + pipeline,
+        function(data) {
+            $lightbox.find('.note-container').each(
+                function() {
+                    let $data = $(data);
+                    let content = $data.find('.note-html p').html();
+                    $data.find('.note-html').replaceWith(content);
+                    this.innerHTML = $data.html();
+                }
+            );
+        }
+    );
+}

@@ -8,7 +8,7 @@ from .client import CGTeamWorkClient
 from .database import ACCOUNT, PROJECT, Database
 from .exceptions import (AccountError, CGTeamWorkException, IDError,
                          LoginError, PrefixError, SignError)
-from .filter import Filter, FilterList
+from .filter import Filter, FilterList, Field
 
 MODULE_ENABLE = has_cgtw()
 
