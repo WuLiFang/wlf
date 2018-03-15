@@ -8,7 +8,6 @@ import pickle
 
 from wlf.csheet.html import HTMLImage
 from wlf.path import PurePath
-from wlf.cgtwq import CGTeamWorkClient
 
 
 class CSheetTestCase(TestCase):
@@ -43,21 +42,6 @@ class CSheetTestCase(TestCase):
         image_a = pickle.loads(data)
         self.assertIsInstance(image_a, HTMLImage)
         self.assertEqual(image_a, image_b)
-
-
-class WSGICsheetTestCase(TestCase):
-    def setUp(self):
-        from wlf.csheet.views import APP
-
-        APP.testing = True
-        self.app = APP.test_client()
-
-    def test_main(self):
-        recv = self.app.get('/')
-        if CGTeamWorkClient.is_logged_in():
-            self.assertEqual(recv.status_code, 200)
-        else:
-            self.assertEqual(recv.status_code, 503)
 
 
 if __name__ == '__main__':

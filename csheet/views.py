@@ -91,8 +91,18 @@ def render_local_dir():
     return from_dir(local_dir, is_client=True, relative_to=local_dir)
 
 
+def get_image(uuid):
+    """Get image from uuid.   """
+
+    try:
+        image = HTMLImage.from_uuid(uuid)
+        assert isinstance(image, HTMLImage)
+        return image
+    except (KeyError, ValueError):
+        abort(404, 'No image match this uuid.')
+
+
 @APP.route('/images/<uuid>.<role>')
-# @nocache
 def response_image(uuid, role):
     """Response file for a image.
 
@@ -107,12 +117,7 @@ def response_image(uuid, role):
         flask.Response: Response for client.
     """
 
-    try:
-        image = HTMLImage.from_uuid(uuid)
-        assert isinstance(image, HTMLImage)
-    except (KeyError, ValueError):
-        abort(404, 'No image match this uuid.')
-
+    image = get_image(uuid)
     kwargs = {}
     folder = APP.config.get('storage')
     if folder:
@@ -213,11 +218,8 @@ def get_images(database, pipeline, prefix):
 @APP.route('/images/<uuid>.info')
 def image_info(uuid):
     """Get image related information.   """
-    try:
-        image = HTMLImage.from_uuid(uuid)
-        assert isinstance(image, HTMLImage)
-    except (KeyError, ValueError):
-        abort(404, 'No image match this uuid.')
+
+    image = get_image(uuid)
 
     try:
         select = image.cgteamwork_select
@@ -242,13 +244,24 @@ def image_info(uuid):
         if v in metadata:
             # Skip same file to reduce io.
             continue
-        _data = (basename(unicode(v)), getmtime(unicode(v)))
+        try:
+            _mtime = getmtime(unicode(v))
+        except OSError:
+            _mtime = None
+        _data = (basename(unicode(v)), _mtime)
         metadata[v] = _data
 
     metadata = sorted(metadata.values(), key=lambda x: x[1])
-    metadata = [(i[0], time.strftime('%x %X', time.localtime(i[1])))
+    metadata = [(i[0],
+                 time.strftime('%x %X', time.localtime(i[1]))
+                 if i[1] else '<获取失败>')
                 for i in metadata]
     return render_template('image_info.html', data=data, metadata=metadata)
+
+
+@APP.route('/images/<uuid>.note')
+def image_notes(self, uuid):
+    pass
 
 
 def get_csheet_config(project, pipeline, prefix):
