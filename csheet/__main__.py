@@ -11,8 +11,8 @@ from multiprocessing.dummy import Pool, cpu_count
 from Qt import QtCore, QtWidgets
 from Qt.QtWidgets import QMessageBox
 
-from . import __version__
-from .. import cgtwq
+from . import __version__, util
+from .. import cgtwq, mp_logging
 from ..config import Config as BaseConfig
 from ..decorators import run_with_memory_require
 from ..ffmpeg import GenerateError
@@ -20,7 +20,6 @@ from ..files import copy
 from ..notify import CancelledError, progress
 from ..path import Path, PurePath, get_encoded
 from ..uitools import DialogWithDir, main_show_dialog
-from .. import mp_logging
 from .html import RESOURCES_DIR, HTMLImage, from_list, updated_config
 
 LOGGER = logging.getLogger('com.wlf.csheet')
@@ -305,7 +304,10 @@ def run_server(port=5000, local_dir=None):
     from gevent.wsgi import WSGIServer
     from .views import APP
     from socket import gethostname, gethostbyname
+
+    util.set_locale()
     APP.config['local_dir'] = local_dir
+
     host_ip = gethostbyname(gethostname())
     server = WSGIServer(('0.0.0.0', port), APP, log=None)
     address = 'https://{}:{}'.format(host_ip, port)

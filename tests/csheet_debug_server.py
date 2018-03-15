@@ -8,10 +8,12 @@ from gevent.wsgi import WSGIServer
 
 from wlf import mp_logging
 from wlf.csheet.views import APP
+from wlf.csheet import util
 
 
 def main():
     mp_logging.basic_config(level=logging.DEBUG)
+    util.set_locale()
 
     port = 5001
     APP.debug = True

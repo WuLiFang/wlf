@@ -3,8 +3,9 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import json
+import time
 from os import SEEK_END
-from os.path import join
+from os.path import basename, getmtime, join
 from tempfile import TemporaryFile, gettempdir
 from zipfile import ZipFile
 
@@ -140,7 +141,7 @@ def response_image(uuid, role):
 
         if not Path(generated).exists():
             try:
-                del image.genearated[role]
+                del image.generated[role]
             except KeyError:
                 pass
             return make_response('Generated file has been moved', 503, {'Retry-After': 10})
@@ -235,7 +236,15 @@ def image_info(uuid):
         i[0] == '动画',
         i[0] == 'Layout',
     ))
-    return render_template('image_info.html', data=data)
+
+    metadata = set()
+    for v in image.source.values():
+        _data = (basename(unicode(v)), getmtime(unicode(v)))
+        metadata.add(_data)
+    metadata = sorted(metadata, key=lambda x: x[1])
+    metadata = [(i[0], time.strftime('%x %X', time.localtime(i[1])))
+                for i in metadata]
+    return render_template('image_info.html', data=data, metadata=metadata)
 
 
 def get_csheet_config(project, pipeline, prefix):

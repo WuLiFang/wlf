@@ -23,3 +23,19 @@
         {% endfor %}
     </tbody>
 </table>
+<table>
+    <thead>
+        <tr>
+            <th>文件名</th>
+            <th>修改日期</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for i in metadata %}
+        <tr>
+            <td>{{ i[0] | e }}</td>
+            <td>{{ i[1] | e }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

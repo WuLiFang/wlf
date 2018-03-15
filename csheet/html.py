@@ -87,7 +87,7 @@ class HTMLImage(Image):
         self.locks = {i: Semaphore() for i in self.folder_names}
         self.uuid = self.get_uuid(path)
         self.source = {}
-        self.genearated = {}
+        self.generated = {}
 
         type_ = unicode(mimetypes.guess_type(unicode(self.path))[0])
         if type_.startswith('image/'):
@@ -159,11 +159,11 @@ class HTMLImage(Image):
             try:
                 return '{}/{}'.format(
                     self.folder_names[role],
-                    self.genearated[role].name)
+                    self.generated[role].name)
             except KeyError:
                 return ''
 
-        path = self.genearated.get(role, self.source.get(role, self.path))
+        path = self.generated.get(role, self.source.get(role, self.path))
         assert isinstance(path, PurePath)
         try:
             return path.as_uri()
@@ -250,7 +250,7 @@ class HTMLImage(Image):
             output.parent.mkdir(parents=True, exist_ok=True)
             ret = method(source, output, **_kwargs)
             ret = Path(ret)
-            self.genearated[role] = ret
+            self.generated[role] = ret
             return ret
         finally:
             lock.release()
@@ -260,7 +260,7 @@ class HTMLImage(Image):
 
         path = PurePath(dest)
         for role in self.folder_names:
-            src_path = self.genearated.get(role, self.source.get(role))
+            src_path = self.generated.get(role, self.source.get(role))
             if not src_path:
                 continue
 
