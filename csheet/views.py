@@ -237,11 +237,15 @@ def image_info(uuid):
         i[0] == 'Layout',
     ))
 
-    metadata = set()
+    metadata = {}
     for v in image.source.values():
+        if v in metadata:
+            # Skip same file to reduce io.
+            continue
         _data = (basename(unicode(v)), getmtime(unicode(v)))
-        metadata.add(_data)
-    metadata = sorted(metadata, key=lambda x: x[1])
+        metadata[v] = _data
+
+    metadata = sorted(metadata.values(), key=lambda x: x[1])
     metadata = [(i[0], time.strftime('%x %X', time.localtime(i[1])))
                 for i in metadata]
     return render_template('image_info.html', data=data, metadata=metadata)
