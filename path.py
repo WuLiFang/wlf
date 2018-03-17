@@ -3,16 +3,18 @@
 
 from __future__ import print_function, unicode_literals
 
-import os
-import sys
 import io
-import re
 import json
 import locale
-import string
 import logging
+import os
+import re
+import string
+import sys
 
 import pathlib2
+from six import binary_type, text_type
+
 from .decorators import deprecated
 
 with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
@@ -30,12 +32,12 @@ def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
     """Return unicode by try decode @string with @codecs.  """
 
     try:
-        return unicode(input_str)
+        return text_type(input_str)
     except UnicodeDecodeError:
-        input_str = str(input_str)
+        input_str = binary_type(input_str)
         for i in tuple(codecs) + (sys.getfilesystemencoding(), locale.getdefaultlocale()[1]):
             try:
-                return unicode(input_str, i)
+                return text_type(input_str, i)
             except UnicodeDecodeError:
                 continue
     raise UnicodeDecodeError(input_str)
@@ -73,7 +75,7 @@ def get_server(path):
     """
     _path = PurePath(path)
     if _path.anchor.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]*)\\?', str(_path))
+        match = re.match(r'(\\\\[^\\]*)\\?', binary_type(_path))
         if match:
             return get_unicode(match.group(1))
 
@@ -307,13 +309,13 @@ class PurePath(pathlib2.PurePath):
     def with_frame(self, frame):
         '''Return a frame mark expaned version of filename, with given frame.
 
-        >>> unicode(PurePath('test_sequence_###.exr').with_frame(1))
+        >>> text_type(PurePath('test_sequence_###.exr').with_frame(1))
         u'test_sequence_001.exr'
-        >>> unicode(PurePath('test_sequence_369.exr').with_frame(1))
+        >>> text_type(PurePath('test_sequence_369.exr').with_frame(1))
         u'test_sequence_369.exr'
-        >>> unicode(PurePath('test_sequence_%03d.exr').with_frame(1234))
+        >>> text_type(PurePath('test_sequence_%03d.exr').with_frame(1234))
         u'test_sequence_1234.exr'
-        >>> unicode(PurePath('test_sequence_%03d.###.exr').with_frame(1234))
+        >>> text_type(PurePath('test_sequence_%03d.###.exr').with_frame(1234))
         u'test_sequence_1234.1234.exr'
         '''
 
@@ -331,7 +333,7 @@ class PurePath(pathlib2.PurePath):
     def as_no_version(self):
         """Return filename without version number.
 
-        >>> unicode(PurePath('sc_001_v233.jpg').as_no_version())
+        >>> text_type(PurePath('sc_001_v233.jpg').as_no_version())
         u'sc_001.jpg'
         """
 
@@ -341,7 +343,7 @@ class PurePath(pathlib2.PurePath):
         """Return the string representation of the path with forward (/)
         slashes."""
         f = getattr(self, '_flavour')
-        return unicode(self).replace(f.sep, '/')
+        return text_type(self).replace(f.sep, '/')
 
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
@@ -372,7 +374,7 @@ class PurePath(pathlib2.PurePath):
             if self.is_absolute():
                 return self.as_uri()
             else:
-                return unicode(self).replace('http:\\', 'http://').replace('\\', '/')
+                return text_type(self).replace('http:\\', 'http://').replace('\\', '/')
 
 
 class PurePosixPath(PurePath):
