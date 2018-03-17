@@ -126,7 +126,7 @@ if HAS_QT:
                 app = QtWidgets.QApplication(sys.argv)
 
             super(QtProgressBar, self).__init__(parent)
-            QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
+            QtCompat.loadUi(os.path.abspath(os.path.join(__file__, '../progress.ui')), self)
             if parent:
                 geo = self.geometry()
                 geo.moveCenter(parent.geometry().center())
