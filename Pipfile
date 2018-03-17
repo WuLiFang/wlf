@@ -11,11 +11,11 @@ pylint = "*"
 rope = "*"
 "autopep8" = "*"
 mock = "*"
+pyside = "*"
 
 
 [packages]
 
-pyside = "*"
 psutil = "*"
 
 

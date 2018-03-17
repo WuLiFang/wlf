@@ -22,8 +22,9 @@ def _setup():
 
     # Add bin folder to path.
     bin_folder = join(__folder__, BIN_FOLDER)
-    if bin_folder not in os.environ['path']:
-        os.environ['path'] = bin_folder + os.pathsep + os.environ['path']
+    _path = os.getenv('path', '')
+    if bin_folder not in _path:
+        os.environ['path'] = bin_folder + os.pathsep + _path
     setattr(sys.modules[__name__], 'BIN_FOLDER', bin_folder)
 
 

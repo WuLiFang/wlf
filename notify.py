@@ -10,13 +10,13 @@ import threading
 import time
 from datetime import timedelta
 
-from .decorators import run_in_main_thread, deprecated
-from .env import has_gui, has_nuke, HAS_QT
+from . import util
+from .decorators import deprecated, run_in_main_thread
+from .env import HAS_QT, has_gui, has_nuke
 from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
 LOGGER = logging.getLogger('com.wlf.notify')
-
 
 class BaseProgressHandler(object):
     """Base class for progress handler."""
@@ -61,7 +61,7 @@ class BaseProgressHandler(object):
     def set_message(self, message):
         """Set progress message.  """
 
-        print(message)
+        util.u_print(message)
 
     def message_factory(self, item):
         """Get message from item.  """

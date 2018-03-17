@@ -15,8 +15,8 @@ import logging
 import pathlib2
 from .decorators import deprecated
 
-with pathlib2.Path(pathlib2.Path(__file__) / '../files.tags.json').open(encoding='UTF-8') as _f:
-    _TAGS = json.load(_f)
+with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
+    _TAGS = json.load(_f, encoding='utf-8')
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
     DEFAULT_TAG = _TAGS['default']
@@ -105,9 +105,9 @@ class PurePath(pathlib2.PurePath):
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with pathlib2.Path(pathlib2.Path(__file__)
-                       / '../precomp.redshift.json').open(encoding='UTF-8') as f:
-        layers = json.load(f).get('layers')
+    with open(os.path.abspath(
+            os.path.join(__file__, '../precomp.redshift.json'))) as f:
+        layers = json.load(f, encoding='utf-8').get('layers')
     _unicode = None
 
     def __new__(cls, *args):
@@ -160,10 +160,6 @@ class PurePath(pathlib2.PurePath):
         layers = self.layers
         if not self:
             return
-        if layers is None:
-            with pathlib2.Path(pathlib2.Path(__file__)
-                               / '../precomp.redshift.json').open(encoding='UTF-8') as f:
-                layers = json.load(f).get('layers')
 
         for layer in layers:
             match = re.search(r'\b({}\d*)\b'.format(layer),
