@@ -71,12 +71,11 @@ def get_server(path):
 
     >>> get_server('\\\\192.168.1.7\\z\\b')
     u'\\\\192.168.1.7'
-    >>> get_server(r'C:/steam')
+    >>> get_server('C:/steam')
     u'C:/steam'
     """
-    _path = PurePath(path)
-    if _path.anchor.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]*)\\?', text_type(_path))
+    if path.startswith('\\\\'):
+        match = re.match(r'(\\\\[^\\]+)\\?', text_type(path))
         if match:
             return match.group(1)
 
