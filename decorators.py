@@ -61,6 +61,38 @@ def run_with_clock(name=None):
     return _wrap
 
 
+if HAS_QT:
+    from Qt.QtCore import QObject, QEvent, QCoreApplication
+    import Qt
+
+    class Event(QEvent):
+        if Qt.IsPySide:
+            event_type = QEvent.Type.User
+        else:
+            event_type = QEvent.registerEventType()
+
+        def __init__(self, func, args, kwargs):
+            super(Event, self).__init__(self.event_type)
+            self.func = func
+            self.args = args
+            self.kwargs = kwargs
+
+    class Runner(QObject):
+        """Runner for run in main thread.  """
+
+        result = Queue(1)
+
+        def event(self, event):
+            if event.type() == Event.event_type:
+                try:
+                    self.result.put(event.func(
+                        *event.args, **event.kwargs))
+                    return True
+                except AttributeError:
+                    return False
+            return super(Runner, self).event(event)
+
+
 def run_in_main_thread(func):
     """(Decorator)Run @func in nuke main_thread.   """
 
@@ -75,30 +107,6 @@ def run_in_main_thread(func):
             return func(*args, **kwargs)
 
     elif HAS_QT:
-        from Qt.QtCore import QObject, QEvent, QCoreApplication
-
-        class Event(QEvent):
-
-            def __init__(self, func, args, kwargs):
-                super(Event, self).__init__(QEvent.Type.User)
-                self.func = func
-                self.args = args
-                self.kwargs = kwargs
-
-        class Runner(QObject):
-            """Runner for run in main thread.  """
-
-            result = Queue(1)
-
-            def event(self, event):
-                if event.type() == QEvent.Type.User:
-                    try:
-                        self.result.put(event.func(
-                            *event.args, **event.kwargs))
-                        return True
-                    except AttributeError:
-                        return False
-                return super(Runner, self).event(event)
 
         @wraps(func)
         def _func(*args, **kwargs):

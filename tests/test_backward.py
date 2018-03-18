@@ -2,12 +2,12 @@
 """Module backward compatibility test.  """
 from __future__ import absolute_import
 
-from unittest import TestCase, main
+from unittest import TestCase, main, skipIf
 from inspect import ismodule
-
+import six
 # pylint: disable=no-member,no-name-in-module,unused-variable,import-error
 
-
+@skipIf(six.PY3, 'No need backward support for python3.')
 class BackwardTestCase(TestCase):
     def assert_all_in(self, namespace, names):
         for i in names:

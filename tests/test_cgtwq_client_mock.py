@@ -8,12 +8,18 @@ import json
 import os
 import socket
 import uuid
+from functools import partial
 from unittest import TestCase, main, skip
 
-from mock import patch
+import six
 
 from wlf import cgtwq
-from functools import partial
+
+if six.PY3:
+    from unittest.mock import patch  # pylint: disable=import-error,no-name-in-module
+else:
+    from mock import patch
+
 
 # Same argument with json.dumps used in `CGTeamWorkClient.call`.
 dumps = partial(json.dumps, sort_keys=True, indent=4)
@@ -22,7 +28,7 @@ dumps = partial(json.dumps, sort_keys=True, indent=4)
 def server_dumps(code, data):
     """CGTeamwork server dumps json in this style.  """
 
-    return dumps({'code': unicode(code), 'data': data})
+    return dumps({'code': six.text_type(code), 'data': data})
 
 
 class CGTeamWorkClientTestCase(TestCase):
@@ -36,7 +42,7 @@ class CGTeamWorkClientTestCase(TestCase):
         conn = self.conn
 
         # Logged in.
-        conn.recv.return_value = server_dumps(1, unicode(uuid.uuid4()))
+        conn.recv.return_value = server_dumps(1, six.text_type(uuid.uuid4()))
         result = cgtwq.CGTeamWorkClient.is_running()
         self.assertIs(result, True)
         conn.send.assert_called_once_with(
@@ -64,7 +70,7 @@ class CGTeamWorkClientTestCase(TestCase):
 
         # Logged in.
         conn.recv.return_value = server_dumps(
-            1, unicode(uuid.uuid4()))
+            1, six.text_type(uuid.uuid4()))
         result = cgtwq.CGTeamWorkClient.is_logged_in()
         self.assertIs(result, True)
         conn.send.assert_called_once_with(
@@ -90,7 +96,7 @@ class CGTeamWorkClientTestCase(TestCase):
     def test_executable(self):
         result = cgtwq.CGTeamWorkClient.executable()
         if result is not None:
-            self.assertIsInstance(result, (unicode))
+            self.assertIsInstance(result, (six.text_type))
         self.conn.assert_not_called()
 
     def test_start(self):
@@ -130,7 +136,7 @@ class CGTeamWorkClientTestCase(TestCase):
 
     def test_token(self):
         conn = self.conn
-        uuid_ = unicode(uuid.uuid4())
+        uuid_ = six.text_type(uuid.uuid4())
         conn.recv.return_value = server_dumps(1, uuid_)
 
         # pylint: disable=protected-access
@@ -196,7 +202,7 @@ class CGTeamWorkClientTestCase(TestCase):
 
     def test_plugin_data(self):
         dummy_data = {'id_list': ['1', '2']}
-        uuid_ = unicode(uuid.uuid4())
+        uuid_ = six.text_type(uuid.uuid4())
         conn = self.conn
         json.loads
         conn.recv.return_value = server_dumps(1, dummy_data)
@@ -220,7 +226,7 @@ class CGTeamWorkClientTestCase(TestCase):
         )
 
     def test_send_plugin_result(self):
-        uuid_ = unicode(uuid.uuid4())
+        uuid_ = six.text_type(uuid.uuid4())
         conn = self.conn
 
         conn.recv.return_value = server_dumps(1, True)

@@ -3,11 +3,13 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
-import warnings
 import os
 import sys
 import traceback
+import warnings
 from multiprocessing.dummy import Lock, Process, Queue
+
+from six import text_type
 
 from .decorators import renamed
 
@@ -24,12 +26,17 @@ class Handler(Process):
         # Patch for use non default encoding.
         if issubclass(handler, logging.StreamHandler):
             def _format(record):
+                def _encode(i):
+                    if isinstance(i, text_type):
+                        try:
+                            return i.encode(sys.stdout.encoding)
+                        except:  # pylint: disable=bare-except
+                            print('test')
+                            pass
+                    return i
+                record.msg = _encode(record.msg)
+                record.args = tuple(_encode(i) for i in record.args)
                 ret = handler.format(self._handler, record)
-                if isinstance(ret, unicode):
-                    try:
-                        ret = ret.encode(sys.stdout.encoding)
-                    except:  # pylint: disable=bare-except
-                        pass
                 return ret
             self._handler.format = _format
         self.queue = Queue(-1)

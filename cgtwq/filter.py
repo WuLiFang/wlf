@@ -3,6 +3,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from six import text_type
 
 
 class Filter(list):
@@ -42,11 +43,11 @@ class FilterList(list):
         return ret
 
 
-class Field(unicode):
+class Field(text_type):
     """Data base field name for filter.  """
 
     def __or__(self, value):
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, (str, text_type)):
             value = [value]
         return Filter(self, value, 'in')
 

@@ -15,7 +15,7 @@ class Image(object):
     def __new__(cls, path):
         if isinstance(path, Image):
             return path
-        return super(Image, cls).__new__(cls, path)
+        return super(Image, cls).__new__(cls)
 
     def __getnewargs__(self):
         return (self.path,)

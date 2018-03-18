@@ -14,7 +14,7 @@ from .decorators import run_with_semaphore
 from .path import get_encoded as e
 from .path import get_unicode as u
 from .path import Path
-
+import shlex
 try:
     from gevent.subprocess import Popen
 except ImportError:

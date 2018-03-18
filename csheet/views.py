@@ -14,6 +14,7 @@ from flask import (Flask, Response, abort, escape, make_response, redirect,
                    render_template, request, send_file)
 from gevent import sleep, spawn
 from gevent.queue import Empty, Queue
+from six import text_type
 
 from . import __version__
 from .. import cgtwq
@@ -34,7 +35,7 @@ CACHE = FanoutCache(join(gettempdir(), 'csheet_server/cache'))
 def u_abort(status, msg):
     """Abort with unicode message.  """
 
-    abort(make_response(escape(unicode(msg)), status, {
+    abort(make_response(escape(text_type(msg)), status, {
         'Content-Type': 'text/html; charset=utf-8'}))
 
 
@@ -151,7 +152,7 @@ def response_image(uuid, role):
                 pass
             return make_response('Generated file has been moved', 503, {'Retry-After': 10})
 
-        resp = send_file(unicode(generated), conditional=True)
+        resp = send_file(text_type(generated), conditional=True)
         resp.cache_control.max_age = 0
         resp.cache_control.no_cache = True
         if request.args:
@@ -245,10 +246,10 @@ def image_info(uuid):
             # Skip same file to reduce io.
             continue
         try:
-            _mtime = getmtime(unicode(v))
+            _mtime = getmtime(text_type(v))
         except OSError:
             _mtime = None
-        _data = (basename(unicode(v)), _mtime)
+        _data = (basename(text_type(v)), _mtime)
         metadata[v] = _data
 
     metadata = sorted(metadata.values(), key=lambda x: x[1])
@@ -348,7 +349,7 @@ def packed_page(**config):
             for role, dirname in image.folder_names.items():
                 try:
                     generated = image.generate(role)
-                    zipfile.write(unicode(generated),
+                    zipfile.write(text_type(generated),
                                   '{}/{}'.format(dirname, generated.name))
                 except (OSError, KeyError):
                     pass

@@ -11,6 +11,7 @@ from functools import partial
 from . import server
 from .filter import Filter, FilterList, Field
 from .util import genreate_thumb, file_md5
+from six import text_type
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
@@ -69,7 +70,7 @@ class Database(object):
     def get_fileboxes(self, filters=None, id_=None):
         """Get fileboxes in this database.
             filters (FilterList, optional): Defaults to None. Filters to get filebox.
-            id_ (unicode, optional): Defaults to None. Filebox id.
+            id_ (text_type, optional): Defaults to None. Filebox id.
 
         Raises:
             ValueError: Not enough arguments.
@@ -118,7 +119,7 @@ class Database(object):
         """Get software path for this database.
 
         Args:
-            name (unicode): Software name.
+            name (text_type): Software name.
 
         Returns:
             path: Path set in `设置` -> `软件`.
@@ -131,8 +132,8 @@ class Database(object):
         """Set addtional data in this database.
 
         Args:
-            key (unicode): Data key.
-            value (unicode): Data value
+            key (text_type): Data key.
+            value (text_type): Data value
             is_user (bool, optional): Defaults to True.
                 If `is_user` is True, this data will be user specific.
         """
@@ -145,12 +146,12 @@ class Database(object):
         """Get addional data set in this database.
 
         Args:
-            key (unicode): Data key.
+            key (text_type): Data key.
             is_user (bool, optional): Defaults to True.
                 If `is_user` is True, this data will be user specific.
 
         Returns:
-            Unicode: Data value.
+            text_type: Data value.
         """
 
         resp = self.call("c_api_data",
@@ -165,7 +166,7 @@ class Module(object):
     def __init__(self, name, database):
         """
         Args:
-            name (unicode): Server defined module name.
+            name (text_type): Server defined module name.
             database (Database): Parent database.
         """
 
@@ -185,7 +186,7 @@ class Module(object):
         """Create selection on this module.
 
         Args:
-            *id_list (unicode): Id list to select.
+            *id_list (text_type): Id list to select.
 
         Returns:
             Selection: Created selection.
@@ -217,13 +218,13 @@ class Module(object):
         """Formatted field name for this module.
 
         Args:
-            name (unicode): Short field name.
+            name (text_type): Short field name.
 
         Returns:
-            unicode: Full field name, for server.
+            text_type: Full field name, for server.
         """
 
-        assert isinstance(name, (str, unicode))
+        assert isinstance(name, (str, text_type))
         if ('.' in name
                 or '#' in name):
             return name
@@ -352,7 +353,7 @@ class Selection(tuple):
     """Selection on a database module.   """
 
     def __new__(cls, module, *id_list):
-        assert all(isinstance(i, unicode) for i in id_list), id_list
+        assert all(isinstance(i, text_type) for i in id_list), id_list
         assert isinstance(module, Module)
         return super(Selection, cls).__new__(cls, id_list)
 
@@ -363,7 +364,7 @@ class Selection(tuple):
             *id_list: Selected id.
         """
 
-        super(Selection, self).__init__(id_list)
+        super(Selection, self).__init__()
         self.module = module
         self.call = partial(self.module.call, id_array=self)
 
@@ -373,7 +374,7 @@ class Selection(tuple):
         return self.get_fields(name).column(name)
 
     def __setitem__(self, name, value):
-        assert isinstance(name, (unicode, str))
+        assert isinstance(name, (text_type, str))
         self.set_fields(**{name: value})
 
     def filter(self, filters):
@@ -428,7 +429,7 @@ class Selection(tuple):
         """Get signed folder path.
 
         Args:
-            sign_list (unicode): Sign name defined in CGTeemWork:
+            sign_list (text_type): Sign name defined in CGTeemWork:
                 `设置` -> `目录文件` -> `标识`
 
         Returns:
@@ -450,8 +451,8 @@ class Selection(tuple):
         """Get one filebox with sign or id_.
 
         Args:
-            sign (unicode): Server defined filebox sign.
-            id_ (unicode): Server filebox id,
+            sign (text_type): Server defined filebox sign.
+            id_ (text_type): Server filebox id,
                 if given, will ignore `sign` value.
 
         Raises:
@@ -489,8 +490,8 @@ class Selection(tuple):
         """Send message to users.
 
         Args:
-            title (unicode): Message title.
-            content (unicode): Message content, support html.
+            title (text_type): Message title.
+            content (text_type): Message content, support html.
             *to: Users that will recives message, use account_id.
             **kwargs:
                 from_: Unknown effect. used in `cgtw` module.
@@ -512,9 +513,9 @@ class Selection(tuple):
         """Set image for the field.
 
         Args:
-            field (unicode): Defaults to 'image', Server defined field name,
-            path (unicode): File path.
-            http_server (unicode, optional): Defaults to None. Http server address,
+            field (text_type): Defaults to 'image', Server defined field name,
+            path (text_type): File path.
+            http_server (text_type, optional): Defaults to None. Http server address,
                 if `http_server` is None, will use value from client.
         """
 
@@ -539,7 +540,7 @@ class Selection(tuple):
         """Get imageinfo used on the field.
 
         Args:
-            field (unicode): Defaults to 'image', Server defined field name,
+            field (text_type): Defaults to 'image', Server defined field name,
 
         Returns:
             set[ImageInfo]: Image information.
@@ -684,7 +685,7 @@ class Entry(Selection):
     """A selection that only has one item.  """
 
     def __init__(self, module, id_):
-        assert isinstance(id_, unicode), type(id_)
+        assert isinstance(id_, text_type), type(id_)
         super(Entry, self).__init__(module, id_)
 
     def __getitem__(self, name):
@@ -709,7 +710,7 @@ class Entry(Selection):
         """Get imageinfo used on the field.
 
         Args:
-            field (unicode): Defaults to 'image', Server defined field name,
+            field (text_type): Defaults to 'image', Server defined field name,
 
         Raises:
             ValueError: when no image in the field.
@@ -742,7 +743,7 @@ class ResultSet(list):
         """Get a column from field name.
 
         Args:
-            field (unicode): Field name.
+            field (text_type): Field name.
 
         Returns:
             tuple: Column data.
@@ -757,7 +758,7 @@ def account_name():
     """Current user name.
 
     Returns:
-        unicode
+        text_type
     """
 
     return ACCOUNT[server.account_id()]['name'][0]

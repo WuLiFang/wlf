@@ -13,12 +13,12 @@ import string
 import sys
 
 import pathlib2
-from six import binary_type, text_type
+from six import binary_type, text_type, python_2_unicode_compatible
 
 from .decorators import deprecated
 
-with open(os.path.abspath(os.path.join(__file__, '../files.tags.json'))) as _f:
-    _TAGS = json.load(_f, encoding='utf-8')
+with pathlib2.Path(os.path.abspath(os.path.join(__file__, '../files.tags.json'))).open(encoding='utf-8') as _f:
+    _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
     DEFAULT_TAG = _TAGS['default']
@@ -100,16 +100,16 @@ def _py2_encode(parts):
 
 setattr(pathlib2, '_py2_fsencode', _py2_encode)
 
-
+@python_2_unicode_compatible
 class PurePath(pathlib2.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with open(os.path.abspath(
-            os.path.join(__file__, '../precomp.redshift.json'))) as f:
-        layers = json.load(f, encoding='utf-8').get('layers')
+    with pathlib2.Path(os.path.abspath(
+            os.path.join(__file__, '../precomp.redshift.json'))).open(encoding='utf-8') as f:
+        layers = json.load(f).get('layers')
     _unicode = None
 
     def __new__(cls, *args):
@@ -128,7 +128,7 @@ class PurePath(pathlib2.PurePath):
             args_u.append(i)
         return cls._from_parts(args_u)
 
-    def __unicode__(self):
+    def __str__(self):
         """Return the string representation of the path, suitable for
         passing to system calls."""
 
@@ -143,9 +143,6 @@ class PurePath(pathlib2.PurePath):
                 get_unicode(self._root),
                 self._parts) or '.'
         return self._unicode
-
-    def __str__(self):
-        return get_encoded(self.__unicode__())
 
     @property
     def name(self):

@@ -10,6 +10,8 @@ import threading
 import time
 from datetime import timedelta
 
+from six import text_type, PY2
+
 from . import util
 from .decorators import deprecated, run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
@@ -17,6 +19,7 @@ from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
 LOGGER = logging.getLogger('com.wlf.notify')
+
 
 class BaseProgressHandler(object):
     """Base class for progress handler."""
@@ -66,7 +69,7 @@ class BaseProgressHandler(object):
     def message_factory(self, item):
         """Get message from item.  """
 
-        return unicode(item)
+        return text_type(item)
 
     def on_finished(self):
         cost_time = time.time() - self.start_time
@@ -93,10 +96,8 @@ class CLIProgressHandler(BaseProgressHandler):
         msg_len = len(message.encode(encoding))
         msg = ('\r' + message
                + ' ' * max(self.last_printed_len - msg_len, 0))
-        try:
-            self.file.write(msg.encode(encoding))
-        except UnicodeDecodeError:
-            self.file.write(msg)
+
+        self.file.write(msg)
         self.file.flush()
         self.last_printed_len = msg_len
 
@@ -126,7 +127,8 @@ if HAS_QT:
                 app = QtWidgets.QApplication(sys.argv)
 
             super(QtProgressBar, self).__init__(parent)
-            QtCompat.loadUi(os.path.abspath(os.path.join(__file__, '../progress.ui')), self)
+            QtCompat.loadUi(os.path.abspath(
+                os.path.join(__file__, '../progress.ui')), self)
             if parent:
                 geo = self.geometry()
                 geo.moveCenter(parent.geometry().center())

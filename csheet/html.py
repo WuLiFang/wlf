@@ -4,13 +4,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import mimetypes
+import os
 import uuid
 
 from jinja2 import Environment, PackageLoader
+from six import text_type, PY3
 
 from .. import ffmpeg
 from ..files import copy, version_filter
-from ..path import Path, PurePath, get_encoded
+from ..path import get_encoded as e
+from ..path import get_unicode as u
+from ..path import Path, PurePath
 from .base import Image
 
 try:
@@ -20,8 +24,7 @@ except ImportError:
 
 
 LOGGER = logging.getLogger('wlf.chseet.html')
-RESOURCES_DIR = Path(Path(__file__).parent.parent / 'static')
-RESOURCES_DIR.resolve()
+RESOURCES_DIR = Path(os.path.abspath(os.path.join(__file__, '../../static')))
 
 
 def updated_config(config=None):
@@ -89,7 +92,7 @@ class HTMLImage(Image):
         self.source = {}
         self.generated = {}
 
-        type_ = unicode(mimetypes.guess_type(unicode(self.path))[0])
+        type_ = text_type(mimetypes.guess_type(text_type(self.path))[0])
         if type_.startswith('image/'):
             self.source['full'] = self.source['thumb'] = self.path
         elif type_.startswith('video/'):
@@ -113,7 +116,11 @@ class HTMLImage(Image):
             str: hex uuid.
         """
 
-        return uuid.uuid5(uuid.NAMESPACE_URL, get_encoded(path)).hex
+        if PY3:
+            path = u(path)
+        else:
+            path = e(path)
+        return uuid.uuid5(uuid.NAMESPACE_URL, path).hex
 
     @classmethod
     def from_uuid(cls, uuid_):
@@ -168,7 +175,7 @@ class HTMLImage(Image):
         try:
             return path.as_uri()
         except ValueError:
-            return unicode(path)
+            return text_type(path)
 
     def get_default(self, role):
         """Get default path.
@@ -290,7 +297,7 @@ def get_images_from_dir(images_folder):
         raise ValueError('Not a dir : {}'.format(images_folder))
     images = version_filter(i for i in path.iterdir()
                             if i.is_file()
-                            and (unicode(mimetypes.guess_type(unicode(i))[0])
+                            and (text_type(mimetypes.guess_type(text_type(i))[0])
                                  .startswith(('video/', 'image/'))))
     return [HTMLImage(i) for i in images]
 

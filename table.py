@@ -8,7 +8,8 @@ import re
 from openpyxl import Workbook
 
 from .notify import Progress
-
+from six import text_type
+from six.moves import range
 LOGGER = logging.getLogger('com.wlf.table')
 __version__ = '0.2.0'
 
@@ -91,7 +92,8 @@ class RowTable(object):
                 return [self.l10n(i) for i in text]
 
             for pattern, repl in self.l10n_dict.items():
-                text = re.sub(unicode(pattern), unicode(repl), unicode(text))
+                text = re.sub(text_type(pattern),
+                              text_type(repl), text_type(text))
         except TypeError:
             LOGGER.warning('L10n fail:%s', text)
 
@@ -116,7 +118,7 @@ class NestedData(object):
         item = self.item
         if isinstance(item, (list, tuple))\
                 and len(item) == 2 \
-                and isinstance(item[0], (str, unicode)) and isinstance(item[1], (tuple, list)):
+                and isinstance(item[0], (str, text_type)) and isinstance(item[1], (tuple, list)):
             item = {item[0]: item[1]}
         if isinstance(item, (list, tuple)):
             for i in item:
@@ -138,7 +140,7 @@ class NestedData(object):
         row_count = max(len(i) for i in columns)
         column_count = len(columns)
         rows = []
-        _ = [rows.append([None] * column_count) for _ in xrange(row_count)]
+        _ = [rows.append([None] * column_count) for _ in range(row_count)]
 
         for column_index, column in enumerate(columns):
             for row_index, item in enumerate(column):

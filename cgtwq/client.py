@@ -12,6 +12,7 @@ from collections import namedtuple
 from functools import partial
 from subprocess import Popen
 
+from six import text_type
 from websocket import create_connection
 
 from ..decorators import deprecated
@@ -56,7 +57,7 @@ class CGTeamWorkClient(object):
         """Get a cgteawmwork client executable.
 
         Returns:
-            unicode: Executable path.
+            text_type: Executable path.
         """
 
         # Get client executable.
@@ -121,8 +122,8 @@ class CGTeamWorkClient(object):
         if matched view is opened.
 
         Args:
-            database (unicode): Database of view.
-            module (unicode): Module of view.
+            database (text_type): Database of view.
+            module (text_type): Module of view.
         """
 
         cls.call('view_control', 'refresh',
@@ -137,8 +138,8 @@ class CGTeamWorkClient(object):
         if matched view is opened.
 
         Args:
-            database (unicode): Database of view.
-            module (unicode): Module of view.
+            database (text_type): Database of view.
+            module (text_type): Module of view.
         """
 
         cls.call(
@@ -169,8 +170,8 @@ class CGTeamWorkClient(object):
         ret = cls.call_main_widget("get_token")
         if ret is True:
             return ''
-        assert isinstance(ret, unicode), type(ret)
-        return unicode(ret)
+        assert isinstance(ret, text_type), type(ret)
+        return text_type(ret)
 
     @classmethod
     def server_ip(cls, max_age=5):
@@ -183,23 +184,23 @@ class CGTeamWorkClient(object):
         """Server ip current using by client.  """
 
         ret = cls.call_main_widget("get_server_ip")
-        assert isinstance(ret, unicode), type(ret)
-        return unicode(ret)
+        assert isinstance(ret, text_type), type(ret)
+        return text_type(ret)
 
     @classmethod
     def server_http(cls):
         """Server http current using by client.  """
 
         ret = cls.call_main_widget("get_server_http")
-        assert isinstance(ret, unicode), type(ret)
-        return unicode(ret)
+        assert isinstance(ret, text_type), type(ret)
+        return text_type(ret)
 
     @classmethod
     def get_plugin_data(cls, uuid=''):
         """Get plugin data for uuid.
 
         Args:
-            uuid (unicode): Plugin uuid.
+            uuid (text_type): Plugin uuid.
         """
 
         data = cls.call_main_widget("get_plugin_data", plugin_uuid=uuid)
@@ -221,7 +222,7 @@ class CGTeamWorkClient(object):
         if result is `False`, following operation will been abort.
 
         Args:
-            uuid (unicode): Plugin uuid.
+            uuid (text_type): Plugin uuid.
             result (bool, optional): Defaults to False. Plugin execution result.
         """
 
@@ -238,7 +239,7 @@ class CGTeamWorkClient(object):
             **data (dict): Data to send.
 
         Returns:
-            dict or unicode: Recived data.
+            dict or text_type: Recived data.
         """
 
         method = partial(
@@ -254,12 +255,12 @@ class CGTeamWorkClient(object):
 
         Args:
             controller: Client defined controller name.
-            method (str, unicode): Client defined method name
+            method (str, text_type): Client defined method name
                 on the controller.
             **kwargs: Client defined method keyword arguments.
 
         Returns:
-            dict or unicode: Recived data.
+            dict or text_type: Recived data.
         """
 
         _kwargs = {

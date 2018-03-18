@@ -32,7 +32,7 @@ class CGTeamworkTestCase(TestCase):
         self.app = APP.test_client()
         # To initiate images
         url = quote(
-            b'/?pipeline=合成&project=梦塔&prefix=MT_EP06_01_', safe=b'/?=&')
+            b'/?pipeline=\xba\xcf\xb3\xc9&project=\xc3\xce\xcb\xfe&prefix=MT_EP06_01_', safe=b'/?=&')
         recv = self.app.get(url)
         self.assertEqual(recv.status_code, 200)
         self.uuid_list = re.findall('data-uuid="(.+)"', recv.data)
@@ -46,7 +46,7 @@ class CGTeamworkTestCase(TestCase):
 
     def test_image_note(self):
         for i in self.uuid_list:
-            url = b'/images/{}.notes/合成'.format(i)
+            url = b'/images/{}.notes/\xba\xcf\xb3\xc9'.format(i)
             recv = self.app.get(quote(url))
             self.assertEqual(recv.status_code, 200)
 

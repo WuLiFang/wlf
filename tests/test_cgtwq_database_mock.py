@@ -6,9 +6,15 @@ from __future__ import (absolute_import, division, print_function,
 
 from unittest import TestCase, main
 
-from mock import MagicMock, patch
+import six
 
 from wlf import cgtwq
+
+if six.PY3:
+    from unittest.mock import MagicMock, patch  # pylint: disable=import-error,no-name-in-module
+else:
+    from mock import MagicMock, patch
+
 
 
 class DatabaseTestCase(TestCase):

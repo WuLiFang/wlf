@@ -5,7 +5,9 @@ from __future__ import absolute_import
 
 import time
 from threading import Thread
-from unittest import TestCase, main, skip
+from unittest import TestCase, main
+
+from six.moves import range
 
 
 class ProgressTestCase(TestCase):
@@ -18,19 +20,19 @@ class ProgressTestCase(TestCase):
     def test_base_handler(self):
         from wlf.notify import progress, BaseProgressHandler
 
-        for _ in progress(xrange(200), 'base测试', handler=BaseProgressHandler()):
+        for _ in progress(range(200), 'base测试', handler=BaseProgressHandler()):
             time.sleep(0.01)
 
     def test_cli_handler(self):
         from wlf.notify import progress, CLIProgressHandler
 
-        for _ in progress(xrange(200), 'cli测试', handler=CLIProgressHandler()):
+        for _ in progress(range(200), 'cli测试', handler=CLIProgressHandler()):
             time.sleep(0.01)
 
     def test_qt_handler(self):
         from wlf.notify import progress, QtProgressHandler
 
-        for _ in progress(xrange(200), 'qt测试', handler=QtProgressHandler()):
+        for _ in progress(range(200), 'qt测试', handler=QtProgressHandler()):
             time.sleep(0.01)
 
     def test_async(self):
