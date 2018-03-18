@@ -27,6 +27,7 @@ script:
   - xvfb-run pipenv run coverage run -m unittest discover -v -s ./tests -p test_*.py
 after_script:
   - coverage xml
+  - coverage report
   - ./cc-test-reporter format-coverage --output "coverage/codeclimate.$TRAVIS_JOB_NUMBER.json"
   - coscmd upload -r coverage /build-$TRAVIS_BUILD_NUMBER
   - coscmd download -r /build-$TRAVIS_BUILD_NUMBER coverage
