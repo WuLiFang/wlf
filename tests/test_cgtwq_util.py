@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import os
+import sys
 from unittest import TestCase, main, skipIf
 
 import six
@@ -15,6 +16,7 @@ import util
 class UtilTestCase(TestCase):
 
     @skipIf(six.PY3, 'TODO')
+    @skipIf(sys.platform != 'win32', 'TODO')
     def test_generate_thumb(self):
         from wlf.cgtwq.util import genreate_thumb
         result = genreate_thumb(util.path('resource', 'gray.jpg'), 100, 75)
