@@ -93,10 +93,16 @@ class CLIProgressHandler(BaseProgressHandler):
     def set_message(self, message):
         message = get_unicode(message)
         encoding = sys.getfilesystemencoding()
+        try:
+            encoding = self.file.encoding or encoding
+        except AttributeError:
+            pass
         msg_len = len(message.encode(encoding))
         msg = ('\r' + message
                + ' ' * max(self.last_printed_len - msg_len, 0))
 
+        if PY2:
+            msg = msg.encode(encoding, 'replace')
         self.file.write(msg)
         self.file.flush()
         self.last_printed_len = msg_len
