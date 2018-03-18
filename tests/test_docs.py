@@ -1,9 +1,11 @@
 """Docstring test.  """
 from __future__ import absolute_import
-from unittest import TestCase
+from unittest import TestCase, skipIf
 import doctest
+import six
 
 
+@skipIf(six.PY3, 'Docstrings is wrote for python2.')
 class DocstringTestCase(TestCase):
     def _test_mod(self, mod):
         result = doctest.testmod(mod, verbose=False)

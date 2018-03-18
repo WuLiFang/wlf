@@ -140,7 +140,7 @@ class TaskTestCase(TestCase):
     def test_get_note(self):
         pass
 
-
+@skip_if_not_logged_in
 class ProjectTestCase(TestCase):
     def test_names(self):
         result = database.PROJECT.names()
@@ -148,7 +148,7 @@ class ProjectTestCase(TestCase):
         for i in result:
             self.assertIsInstance(i, unicode)
 
-
+@skip_if_not_logged_in
 class AccountTestCase(TestCase):
     def test_names(self):
         result = database.ACCOUNT.names()

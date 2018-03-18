@@ -68,7 +68,7 @@ def is_ascii(text):
 def get_server(path):
     r"""Return only path head for unc path.
 
-    >>> get_server(r'\\192.168.1.7\z\b')
+    >>> get_server('\\\\192.168.1.7\\z\\b')
     u'\\\\192.168.1.7'
     >>> get_server(r'C:/steam')
     u'C:/steam'
@@ -190,9 +190,9 @@ class PurePath(pathlib2.PurePath):
 
         Use default tag pattern:
 
-        >>> PurePath(r'Z:\\QQFC2017\\Render\\SC_065\\QQFC_sc065_CH2').tag
+        >>> PurePath('Z:/QQFC2017/Render/SC_065/QQFC_sc065_CH2').tag
         u'CH2'
-        >>> PurePath(r'Z:\\EP13_09_sc151_CH_B\\EP13_09_sc151_CH_B.0015.exr').tag
+        >>> PurePath('Z:/EP13_09_sc151_CH_B/EP13_09_sc151_CH_B.0015.exr').tag
         u'CH_B'
 
         result of below cases has been auto converted
@@ -347,35 +347,6 @@ class PurePath(pathlib2.PurePath):
 
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
-
-    def html_relative_to(self, *other):
-        r"""Try give relative path for html.
-
-        >>> PurePath('/test/abc').html_relative_to('/test')
-        u'./abc'
-        >>> PurePath('C:/test\\abc/d\\e').html_relative_to('C:\\test')
-        u'./abc/d/e'
-        >>> PurePath('C:/test\\abc').html_relative_to(None)
-        u'file:///C:/test/abc'
-        >>> PurePath('C:/test\\abc').html_relative_to('C:\\def')
-        u'file:///C:/test/abc'
-        >>> PurePath('http://example.com').html_relative_to('C:\\def')
-        u'http://example.com'
-        >>> PurePath('http://example.com/test').html_relative_to('http://example.com')
-        u'./test'
-
-        """
-
-        try:
-            path = self.relative_to(*other)
-            path = './{}'.format(path.as_posix())
-            return path
-        except ValueError:
-            if self.is_absolute():
-                return self.as_uri()
-            else:
-                return text_type(self).replace('http:\\', 'http://').replace('\\', '/')
-
 
 class PurePosixPath(PurePath):
     """Port from pathlib.PurePosixPath.  """

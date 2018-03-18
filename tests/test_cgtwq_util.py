@@ -7,12 +7,15 @@ from __future__ import (absolute_import, division, print_function,
 from unittest import TestCase, main
 
 import os
+import util
 
 
 class UtilTestCase(TestCase):
     def test_generate_thumb(self):
         from wlf.cgtwq.util import genreate_thumb
-        result = genreate_thumb(r'E:\test\images\autoComper.0112.jpg', 100, 75)
+        result = genreate_thumb(util.path('resource', 'gray.jpg'), 100, 75)
+        self.addCleanup(os.unlink, result)
+        result = genreate_thumb(util.path('resource', 'gray.png'), 100, 75)
         self.addCleanup(os.unlink, result)
 
 

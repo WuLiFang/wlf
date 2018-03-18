@@ -27,9 +27,9 @@ def genreate_thumb(path, width, height):
     # Generate.
     cmd = ('ffmpeg -y -hide_banner '
            '-i "{input}" '
-           '-vf scale={width}:{height}:'
+           '-vf scale=trunc({width}/2)*2:trunc({height}/2)*2:'
            'force_original_aspect_ratio=decrease,'
-           'pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1 '
+           'pad={width}:{height}:abs(ow-iw)/2:abs(oh-ih)/2,setsar=1 '
            '-q:v 1 '
            '"{output}"').format(input=path, output=filename,
                                 width=width, height=height)
