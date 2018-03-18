@@ -65,6 +65,7 @@ def is_ascii(text):
         return False
 
 
+@deprecated
 def get_server(path):
     r"""Return only path head for unc path.
 
@@ -75,9 +76,9 @@ def get_server(path):
     """
     _path = PurePath(path)
     if _path.anchor.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]*)\\?', binary_type(_path))
+        match = re.match(r'(\\\\[^\\]*)\\?', text_type(_path))
         if match:
-            return get_unicode(match.group(1))
+            return match.group(1)
 
     return path
 
@@ -99,6 +100,7 @@ def _py2_encode(parts):
 
 
 setattr(pathlib2, '_py2_fsencode', _py2_encode)
+
 
 @python_2_unicode_compatible
 class PurePath(pathlib2.PurePath):
@@ -344,6 +346,7 @@ class PurePath(pathlib2.PurePath):
 
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
+
 
 class PurePosixPath(PurePath):
     """Port from pathlib.PurePosixPath.  """
