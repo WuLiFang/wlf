@@ -3,6 +3,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import pickle
+import sys
 from tempfile import mktemp
 from unittest import TestCase, main, skip
 
@@ -22,9 +23,15 @@ class CSheetTestCase(TestCase):
         from_list(self.dummy_list)
 
     def test_preview_default(self):
-        image = HTMLImage('c:/test/case1.jpg')
+        if sys.platform == 'win32':
+            src = 'c:/test/case1.jpg'
+            expected = 'c:/test/previews/case1.mp4'
+        else:
+            src = '/mnt/c/test/case1.jpg'
+            expected = '/mnt/c/test/previews/case1.mp4'
+        image = HTMLImage(src)
         self.assertEqual(image.get_default('preview'),
-                         PurePath('c:/test/previews/case1.mp4'))
+                         PurePath(expected))
 
     def test_pickle_image(self):
         from wlf.csheet.base import Image
