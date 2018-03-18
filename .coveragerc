@@ -1,4 +1,5 @@
 [run]
+include = ./*
 omit = 
     */tests/*
     */site-packages/*
