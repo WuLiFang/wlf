@@ -29,7 +29,6 @@ def _setup():
 
 
 def _init():
-    import Qt
     import scandir
 
     def _set_attr(name, value):
@@ -51,9 +50,13 @@ def _init():
     except ImportError:
         pass
 
-    _set_attr('Qt', Qt)
-    for i in Qt.__all__:
-        sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
+    try:
+        import Qt
+        _set_attr('Qt', Qt)
+        for i in Qt.__all__:
+            sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
+    except ImportError:
+        pass
 
     # Add scandir
     if 'scandir' not in os.__all__:
