@@ -36,11 +36,6 @@ def _init():
 
     # Remap deprecated module.
     # TODO: Remove at next major version.
-    try:
-        from .csheet import __main__ as csheet_tool
-        _set_attr('csheet_tool', csheet_tool)
-    except ImportError:
-        pass
 
     try:
         from . import notify

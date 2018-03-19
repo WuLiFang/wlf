@@ -7,19 +7,12 @@ from inspect import ismodule
 import six
 # pylint: disable=no-member,no-name-in-module,unused-variable,import-error
 
+
 @skipIf(six.PY3, 'No need backward support for python3.')
 class BackwardTestCase(TestCase):
     def assert_all_in(self, namespace, names):
         for i in names:
             self.assertIn(i, namespace)
-
-    def test_csheet(self):
-        import wlf.csheet_tool
-        self.assertTrue(ismodule(wlf.csheet_tool))
-
-    def test_csheet_from(self):
-        from wlf import csheet_tool
-        self.assertTrue(ismodule(csheet_tool))
 
     def test_notify(self):
         import wlf.progress
