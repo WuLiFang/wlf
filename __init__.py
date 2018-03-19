@@ -29,7 +29,6 @@ def _setup():
 
 
 def _init():
-    import scandir
 
     def _set_attr(name, value):
         setattr(sys.modules[__name__], name, value)
@@ -59,10 +58,14 @@ def _init():
         pass
 
     # Add scandir
-    if 'scandir' not in os.__all__:
-        os.__all__.append('scandir')
-        os.scandir = scandir.scandir
-        os.walk = scandir.walk
+    try:
+        import scandir
+        if 'scandir' not in os.__all__:
+            os.__all__.append('scandir')
+            os.scandir = scandir.scandir
+            os.walk = scandir.walk
+    except ImportError:
+        pass
 
 
 _setup()
