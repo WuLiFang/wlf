@@ -71,7 +71,7 @@ class Database(object):
             'token': self.token,
             'db': self.name
         }
-        kwargs = dict(default.items() + kwargs.items())
+        kwargs = dict(tuple(default.items()) + tuple(kwargs.items()))
         return server.call(*args, **kwargs)
 
     def __getitem__(self, name):
@@ -198,7 +198,7 @@ class Module(object):
             'token': self.token,
             'module': self.name
         }
-        kwargs = dict(default.items() + kwargs.items())
+        kwargs = dict(tuple(default.items()) + tuple(kwargs.items()))
         return self.database.call(*args, **kwargs)
 
     def select(self, *id_list):
@@ -403,7 +403,7 @@ class Selection(tuple):
             'token': self.token,
             'id_array': self
         }
-        kwargs = dict(default.items() + kwargs.items())
+        kwargs = dict(tuple(default.items()) + tuple(kwargs.items()))
         return self.module.call(*args, **kwargs)
 
     def filter(self, filters):
