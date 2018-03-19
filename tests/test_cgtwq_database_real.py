@@ -124,7 +124,7 @@ class SelectionTestCase(TestCase):
     def test_send_message(self):
         self.select.send_message('test',
                                  'test <b>message</b>',
-                                 server.account_id())
+                                 server.get_account_id())
 
     def test_get_history(self):
         result = self.select.get_history()
@@ -140,6 +140,7 @@ class TaskTestCase(TestCase):
     def test_get_note(self):
         pass
 
+
 @skip_if_not_logged_in
 class ProjectTestCase(TestCase):
     def test_names(self):
@@ -147,6 +148,7 @@ class ProjectTestCase(TestCase):
         self.assertIsInstance(result, tuple)
         for i in result:
             self.assertIsInstance(i, unicode)
+
 
 @skip_if_not_logged_in
 class AccountTestCase(TestCase):

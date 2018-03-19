@@ -9,12 +9,12 @@ from unittest import TestCase, main
 import six
 
 from wlf import cgtwq
+from wlf.cgtwq.server.websocket import Response
 
 if six.PY3:
     from unittest.mock import MagicMock, patch  # pylint: disable=import-error,no-name-in-module
 else:
     from mock import MagicMock, patch
-
 
 
 class DatabaseTestCase(TestCase):
@@ -53,7 +53,7 @@ class ModuleTestCase(TestCase):
     def test_filter(self):
         module = self.module
         method = self.call_method
-        dummy_resp = cgtwq.server.Response(['0', '1'], 1, 'json')
+        dummy_resp = Response(['0', '1'], 1, 'json')
         method.return_value = dummy_resp
 
         select = module.filter(cgtwq.Filter('key', 'value'))
@@ -61,7 +61,9 @@ class ModuleTestCase(TestCase):
                                   db='dummy_db',
                                   module='shot_task',
                                   sign_array=['shot_task.id'],
-                                  sign_filter_array=[['shot_task.key', '=', 'value']])
+                                  sign_filter_array=[
+                                      ['shot_task.key', '=', 'value']],
+                                  token=select.token)
         self.assertIsInstance(select, cgtwq.database.Selection)
 
     @patch('wlf.cgtwq.database.Module.filter')
@@ -83,7 +85,7 @@ class ModuleTestCase(TestCase):
 class SelectionTestCase(TestCase):
     def setUp(self):
         patcher = patch('wlf.cgtwq.server.call',
-                        return_value=cgtwq.server.Response('Testing', 1, 'json'))
+                        return_value=Response('Testing', 1, 'json'))
         self.addCleanup(patcher.stop)
 
         self.call_method = patcher.start()
@@ -94,7 +96,7 @@ class SelectionTestCase(TestCase):
     def test_getter(self):
         select = self.select
         call_method = self.call_method
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             [["1", "monkey", 'banana'],
              ["2", "dog", 'bone']],
             1, 'json')
@@ -108,10 +110,12 @@ class SelectionTestCase(TestCase):
             db='dummy_db', id_array=('1', '2'), module='shot_task',
             order_sign_array=['shot_task.id',
                               'shot_task.artist', 'shot_task.task_name'],
-            sign_array=['shot_task.id', 'shot_task.artist', 'shot_task.task_name'])
+            sign_array=['shot_task.id',
+                        'shot_task.artist', 'shot_task.task_name'],
+            token=select.token)
 
         # Test `__getitem__`.
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             [['banana'],
              ['bone']],
             1, 'json')
@@ -122,10 +126,12 @@ class SelectionTestCase(TestCase):
             'c_orm', 'get_in_id',
             db='dummy_db', id_array=('1', '2'), module='shot_task',
             order_sign_array=['shot_task.task_name'],
-            sign_array=['shot_task.task_name'])
+            sign_array=['shot_task.task_name'],
+            token=select.token)
 
     def test_setter(self):
         select = self.select
+        select.token = 'Sayori'
         call_method = self.call_method
 
         # Test `set_fields`.
@@ -133,7 +139,8 @@ class SelectionTestCase(TestCase):
         call_method.assert_called_once_with(
             'c_orm', 'set_in_id',
             db='dummy_db', id_array=('1', '2'), module='shot_task',
-            sign_data_array={'shot_task.artist': 'Yuri'})
+            sign_data_array={'shot_task.artist': 'Yuri'},
+            token=select.token)
 
         # Test `__setitem__`.
         call_method.reset_mock()
@@ -142,7 +149,8 @@ class SelectionTestCase(TestCase):
             'c_orm', 'set_in_id',
             db='dummy_db', id_array=('1', '2'),
             module='shot_task',
-            sign_data_array={'shot_task.artist': 'Monika'})
+            sign_data_array={'shot_task.artist': 'Monika'},
+            token=select.token)
 
     def test_delete(self):
         select = self.select
@@ -152,13 +160,14 @@ class SelectionTestCase(TestCase):
         call_method.assert_called_once_with(
             'c_orm', 'del_in_id',
             db='dummy_db', id_array=('1', '2'),
-            module='shot_task')
+            module='shot_task',
+            token=select.token)
 
     def test_get_dir(self):
         select = self.select
         call_method = self.call_method
 
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             data={'path': 'E:/temp'}, code=1, type='json'
         )
         select.get_path('test')
@@ -168,14 +177,15 @@ class SelectionTestCase(TestCase):
             db='dummy_db', id_array=('1', '2'),
             module='shot_task', os=cgtwq.database._OS,  # pylint: disable=protected-access
             sign_array=('test',),
-            task_id_array=('1', '2'))
+            task_id_array=('1', '2'),
+            token=select.token)
 
     def test_get_filebox(self):
         # pylint: disable=protected-access
         select = self.select
         call_method = self.call_method
 
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             data={"path": "E:/test", "classify": "测试", "title": "测试box",
                   "sign": "test_fb", "color": "#005500",
                   "rule": [], "rule_view": [], "is_submit": "N",
@@ -195,7 +205,8 @@ class SelectionTestCase(TestCase):
             module='shot_task',
             os=cgtwq.database._OS,
             sign='test_fb',
-            task_id='1')
+            task_id='1',
+            token=select.token)
 
     def test_to_entry(self):
         from wlf.cgtwq import Database, database
@@ -207,7 +218,7 @@ class SelectionTestCase(TestCase):
 class EntryTestCase(TestCase):
     def setUp(self):
         patcher = patch('wlf.cgtwq.server.call',
-                        return_value=cgtwq.server.Response('Testing', 1, 'json'))
+                        return_value=Response('Testing', 1, 'json'))
         self.addCleanup(patcher.stop)
 
         self.call_method = patcher.start()
@@ -217,7 +228,7 @@ class EntryTestCase(TestCase):
     def test_getter(self):
         task = self.task
         call_method = self.call_method
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             [['1', "unity"]],
             1, 'json')
 
@@ -229,10 +240,11 @@ class EntryTestCase(TestCase):
             'c_orm', 'get_in_id',
             db='dummy_db', id_array=('1',), module='shot_task',
             order_sign_array=['shot_task.id', 'shot_task.artist'],
-            sign_array=['shot_task.id', 'shot_task.artist'])
+            sign_array=['shot_task.id', 'shot_task.artist'],
+            token=task.token)
 
         # Test `__getitem__`.
-        call_method.return_value = cgtwq.server.Response(
+        call_method.return_value = Response(
             [["build"]],
             1, 'json')
         call_method.reset_mock()
@@ -242,7 +254,8 @@ class EntryTestCase(TestCase):
             'c_orm', 'get_in_id',
             db='dummy_db', id_array=('1',), module='shot_task',
             order_sign_array=['shot_task.task_name'],
-            sign_array=['shot_task.task_name'])
+            sign_array=['shot_task.task_name'],
+            token=task.token)
 
 
 if __name__ == '__main__':

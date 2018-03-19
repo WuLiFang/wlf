@@ -1,191 +1,24 @@
 # -*- coding=UTF-8 -*-
-"""Create connection with cgtw server.  """
+"""Manipulate files on server.  """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import errno
 import io
-import json
 import logging
 import os
 import tempfile
 from collections import namedtuple
-from contextlib import contextmanager
 
-import requests
-import websocket
+from .http import post, get
+from ..client import CGTeamWorkClient
+from ..util import file_md5
 
-from .client import CGTeamWorkClient
-from .exceptions import LoginError
-from .util import file_md5
-
-LOGGER = logging.getLogger('wlf.cgtwq.server')
+LOGGER = logging.getLogger(__name__)
 
 BACKUP = 1 << 0
 COUNTINUE = 1 << 1
 REPLACE = 1 << 2
-
-
-@contextmanager
-def connection(ip=None, port=8888):
-    """Create connection to server.
-
-    Decorators:
-        contextmanager
-
-    Args:
-        ip (unicode, optional): Defaults to None. Server ip,
-            if `ip` is None, will try use ip from running client.
-        port (int, optional): Defaults to 8888. Server port.
-
-    Returns:
-        websocket.WebSocket: Connected soket.
-    """
-    # pylint: disable=invalid-name
-
-    ip = ip or CGTeamWorkClient.server_ip()
-    url = 'ws://{}:{}'.format(ip, port)
-    conn = websocket.create_connection(url)
-    assert isinstance(conn, websocket.WebSocket)
-    try:
-        yield conn
-    finally:
-        conn.close()
-
-
-Response = namedtuple('Response', ['data', 'code', 'type'])
-
-
-def parse_recv(payload):
-    """Parse server response
-
-    Args:
-        payload (bytes): Server defined response.
-
-    Returns:
-        Response: Parsed payload.
-    """
-
-    resp = json.loads(payload)
-    data = resp['data']
-    code = int(resp['code'])
-    type_ = resp['type']
-    return Response(data, code, type_)
-
-
-def call(controller, method, **kwargs):
-    """Send command to server, then get response.
-
-    Args:
-        controller (str): Server defined controller.
-        method (str): Server defined controller method.
-        **kwargs : Server defined keyword arguments for method.
-
-    Raises:
-        LoginError: When not loged in .
-        ValueError: When server call failed.
-
-    Returns:
-        Response: Server response.
-    """
-    payload = {'controller': controller,
-               'method': method,
-               'token': CGTeamWorkClient.token()}
-    payload.update(kwargs)
-    with connection() as conn:
-        assert isinstance(conn, websocket.WebSocket)
-        conn.send(json.dumps(payload))
-        LOGGER.debug('SEND: %s', payload)
-        recv = conn.recv()
-        LOGGER.debug('RECV: %s', recv)
-        resp = parse_recv(recv)
-        if resp.data == 'please login!!!':
-            raise LoginError(resp)
-        if (resp.code, resp.type) == (0, 'msg'):
-            raise ValueError(resp.data)
-        return resp
-
-
-def account():
-    """Get current account.
-
-    Returns:
-        unicode: Account name.
-    """
-    return call("c_token", "get_account").data
-
-
-def account_id():
-    """Get current acccount id.
-
-    Returns:
-        unicode: account id.
-    """
-    return call("c_token", "get_account_id").data
-
-
-def post(pathname, data, ip=None, **kwargs):
-    """Post data to CGTeamWork server.
-        pathname (str unicode): Pathname for http host.
-        ip (str unicode, optional): Defaults to None. If `ip` is None,
-            will use ip from CGTeamWorkClient.
-        data: Data to post.
-        **kwargs: kwargs for `requests.post`
-
-    Returns:
-        Server execution result.
-    """
-
-    assert 'cookies' not in kwargs
-    assert 'data' not in kwargs
-    token = data.get('token', CGTeamWorkClient.token())
-    data['token'] = token
-    ip = ip or CGTeamWorkClient.server_ip()
-    cookies = {'token': token}
-
-    resp = requests.post('http://{}/{}'.format(ip, pathname.lstrip('\\/')),
-                         data={'data': json.dumps(data)},
-                         cookies=cookies,
-                         **kwargs)
-    json_ = resp.json()
-    result = json_.get('data', json_)
-    if (isinstance(json_, dict)
-            and (json_.get('code'), json_.get('type')) == ('0', 'msg')):
-        raise ValueError(result)
-
-    return result
-
-
-def get(pathname, token=None, ip=None, **kwargs):
-    """Get request to CGTeamWork server.
-        token (str unicode, optional): Defaults to None. If `token` is None,
-            will use token from CGTeamWorkClient.
-        ip (str unicode, optional): Defaults to None. If `ip` is None,
-            will use ip from CGTeamWorkClient.
-        **kwargs: kwargs for `requests.get`
-
-    Returns:
-        [type]: [description]
-    """
-
-    assert 'cookies' not in kwargs
-    token = token or CGTeamWorkClient.token()
-    ip = ip or CGTeamWorkClient.server_ip()
-    cookies = {'token': token}
-
-    LOGGER.debug('GET: kwargs: %s', kwargs)
-    resp = requests.get('http://{}/{}'.format(ip, pathname.lstrip('\\/')),
-                        cookies=cookies,
-                        **kwargs)
-    try:
-        result = json.loads(resp.content)
-    except ValueError:
-        result = None
-    if (isinstance(result, dict)
-            and (result.get('code'), result.get('type')) == ('0', 'msg')):
-        raise ValueError(result.get('data', result))
-    LOGGER.debug('GET: %s', result)
-    return resp
 
 
 def upload(path, pathname, ip=None, flags=BACKUP | COUNTINUE):

@@ -2,16 +2,18 @@
 """Database in cgtw server.  """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
+
 import json
 import logging
+import os
 from collections import namedtuple
 from functools import partial
 
-from . import server
-from .filter import Filter, FilterList, Field
-from .util import genreate_thumb, file_md5
 from six import text_type
+
+from . import server
+from .filter import Field, Filter, FilterList
+from .util import file_md5, genreate_thumb
 
 _OS = {'windows': 'win', 'linux': 'linux', 'darwin': 'mac'}.get(
     __import__('platform').system().lower())  # Server defined os string.
@@ -58,11 +60,19 @@ HistoryInfo = namedtuple('HistoryInfo',
 
 class Database(object):
     """Database on server.    """
+    token = None
 
     def __init__(self, name):
         self.name = name
-        self.call = partial(server.call,
-                            db=self.name)
+
+    def call(self, *args, **kwargs):
+        """Call on this database.   """
+        default = {
+            'token': self.token,
+            'db': self.name
+        }
+        kwargs = dict(default.items() + kwargs.items())
+        return server.call(*args, **kwargs)
 
     def __getitem__(self, name):
         return Module(name=name, database=self)
@@ -162,6 +172,7 @@ class Database(object):
 
 class Module(object):
     """Module(Database table) in database.    """
+    token = None
 
     def __init__(self, name, database):
         """
@@ -174,13 +185,21 @@ class Module(object):
             self.name = name
         assert isinstance(database, Database)
         self.database = database
-        self.call = partial(self.database.call,
-                            module=self.name)
 
     def __getitem__(self, name):
         if isinstance(name, (Filter, FilterList)):
             return self.filter(name)
         return self.select(name)
+
+    def call(self, *args, **kwargs):
+        """Call on this selection.   """
+
+        default = {
+            'token': self.token,
+            'module': self.name
+        }
+        kwargs = dict(default.items() + kwargs.items())
+        return self.database.call(*args, **kwargs)
 
     def select(self, *id_list):
         """Create selection on this module.
@@ -351,6 +370,7 @@ ACCOUNT = Account()
 
 class Selection(tuple):
     """Selection on a database module.   """
+    token = None
 
     def __new__(cls, module, *id_list):
         assert all(isinstance(i, text_type) for i in id_list), id_list
@@ -366,7 +386,6 @@ class Selection(tuple):
 
         super(Selection, self).__init__()
         self.module = module
-        self.call = partial(self.module.call, id_array=self)
 
     def __getitem__(self, name):
         if isinstance(name, int):
@@ -376,6 +395,16 @@ class Selection(tuple):
     def __setitem__(self, name, value):
         assert isinstance(name, (text_type, str))
         self.set_fields(**{name: value})
+
+    def call(self, *args, **kwargs):
+        """Call on this selection.   """
+
+        default = {
+            'token': self.token,
+            'id_array': self
+        }
+        kwargs = dict(default.items() + kwargs.items())
+        return self.module.call(*args, **kwargs)
 
     def filter(self, filters):
         """Filter selection again.
@@ -615,7 +644,7 @@ class Selection(tuple):
         resp = self.call(
             "c_work_flow", "submit",
             task_id=self[0],
-            account_id=server.account_id(),
+            account_id=server.get_account_id(self.token),
             submit_file_path_array={
                 'path': pathlist or [], 'file_path': filelist},
             text=note)
@@ -754,11 +783,11 @@ class ResultSet(list):
         return tuple(sorted(set(i[index] for i in self)))
 
 
-def account_name():
+def account_name(token=None):
     """Current user name.
 
     Returns:
         text_type
     """
 
-    return ACCOUNT[server.account_id()]['name'][0]
+    return ACCOUNT[server.get_account_id(token)]['name'][0]

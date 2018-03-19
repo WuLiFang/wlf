@@ -4,22 +4,21 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import io
+import os
+import uuid
+from tempfile import mkdtemp, mkstemp
 from unittest import TestCase, main
 
 from util import skip_if_not_logged_in
 from wlf.cgtwq import server
-from tempfile import mkstemp, mkdtemp
-import uuid
-import io
-
-import os
 
 
 @skip_if_not_logged_in
 class ServerTestCase(TestCase):
     def test_account(self):
-        account = server.account()
-        account_id = server.account_id()
+        account = server.get_account()
+        account_id = server.get_account_id()
         print('# account: <id: {}: {}>'.format(account_id, account))
 
     def test_file_operation(self):
@@ -70,6 +69,9 @@ class ServerTestCase(TestCase):
         self.assertNotIn(filename, server.listdir(dir_pathname).file)
         server.delete(dir_pathname)
         self.assertIs(server.exists(dir_pathname), False)
+
+    def test_login(self):
+        self.assertRaises(ValueError, server.login, 'admin', 'default')
 
 
 if __name__ == '__main__':
