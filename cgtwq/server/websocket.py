@@ -82,16 +82,16 @@ def call(controller, method, token=None, **kwargs):
         Response: Server response.
     """
     # pylint: disable=invalid-name
+    if token is None:
+        token = CGTeamWorkClient.token()
     payload = {'controller': controller,
                'method': method,
-               'token': (token
-                         if token is not None
-                         else CGTeamWorkClient.token())}
+               'token': token}
     payload.update(kwargs)
     with connection() as conn:
         assert isinstance(conn, websocket.WebSocket)
         conn.send(json.dumps(payload))
-        LOGGER.debug('SEND: %s', payload)
+        LOGGER.debug('SEND: %s', repr(payload))
         recv = conn.recv()
         LOGGER.debug('RECV: %s', recv)
         resp = parse_recv(recv)
