@@ -11,7 +11,7 @@ from functools import partial
 
 from six import text_type
 
-from . import server
+from . import server, setting
 from .filter import Field, Filter, FilterList
 from .util import file_md5, genreate_thumb
 
@@ -62,7 +62,6 @@ class Database(object):
     """Database on server.    """
 
     token = None
-    ip = None
 
     def __init__(self, name):
         self.name = name
@@ -73,10 +72,10 @@ class Database(object):
         default = {
             'token': self.token,
             'db': self.name,
-            'ip': self.ip
         }
         kwargs = dict(tuple(default.items()) + tuple(kwargs.items()))
         return server.call(*args, **kwargs)
+
 
     def __getitem__(self, name):
         return Module(name=name, database=self)

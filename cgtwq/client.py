@@ -13,8 +13,10 @@ from functools import partial
 from subprocess import Popen
 
 from six import text_type
+
 from websocket import create_connection
 
+from . import setting
 from ..decorators import deprecated
 from ..env import has_cgtw
 from .exceptions import IDError
@@ -301,3 +303,9 @@ class CGTeamWorkClient(object):
         """Depreacted. Use `call` instead.  """
 
         return cls.call(*args, **kwargs)
+
+
+def update_setting():
+    """Update setting from desktop client.   """
+
+    setting.SERVER_IP = CGTeamWorkClient.server_ip()

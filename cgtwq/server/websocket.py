@@ -12,6 +12,7 @@ import websocket
 
 from ..client import CGTeamWorkClient
 from ..exceptions import LoginError
+from .. import setting
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def connection(ip=None, port=8888):
     """
     # pylint: disable=invalid-name
 
-    ip = ip or CGTeamWorkClient.server_ip()
+    ip = ip or setting.SERVER_IP
     url = 'ws://{}:{}'.format(ip, port)
     conn = websocket.create_connection(url)
     assert isinstance(conn, websocket.WebSocket)
@@ -62,7 +63,7 @@ def parse_recv(payload):
     return Response(data, code, type_)
 
 
-def call(controller, method, token=None, ip=None, **kwargs):
+def call(controller, method, token=None, **kwargs):
     """Send command to server, then get response.
 
     Args:
@@ -87,7 +88,7 @@ def call(controller, method, token=None, ip=None, **kwargs):
                          if token is not None
                          else CGTeamWorkClient.token())}
     payload.update(kwargs)
-    with connection(ip=ip) as conn:
+    with connection() as conn:
         assert isinstance(conn, websocket.WebSocket)
         conn.send(json.dumps(payload))
         LOGGER.debug('SEND: %s', payload)
