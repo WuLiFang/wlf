@@ -9,6 +9,7 @@ from .database import ACCOUNT, PROJECT, Database
 from .exceptions import (AccountError, CGTeamWorkException, IDError,
                          LoginError, PrefixError, SignError)
 from .filter import Filter, FilterList, Field
+from .server import login
 
 MODULE_ENABLE = has_cgtw()
 

@@ -62,7 +62,7 @@ def parse_recv(payload):
     return Response(data, code, type_)
 
 
-def call(controller, method, token=None, **kwargs):
+def call(controller, method, token=None, ip=None, **kwargs):
     """Send command to server, then get response.
 
     Args:
@@ -70,6 +70,7 @@ def call(controller, method, token=None, **kwargs):
         method (str): Server defined controller method.
         token (str): Defalts to None, User token.
             If token is None, will try get token from cgtw desktop client.
+        ip (str): Server websocket ip.
         **kwargs : Server defined keyword arguments for method.
 
     Raises:
@@ -79,13 +80,14 @@ def call(controller, method, token=None, **kwargs):
     Returns:
         Response: Server response.
     """
+    # pylint: disable=invalid-name
     payload = {'controller': controller,
                'method': method,
                'token': (token
                          if token is not None
                          else CGTeamWorkClient.token())}
     payload.update(kwargs)
-    with connection() as conn:
+    with connection(ip=ip) as conn:
         assert isinstance(conn, websocket.WebSocket)
         conn.send(json.dumps(payload))
         LOGGER.debug('SEND: %s', payload)

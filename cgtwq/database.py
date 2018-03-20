@@ -60,16 +60,20 @@ HistoryInfo = namedtuple('HistoryInfo',
 
 class Database(object):
     """Database on server.    """
+
     token = None
+    ip = None
 
     def __init__(self, name):
         self.name = name
 
     def call(self, *args, **kwargs):
         """Call on this database.   """
+
         default = {
             'token': self.token,
-            'db': self.name
+            'db': self.name,
+            'ip': self.ip
         }
         kwargs = dict(tuple(default.items()) + tuple(kwargs.items()))
         return server.call(*args, **kwargs)

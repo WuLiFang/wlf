@@ -47,5 +47,6 @@ def login(account, password):
     resp = call("c_token", "login",
                 account=account,
                 password=password,
+                token='',
                 client_type="py")
     return AccountInfo(**resp.data)
