@@ -2,9 +2,13 @@
 """Module backward compatibility test.  """
 from __future__ import absolute_import
 
-from unittest import TestCase, main, skipIf
 from inspect import ismodule
+from unittest import TestCase, main, skipIf
+
 import six
+
+from util import skip_if_no_qt
+
 # pylint: disable=no-member,no-name-in-module,unused-variable,import-error
 
 
@@ -25,10 +29,12 @@ class BackwardTestCase(TestCase):
         self.assertTrue(ismodule(progress))
         self.assertTrue(ismodule(message))
 
+    @skip_if_no_qt
     def test_qt(self):
         import wlf.Qt
         self.assertTrue(ismodule(wlf.Qt))
 
+    @skip_if_no_qt
     def test_qt_from(self):
         from wlf import Qt
         from wlf.Qt import QtCore, QtWidgets
@@ -57,6 +63,7 @@ class BackwardTestCase(TestCase):
         )
         self.assert_all_in(dir(path), deprecated)
 
+    @skip_if_no_qt
     def test_uitools(self):
         from wlf import uitools
         deprecated = (

@@ -9,14 +9,10 @@ from unittest import TestCase, main
 
 from six.moves import range
 
+from util import skip_if_no_qt
+
 
 class ProgressTestCase(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        from Qt.QtWidgets import QApplication
-        import sys
-        cls.app = QApplication(sys.argv)
-
     def test_base_handler(self):
         from wlf.notify import progress, BaseProgressHandler
 
@@ -29,7 +25,10 @@ class ProgressTestCase(TestCase):
         for _ in progress(range(200), 'cli测试', handler=CLIProgressHandler()):
             time.sleep(0.01)
 
+    @skip_if_no_qt
     def test_qt_handler(self):
+        from Qt.QtWidgets import QApplication
+        _app = QApplication([])
         from wlf.notify import progress, QtProgressHandler
 
         for _ in progress(range(200), 'qt测试', handler=QtProgressHandler()):
