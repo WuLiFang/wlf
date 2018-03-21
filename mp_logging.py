@@ -29,9 +29,8 @@ class Handler(Process):
                 def _encode(i):
                     if isinstance(i, text_type):
                         try:
-                            return i.encode(sys.stdout.encoding)
+                            return i.encode(sys.stdout.encoding, 'replace')
                         except:  # pylint: disable=bare-except
-                            print('test')
                             pass
                     return i
                 record.msg = _encode(record.msg)
