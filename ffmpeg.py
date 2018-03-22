@@ -84,13 +84,13 @@ def generate_mp4(filename, output=None, **kwargs):
     limit_size = kwargs.get('limit_size')
 
     output_options = [
-        '-movflags faststart',
-        '-vcodec libx264',
-        '-preset veryslow',
-        '-tune fastdecode',
-        '-crf 18',
-        '-pix_fmt yuv420p',
-        '-f mp4'
+        '-movflags','faststart',
+        '-vcodec','libx264',
+        '-preset','veryslow',
+        '-tune','fastdecode',
+        '-crf','18',
+        '-pix_fmt','yuv420p',
+        '-f','mp4'
     ]
     if duration > 0:
         output_options.append('-t {}'.format(duration))
@@ -134,7 +134,7 @@ def generate_jpg(filename, output=None, **kwargs):
     width = kwargs.get('width')
     height = kwargs.get('height')
     ret = Path(Path(output or path).with_suffix('.jpg'))
-    _filters = 'scale="{}:{}:flags=lanczos"'.format(
+    _filters = 'scale={}:{}:flags=lanczos'.format(
         '-1' if width is None else int(width),
         r'min(ih\, 1080)' if height is None else int(height))
 
