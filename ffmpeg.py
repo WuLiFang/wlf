@@ -10,6 +10,8 @@ from logging import getLogger
 from subprocess import PIPE
 from tempfile import mktemp
 
+import six
+
 from .decorators import run_with_semaphore
 from .path import get_encoded as e
 from .path import get_unicode as u
@@ -249,6 +251,12 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
         'env': os.environ
     }
     kwargs.update(popen_kwargs)
+    if isinstance(cmd, six.binary_type):
+        pass
+    elif isinstance(cmd, six.text_type):
+        cmd = e(cmd)
+    else:
+        cmd = [e(i) for i in cmd]
 
     proc = Popen(cmd, **kwargs)
     stderr = proc.communicate()[1]
