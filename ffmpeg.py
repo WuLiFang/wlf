@@ -14,7 +14,7 @@ from .decorators import run_with_semaphore
 from .path import get_encoded as e
 from .path import get_unicode as u
 from .path import Path
-import shlex
+
 try:
     from gevent.subprocess import Popen
 except ImportError:
@@ -35,21 +35,23 @@ def generate_gif(filename, output=None, **kwargs):
     _filters = 'fps=15,scale={}:{}:flags=lanczos'.format(
         -1 if width is None else width,
         -1 if height is None else height)
-    ret = Path(output or path).with_suffix('.gif')
+    ret = Path(Path(output or path).with_suffix('.gif'))
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
         return ret
 
     # Generate palette
-    cmd = ('ffmpeg -i "{0[filename]}" '
-           '-vf "{0[_filters]}, palettegen" '
-           '-y "{0[_palette]}"').format(locals())
-    _try_run_cmd(cmd, 'Error during generate gif palette', cwd=str(ret.parent))
+    cmd = ['ffmpeg', '-i', filename,
+           '-vf', '{}, palettegen'.format(_filters),
+           '-y', _palette]
+    _try_run_cmd(cmd, 'Error during generate gif palette',
+                 cwd=str(ret.parent))
     # Generate gif
-    cmd = ('ffmpeg -i "{0[filename]}" -i "{0[_palette]}" '
-           '-lavfi "{0[_filters]} [x]; [x][1:v] paletteuse" '
-           '-y "{0[ret]}"').format(locals())
+    cmd = ['ffmpeg', '-i', filename,
+           '-i', _palette, '-lavfi', '{} [x]; [x][1:v] paletteuse'.format(
+               _filters),
+           '-y', ret]
     start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate gif', cwd=str(ret.parent))
 
@@ -73,7 +75,7 @@ def generate_mp4(filename, output=None, **kwargs):
     """
 
     path = Path(filename)
-    ret = Path(output or path).with_suffix('.mp4')
+    ret = Path(Path(output or path).with_suffix('.mp4'))
     width = kwargs.get('width')
     height = kwargs.get('height')
     duration = kwargs.get('duration')
@@ -102,8 +104,8 @@ def generate_mp4(filename, output=None, **kwargs):
         return ret
 
     # Generate.
-    cmd = ('ffmpeg -y -hide_banner -i "{}" {} "{}"').format(
-        filename, ' '.join(output_options), ret)
+    cmd = (['ffmpeg', '-y', '-hide_banner', '-i', filename]
+           + output_options+[ret])
     start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
     LOGGER.info('生成mp4: %s, 耗时 %s 秒', ret, time.clock() - start_time)
@@ -129,7 +131,7 @@ def generate_jpg(filename, output=None, **kwargs):
     path = Path(filename)
     width = kwargs.get('width')
     height = kwargs.get('height')
-    ret = Path(output or path).with_suffix('.jpg')
+    ret = Path(Path(output or path).with_suffix('.jpg'))
     _filters = 'scale="{}:{}:flags=lanczos"'.format(
         '-1' if width is None else int(width),
         r'min(ih\, 1080)' if height is None else int(height))
@@ -152,10 +154,10 @@ def generate_jpg(filename, output=None, **kwargs):
             pass
 
     # Generate.
-    cmd = ('ffmpeg -y -hide_banner '
-           '{} -i "{}" -q:v 1 -vframes 1 '
-           '-vf {} "{}"').format(
-               ' '.join(input_options), filename, _filters, ret)
+    cmd = (['ffmpeg', '-y', '-hide_banner']
+           + input_options
+           + ['-i', filename, '-q:v', '1',
+              '-vframes', '1', '-vf', _filters, ret])
     start_time = time.clock()
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
     LOGGER.info('生成jpg: %s, 耗时 %s 秒', ret, time.clock() - start_time)
@@ -232,8 +234,8 @@ def probe(filename):
         ProbeResult: Optimized dict to save result.
     """
 
-    cmd = ('ffprobe -show_entries format:streams '
-           '-of json -hide_banner "{}"').format(u(filename))
+    cmd = ['ffprobe', '-show_entries', 'format:streams',
+           '-of', 'json', '-hide_banner', filename]
     proc = Popen(e(cmd), stdout=PIPE, stderr=PIPE, env=os.environ)
     stdout, _ = proc.communicate()
     ret = json.loads(stdout)
@@ -248,7 +250,7 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
     }
     kwargs.update(popen_kwargs)
 
-    proc = Popen(e(cmd), **kwargs)
+    proc = Popen(cmd, **kwargs)
     stderr = proc.communicate()[1]
     if proc.wait():
         raise GenerateError(

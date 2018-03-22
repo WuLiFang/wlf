@@ -28,7 +28,8 @@ class ProgressTestCase(TestCase):
     @skip_if_no_qt
     def test_qt_handler(self):
         from Qt.QtWidgets import QApplication
-        _app = QApplication([])
+        if not QApplication.instance():
+            _app = QApplication([])
         from wlf.notify import progress, QtProgressHandler
 
         for _ in progress(range(200), 'qt测试', handler=QtProgressHandler()):
