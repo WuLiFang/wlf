@@ -128,10 +128,6 @@ if HAS_QT:
                 parent = self.default_parent
             self._cancelled = False
 
-            app = QtWidgets.QApplication.instance()
-            if not app:
-                app = QtWidgets.QApplication(sys.argv)
-
             super(QtProgressBar, self).__init__(parent)
             QtCompat.loadUi(os.path.abspath(
                 os.path.join(__file__, '../progress.ui')), self)
