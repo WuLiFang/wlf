@@ -122,7 +122,7 @@ if HAS_QT:
         message_changed = Signal(str)
         default_parent = None
 
-        @run_in_main_thread
+        # @run_in_main_thread
         def __init__(self, parent=None):
             if parent is None:
                 parent = self.default_parent
@@ -136,7 +136,8 @@ if HAS_QT:
                 geo.moveCenter(parent.geometry().center())
                 self.setGeometry(geo)
 
-            self.setAttribute(Qt.WA_QuitOnClose)
+            self.setAttribute(Qt.WA_QuitOnClose, True)
+            self.setAttribute(Qt.WA_DeleteOnClose, True)
             self.value_changed.connect(self.on_value_changed)
             self.message_changed.connect(self.on_message_changed)
 
@@ -155,16 +156,12 @@ if HAS_QT:
 
             self._cancelled = True
 
-        def closeEvent(self, event):
-            """Override QWidget.closeEvent()"""
-
-            event.ignore()
-
     class QtProgressHandler(BaseProgressHandler):
         """Qt progress handler."""
 
         def __init__(self, **handler_kwargs):
             super(QtProgressHandler, self).__init__(**handler_kwargs)
+            
             self.progress_bar = QtProgressBar(handler_kwargs.get('parent'))
 
         def is_busy(self):
@@ -201,8 +198,9 @@ if HAS_QT:
         @run_in_main_thread
         def on_finished(self):
             super(QtProgressHandler, self).on_finished()
-            self.progress_bar.hide()
-            self.progress_bar.deleteLater()
+            self.progress_bar.accept()
+            self.progress_bar.close()
+            self.progress_bar = None
 
 
 class NukeProgressHandler(BaseProgressHandler):

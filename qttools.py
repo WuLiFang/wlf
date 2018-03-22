@@ -8,7 +8,6 @@ from contextlib import contextmanager
 
 from Qt.QtWidgets import QApplication
 
-
 @contextmanager
 def application():
     """Yield a QApplication, create one if needed.  """
@@ -16,7 +15,5 @@ def application():
 
     if not app:
         app = QApplication(sys.argv)
-        yield app
-        app.exec_()
-    else:
-        yield app
+    yield app
+
