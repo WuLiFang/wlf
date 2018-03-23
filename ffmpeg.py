@@ -84,22 +84,25 @@ def generate_mp4(filename, output=None, **kwargs):
     limit_size = kwargs.get('limit_size')
 
     output_options = [
-        '-movflags','faststart',
-        '-vcodec','libx264',
-        '-preset','veryslow',
-        '-tune','fastdecode',
-        '-crf','18',
-        '-pix_fmt','yuv420p',
-        '-f','mp4'
+        '-movflags', 'faststart',
+        '-vcodec', 'libx264',
+        '-preset', 'veryslow',
+        '-tune', 'fastdecode',
+        '-crf', '18',
+        '-pix_fmt', 'yuv420p',
+        '-f', 'mp4'
     ]
     if duration > 0:
-        output_options.append('-t {}'.format(duration))
+        output_options.extend(['-t', duration])
     if limit_size:
-        output_options.append('-fs {}'.format(limit_size))
+        output_options.extend(['-fs', limit_size])
 
-    output_options.append('-vf scale="{}:{}:flags=lanczos"'.format(
-        '-2' if width is None else int(width) // 2 * 2,
-        r'min(trunc(ih / 2) * 2\, 1080)' if height is None else int(height) // 2 * 2))
+    output_options.extend(['-vf',
+                           'scale={}:{}:flags=lanczos'.format(
+                               '-2'
+                               if width is None else int(width) // 2 * 2,
+                               r'min(trunc(ih / 2) * 2\, 1080)'
+                               if height is None else int(height) // 2 * 2)])
 
     # Skip generated.
     if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
