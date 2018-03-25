@@ -11,13 +11,16 @@ import os
 import re
 import string
 import sys
+from functools import wraps
+
+from six import binary_type, python_2_unicode_compatible, text_type
 
 import pathlib2
-from six import binary_type, text_type, python_2_unicode_compatible
 
 from .decorators import deprecated
 
-with pathlib2.Path(os.path.abspath(os.path.join(__file__, '../files.tags.json'))).open(encoding='utf-8') as _f:
+with pathlib2.Path(os.path.abspath(
+        os.path.join(__file__, '../files.tags.json'))).open(encoding='utf-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
@@ -99,6 +102,21 @@ def _py2_encode(parts):
 
 
 setattr(pathlib2, '_py2_fsencode', _py2_encode)
+
+
+def path_accessor():
+    """Path pathlib2._normal_accessor to accept encoded path.  """
+
+    def _e(func):
+        @wraps(func)
+        def _func(path):
+            return func(get_encoded(path))
+        return _func
+
+    pathlib2._normal_accessor.stat = _e(pathlib2._normal_accessor.stat)
+
+
+path_accessor()
 
 
 @python_2_unicode_compatible
