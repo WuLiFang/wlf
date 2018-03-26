@@ -104,7 +104,7 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
     else:
         try:
             loglevel = int(os.getenv('LOGLEVEL'))
-        except TypeError:
+        except ValueError:
             loglevel = None
 
     _kwargs = {
