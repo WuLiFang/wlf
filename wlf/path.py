@@ -13,13 +13,17 @@ import string
 import sys
 from functools import wraps
 
-from six import binary_type, python_2_unicode_compatible, text_type
-
-import pathlib2
+from six import PY2, binary_type, python_2_unicode_compatible, text_type
 
 from .decorators import deprecated
 
-with pathlib2.Path(os.path.abspath(
+if PY2:
+    import pathlib2 as pathlib
+else:
+    import pathlib
+
+
+with pathlib.Path(os.path.abspath(
         os.path.join(__file__, '../files.tags.json'))).open(encoding='utf-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
@@ -101,11 +105,11 @@ def _py2_encode(parts):
     return [get_encoded(part) for part in parts]
 
 
-setattr(pathlib2, '_py2_fsencode', _py2_encode)
+setattr(pathlib, '_py2_fsencode', _py2_encode)
 
 
 def path_accessor():
-    """Path pathlib2._normal_accessor to accept encoded path.  """
+    """Path pathlib._normal_accessor to accept encoded path.  """
 
     def _e(func):
         @wraps(func)
@@ -113,20 +117,20 @@ def path_accessor():
             return func(get_encoded(path))
         return _func
 
-    pathlib2._normal_accessor.stat = _e(pathlib2._normal_accessor.stat)
+    pathlib._normal_accessor.stat = _e(pathlib._normal_accessor.stat)
 
 
 path_accessor()
 
 
 @python_2_unicode_compatible
-class PurePath(pathlib2.PurePath):
+class PurePath(pathlib.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with pathlib2.Path(os.path.abspath(
+    with pathlib.Path(os.path.abspath(
             os.path.join(__file__, '../precomp.redshift.json'))).open(encoding='utf-8') as f:
         layers = json.load(f).get('layers')
     _unicode = None
@@ -368,18 +372,18 @@ class PurePath(pathlib2.PurePath):
 class PurePosixPath(PurePath):
     """Port from pathlib.PurePosixPath.  """
 
-    _flavour = getattr(pathlib2, '_posix_flavour')
+    _flavour = getattr(pathlib, '_posix_flavour')
     __slots__ = ()
 
 
 class PureWindowsPath(PurePath):
     """Port from pathlib.PureWindowsPath.  """
 
-    _flavour = getattr(pathlib2, '_windows_flavour')
+    _flavour = getattr(pathlib, '_windows_flavour')
     __slots__ = ()
 
 
-class Path(pathlib2.Path, PurePath):
+class Path(pathlib.Path, PurePath):
     """Port from pathlib.Path.  """
 
     def __new__(cls, *args, **kwargs):
