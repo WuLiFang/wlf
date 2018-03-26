@@ -1,5 +1,5 @@
 # -*- coding=UTF-8 -*-
-"""wlf studio common lib.  """
+"""wlf studio tool library.  """
 
 from __future__ import absolute_import
 
@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-__version__ = '0.2.4'
+from __about__ import __version__
 
 BIN_FOLDER = 'bin'
 
