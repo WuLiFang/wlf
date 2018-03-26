@@ -35,7 +35,7 @@ class Config(dict):
         """Write config to disk.  """
 
         path = Path(self.path)
-        path.parent.mkdir(parents=True, exist_ok=True)
+        Path(path.parent).mkdir(parents=True, exist_ok=True)
         with path.open('w', encoding='utf-8') as f:
             data = json.dumps(self, indent=4, sort_keys=True)
             f.write(u(data))
