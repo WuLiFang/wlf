@@ -14,11 +14,8 @@ BIN_FOLDER = 'bin'
 
 def _setup():
     from os.path import dirname, abspath, join
-    from site import addsitedir
 
     __folder__ = dirname(abspath(__file__))
-    dirname = join(__folder__, 'site-packages')
-    addsitedir(dirname)
 
     # Add bin folder to path.
     bin_folder = join(__folder__, BIN_FOLDER)

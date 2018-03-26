@@ -1,6 +1,7 @@
 """Test wlf.table module."""
 from unittest import TestCase
-
+import sys
+print(sys.path)
 from wlf.table import NestedData
 
 
