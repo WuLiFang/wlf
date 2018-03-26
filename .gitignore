@@ -1,6 +1,8 @@
 build/
+dist/
 *.pyc
 *.spec
+*.egg-info
 
 # Virtual environment
 /.venv
