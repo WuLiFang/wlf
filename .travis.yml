@@ -9,13 +9,11 @@ install:
   - coscmd config -a $COS_ID -s $COS_KEY -b codeclimate-report-1253052102 -r eu-frankfurt 
   - yes "" | sudo add-apt-repository ppa:mc3man/trusty-media
   - sudo apt-get update
-  - sudo apt-get install ffmpeg
-  - ffmpeg -version
-  - pip install pipenv
-  - pipenv --version
-  - pipenv install
+  - sudo apt-get install ffmpeg && ffmpeg -version
+  - pip install pipenv && pipenv --version
+  - pipenv install --system --deploy
   - pip install PySide || pip install PyQt5
-  - pip install coverage
+  - pip install coverage pytest
   - ls ./tests/resource
 cache:
   - pip
@@ -24,7 +22,7 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 script:
-  - xvfb-run pipenv run coverage run -m unittest discover -v -s ./tests -p test_*.py
+  - xvfb-run coverage run -m pytest ./tests
 after_script:
   - coverage xml
   - coverage report
