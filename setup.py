@@ -1,6 +1,9 @@
 """Python setup script.  """
+import sys
 from setuptools import setup, find_packages
-from wlf import __about__
+
+sys.path.insert(0, 'wlf')
+__about__ = __import__('__about__')
 
 setup(
     name='wlf',
