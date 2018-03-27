@@ -1,14 +1,15 @@
 """Python setup script.  """
-import sys
+import os
 from setuptools import setup, find_packages
 
-sys.path.insert(0, 'wlf')
-__about__ = __import__('__about__')
+__about__ = {}
+execfile(os.path.join(os.path.dirname(__file__),
+                      'wlf', '__about__.py'), __about__)
 
 setup(
     name='wlf',
-    version=__about__.__version__,
-    author=__about__.__author__,
+    version=__about__['__version__'],
+    author=__about__['__author__'],
     packages=find_packages(),
     package_data={'': ['*.json', '*.png', '*.ui']},
     install_requires=[
