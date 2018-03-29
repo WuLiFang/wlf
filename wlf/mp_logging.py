@@ -9,9 +9,10 @@ import traceback
 import warnings
 from multiprocessing.dummy import Lock, Process, Queue
 
-from six import text_type
+from six import text_type, binary_type
 
 from .decorators import renamed
+from .path import get_unicode as u
 
 _LOCK = Lock()
 
@@ -33,10 +34,18 @@ class Handler(Process):
                         except:  # pylint: disable=bare-except
                             pass
                     return i
-                record.msg = _encode(record.msg)
-                record.args = tuple(_encode(i) for i in record.args)
+
+                def _decode(i):
+                    if isinstance(i, binary_type):
+                        try:
+                            return u(i)
+                        except:  # pylint: disable=bare-except
+                            pass
+                    return i
+                record.msg = _decode(record.msg)
+                record.args = tuple(_decode(i) for i in record.args)
                 ret = handler.format(self._handler, record)
-                return ret
+                return _encode(ret)
             self._handler.format = _format
         self.queue = Queue(-1)
 
@@ -103,10 +112,9 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
         loglevel = kwargs['level']
     else:
         try:
-            loglevel = int(os.getenv('LOGLEVEL'))
+            loglevel = int(logging.getLevelName(os.getenv('WLF_LOGLEVEL')))
         except (TypeError, ValueError):
-            loglevel = None
-
+            loglevel = logging.WARNING
     _kwargs = {
         'level': loglevel,
         'format': (b'%(levelname)-6s[%(asctime)s]:%(filename)s:%(lineno)d:%(funcName)s: %(message)s'
