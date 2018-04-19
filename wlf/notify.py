@@ -161,7 +161,7 @@ if HAS_QT:
 
         def __init__(self, **handler_kwargs):
             super(QtProgressHandler, self).__init__(**handler_kwargs)
-            
+
             self.progress_bar = QtProgressBar(handler_kwargs.get('parent'))
 
         def is_busy(self):
@@ -271,15 +271,15 @@ def progress(iterable, name=None, handler=None,
 
         threading.Thread(target=_watch).start()
 
+    handler.on_started()
     try:
-        handler.on_started()
         if start_message is not None:
             handler.set_message(start_message)
         for i in iterable:
             handler.step(i)
             yield i
-        handler.on_finished()
     finally:
+        handler.on_finished()
         finished_event.set()
 
 
