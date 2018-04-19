@@ -11,6 +11,7 @@ def test_is_same(tmpdir):
     file1.write('aaa')
     file2 = tmpdir.dirpath('file2')
     file2.write('aaa')
+    file2.setmtime(0)
 
     assert not files.is_same(file1, file2)
     current_time = time.time()
