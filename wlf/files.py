@@ -148,19 +148,19 @@ def checked_exists(checking_list):
 
 
 def is_same(src, dst):
-    """Check if @src has same modifield time with @dst. """
-    if not src or not dst:
-        return False
+    """Check if @src has same modifield time and size with @dst. """
 
     try:
-        if abs(os.path.getmtime(e(src)) - os.path.getmtime(e(dst))) < 1e-4:
-            return True
+        src_stat = os.stat(e(src))
+        dst_stat = os.stat(e(dst))
     except OSError as ex:
         if ex.errno not in (errno.ENOENT,):
             LOGGER.warning('Can not check if same: %s',
                            os.strerror(ex.errno), exc_info=True)
+        return False
 
-    return False
+    return (src_stat.st_size == dst_stat.st_size
+            and abs(src_stat.st_mtime - dst_stat.st_mtime) < 1e-4)
 
 # Deprecated functions.
 
