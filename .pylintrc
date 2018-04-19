@@ -95,7 +95,7 @@ max-nested-blocks=5
 argument-name-hint=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
 
 # Regular expression matching correct argument names
-argument-rgx=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
+argument-rgx=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$|ip|to
 
 # Naming hint for attribute names
 attr-name-hint=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
@@ -135,7 +135,7 @@ function-name-hint=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
 function-rgx=(([a-z][a-z0-9_]{2,30})|(_[a-z0-9_]*))$
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,k,ex,Run,_,n,f,m,v, mt,c
+good-names=i,j,k,ex,Run,_,n,f,m,v,mt,c,fd,ip
 
 # Include a hint for the correct naming format with invalid-name
 include-naming-hint=no
@@ -164,7 +164,7 @@ name-group=
 
 # Regular expression which should only match function or class names that do
 # not require a docstring.
-no-docstring-rgx=^_|^test|(?i).*event|main|on_|.*TestCase
+no-docstring-rgx=^_|^test|(?i).*event|main|on_|.*TestCase|setup
 
 # List of decorators that produce properties, such as abc.abstractproperty. Add
 # to this list to register other decorators that produce valid properties.

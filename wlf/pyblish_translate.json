@@ -1,0 +1,8 @@
+{
+    "Current user": "当前用户",
+    "Inject the currently logged on user into the Context": "添加当前用户至上下文",
+    "Current date": "当前日期",
+    "Inject the current time into the Context": "添加当前时间至上下文",
+    "Current working directory": "当前工作目录",
+    "Inject the current working directory into Context": "添加当前工作目录至上下文"
+}

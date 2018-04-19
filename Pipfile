@@ -10,12 +10,20 @@ name = "pypi"
 pylint = "*"
 rope = "*"
 "autopep8" = "*"
+mock = "*"
+pyside = "*"
+pytest = "*"
 
 
 [packages]
 
-pyside = "*"
 psutil = "*"
+gevent = "*"
+openpyxl = "*"
+"pathlib2" = "*"
+"beautifulsoup4" = "*"
+"qt.py" = "*"
+pyblish = "*"
 
 
 [requires]

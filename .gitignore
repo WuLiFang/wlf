@@ -1,6 +1,9 @@
 build/
+dist/
 *.pyc
 *.spec
+*.egg-info
+.pytest_cache
 
 # Virtual environment
 /.venv
@@ -17,3 +20,6 @@ classes.png
 
 # SASS
 .sass-cache/
+
+# coverage.py
+.coverage
