@@ -154,7 +154,7 @@ def generate_jpg(filename, output=None, **kwargs):
         try:
             mediainfo = probe(path)
             if mediainfo.frames() > 1:
-                input_options.append('-ss {}'.format(mediainfo.duration() / 2))
+                input_options.extend(['-ss', mediainfo.duration() / 2])
         except (ValueError, KeyError):
             pass
 
@@ -241,7 +241,7 @@ def probe(filename):
 
     cmd = ['ffprobe', '-show_entries', 'format:streams',
            '-of', 'json', '-hide_banner', filename]
-    proc = Popen(e(cmd), stdout=PIPE, stderr=PIPE, env=os.environ)
+    proc = Popen([e(i) for i in cmd], stdout=PIPE, stderr=PIPE, env=os.environ)
     stdout, _ = proc.communicate()
     ret = json.loads(stdout)
     return ProbeResult(ret)
@@ -262,7 +262,7 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
         cmd = [e(i) for i in cmd]
 
     proc = Popen(cmd, **kwargs)
-    stderr = proc.communicate()[1]
+    _, stderr = proc.communicate()
     if proc.wait():
         raise GenerateError(
             '%s:\n\t %s\n\t%s' % (u(error_msg), u(cmd), u(stderr)))
