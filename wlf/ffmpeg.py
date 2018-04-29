@@ -176,6 +176,8 @@ def generate_jpg(filename, output=None, **kwargs):
 class ProbeResult(dict):
     """Optimized dict for probe result.  """
 
+    error = None
+
     def fps(self):
         """FPS for the file.
 
@@ -242,9 +244,11 @@ def probe(filename):
     cmd = ['ffprobe', '-show_entries', 'format:streams',
            '-of', 'json', '-hide_banner', filename]
     proc = Popen([e(i) for i in cmd], stdout=PIPE, stderr=PIPE, env=os.environ)
-    stdout, _ = proc.communicate()
+    stdout, stderr = proc.communicate()
     ret = json.loads(stdout)
-    return ProbeResult(ret)
+    ret = ProbeResult(ret)
+    ret.error = stderr
+    return ret
 
 
 def _try_run_cmd(cmd, error_msg, **popen_kwargs):
