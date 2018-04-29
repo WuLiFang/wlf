@@ -242,7 +242,8 @@ def probe(filename):
     """
 
     cmd = ['ffprobe', '-show_entries', 'format:streams',
-           '-of', 'json', '-hide_banner', filename]
+           '-of', 'json', '-hide_banner',
+           '-loglevel', 'error', filename]
     proc = Popen([e(i) for i in cmd], stdout=PIPE, stderr=PIPE, env=os.environ)
     stdout, stderr = proc.communicate()
     ret = json.loads(stdout)
