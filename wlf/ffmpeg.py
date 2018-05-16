@@ -21,7 +21,8 @@ try:
     from gevent.subprocess import Popen
 except ImportError:
     from subprocess import Popen  # pylint: disable=ungrouped-imports
-
+if six.PY3:
+    from functools import reduce
 
 LOGGER = getLogger('com.wlf.ffmpeg')
 
@@ -92,7 +93,7 @@ def generate_mp4(filename, output=None, **kwargs):
         '-pix_fmt', 'yuv420p',
         '-f', 'mp4'
     ]
-    if duration > 0:
+    if duration and duration > 0:
         output_options.extend(['-t', duration])
     if limit_size:
         output_options.extend(['-fs', limit_size])
@@ -149,8 +150,8 @@ def generate_jpg(filename, output=None, **kwargs):
         '-noaccurate_seek'
     ]
 
-    type_, _ = mimetypes.guess_type(unicode(path))
-    if unicode(type_).startswith('video/'):
+    type_, _ = mimetypes.guess_type(six.text_type(path))
+    if six.text_type(type_).startswith('video/'):
         try:
             mediainfo = probe(path)
             if mediainfo.frames() > 1:
@@ -226,7 +227,7 @@ class ProbeResult(dict):
             float: caculate result.
         """
 
-        assert isinstance(exp, (unicode, str))
+        assert isinstance(exp, (six.types, six.text_type))
         return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
 
 

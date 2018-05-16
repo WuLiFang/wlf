@@ -42,7 +42,11 @@ def get_unicode(input_bytes, codecs=('UTF-8', 'GBK')):
     if isinstance(input_bytes, str):
         return input_bytes
 
-    input_bytes = six.binary_type(input_bytes)
+    try:
+        input_bytes = six.binary_type(input_bytes)
+    except TypeError:
+        return six.text_type(input_bytes)
+
     try:
         return input_bytes.decode()
     except UnicodeDecodeError:
@@ -112,8 +116,8 @@ def _py2_encode(parts):
 setattr(pathlib, '_py2_fsencode', _py2_encode)
 
 
-def path_accessor():
-    """Path pathlib._normal_accessor to accept encoded path.  """
+def _patch_accessor():
+    """Patch pathlib._normal_accessor to accept encoded path.  """
 
     def _e(func):
         @wraps(func)
@@ -121,10 +125,13 @@ def path_accessor():
             return func(get_encoded(path))
         return _func
 
-    pathlib._normal_accessor.stat = _e(pathlib._normal_accessor.stat)
+    # pylint: disable=protected-access
+    pathlib._normal_accessor.stat = _e(
+        pathlib._normal_accessor.stat)
 
 
-path_accessor()
+if six.PY2:
+    _patch_accessor()
 
 
 @python_2_unicode_compatible
