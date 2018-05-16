@@ -338,13 +338,13 @@ class PurePath(pathlib.PurePath):
     def with_frame(self, frame):
         '''Return a frame mark expaned version of filename, with given frame.
 
-        >>> text_type(PurePath('test_sequence_###.exr').with_frame(1))
+        >>> six.text_type(PurePath('test_sequence_###.exr').with_frame(1))
         u'test_sequence_001.exr'
-        >>> text_type(PurePath('test_sequence_369.exr').with_frame(1))
+        >>> six.text_type(PurePath('test_sequence_369.exr').with_frame(1))
         u'test_sequence_369.exr'
-        >>> text_type(PurePath('test_sequence_%03d.exr').with_frame(1234))
+        >>> six.text_type(PurePath('test_sequence_%03d.exr').with_frame(1234))
         u'test_sequence_1234.exr'
-        >>> text_type(PurePath('test_sequence_%03d.###.exr').with_frame(1234))
+        >>> six.text_type(PurePath('test_sequence_%03d.###.exr').with_frame(1234))
         u'test_sequence_1234.1234.exr'
         '''
 
@@ -362,7 +362,7 @@ class PurePath(pathlib.PurePath):
     def as_no_version(self):
         """Return filename without version number.
 
-        >>> text_type(PurePath('sc_001_v233.jpg').as_no_version())
+        >>> six.text_type(PurePath('sc_001_v233.jpg').as_no_version())
         u'sc_001.jpg'
         """
 
