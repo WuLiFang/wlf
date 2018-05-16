@@ -14,14 +14,12 @@ import sys
 from functools import wraps
 
 import six
-from six import PY2, binary_type, python_2_unicode_compatible, text_type
-
 from .decorators import deprecated
 
-if PY2:
+if six.PY2:
     import pathlib2 as pathlib  # pylint: disable=import-error
 else:
-    import pathlib
+    import pathlib  # pylint: disable=import-error
 
 
 with pathlib.Path(os.path.abspath(
@@ -39,7 +37,7 @@ LOGGER = logging.getLogger('com.wlf.path')
 def get_unicode(input_bytes, codecs=('UTF-8', 'GBK')):
     """Return unicode string by try decode @input_bytes with @codecs.  """
 
-    if isinstance(input_bytes, str):
+    if isinstance(input_bytes, six.text_type):
         return input_bytes
 
     try:
@@ -90,7 +88,7 @@ def get_server(path):
     u'C:/steam'
     """
     if path.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]+)\\?', text_type(path))
+        match = re.match(r'(\\\\[^\\]+)\\?', six.text_type(path))
         if match:
             return match.group(1)
 
@@ -134,7 +132,7 @@ if six.PY2:
     _patch_accessor()
 
 
-@python_2_unicode_compatible
+@six.python_2_unicode_compatible
 class PurePath(pathlib.PurePath):
     """Optimized pathlib.PurePath object for footages.  """
 
@@ -374,7 +372,7 @@ class PurePath(pathlib.PurePath):
         """Return the string representation of the path with forward (/)
         slashes."""
         f = getattr(self, '_flavour')
-        return text_type(self).replace(f.sep, '/')
+        return six.text_type(self).replace(f.sep, '/')
 
     def relative_to(self, *other):
         return super(PurePath, self).relative_to(*(get_unicode(i) for i in other))
