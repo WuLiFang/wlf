@@ -259,12 +259,8 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
         'env': os.environ
     }
     kwargs.update(popen_kwargs)
-    if isinstance(cmd, six.binary_type):
-        pass
-    elif isinstance(cmd, six.text_type):
-        cmd = e(cmd)
-    else:
-        cmd = [e(i) for i in cmd]
+
+    cmd = [e(i) if six.PY2 else u(i) for i in cmd]
 
     proc = Popen(cmd, **kwargs)
     _, stderr = proc.communicate()
