@@ -13,12 +13,13 @@ import string
 import sys
 from functools import wraps
 
+import six
 from six import PY2, binary_type, python_2_unicode_compatible, text_type
 
 from .decorators import deprecated
 
 if PY2:
-    import pathlib2 as pathlib
+    import pathlib2 as pathlib  # pylint: disable=import-error
 else:
     import pathlib
 
@@ -35,19 +36,22 @@ del _TAGS, _f
 LOGGER = logging.getLogger('com.wlf.path')
 
 
-def get_unicode(input_str, codecs=('UTF-8', 'GBK')):
-    """Return unicode by try decode @string with @codecs.  """
+def get_unicode(input_bytes, codecs=('UTF-8', 'GBK')):
+    """Return unicode string by try decode @input_bytes with @codecs.  """
 
+    if isinstance(input_bytes, str):
+        return input_bytes
+
+    input_bytes = six.binary_type(input_bytes)
     try:
-        return text_type(input_str)
+        return input_bytes.decode()
     except UnicodeDecodeError:
-        input_str = binary_type(input_str)
         for i in tuple(codecs) + (sys.getfilesystemencoding(), locale.getdefaultlocale()[1]):
             try:
-                return text_type(input_str, i)
+                return six.text_type(input_bytes, i)
             except UnicodeDecodeError:
                 continue
-    raise UnicodeDecodeError(input_str)
+    raise UnicodeDecodeError(input_bytes)
 
 
 def get_encoded(input_str, encoding=None):
