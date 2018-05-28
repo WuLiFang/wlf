@@ -30,3 +30,14 @@ def test_generate_gif(tmpdir):
 
 def test_generate_mp4(tmpdir):
     _test_method(ffmpeg.generate_mp4, tmpdir)
+
+
+def test_parse_div():
+    method = ffmpeg.ProbeResult.parse_div
+
+    test_case = {
+        '1 / 2': 0.5,
+        '1 / 3 / 2': 1 / 6
+    }
+    for k, v in test_case.items():
+        assert method(k) == v

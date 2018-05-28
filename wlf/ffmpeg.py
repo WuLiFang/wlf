@@ -227,7 +227,7 @@ class ProbeResult(dict):
             float: caculate result.
         """
 
-        assert isinstance(exp, (six.types, six.text_type))
+        assert isinstance(exp, (six.binary_type, six.text_type))
         return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
 
 
