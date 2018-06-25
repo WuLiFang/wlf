@@ -23,6 +23,6 @@ setup(
     version=__about__['__version__'],
     author=__about__['__author__'],
     packages=find_packages(),
-    package_data={'': ['*.json', '*.png', '*.ui']},
+    package_data={'': ['data/*.json', 'assets/*.png', 'assets/*.ui']},
     install_requires=REQUIRES
 )
