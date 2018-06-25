@@ -28,3 +28,10 @@ def test_tray(app):  # pylint: disable=unused-argument
     time.sleep(1)
     uitools.Tray.critical('test', 'd')
     time.sleep(1)
+
+    tray = uitools.Tray()
+    tray.menu.add_command('aa', lambda: print(1))
+    tray.show()
+    start = time.clock()
+    while time.clock() - start < 10:
+        app.processEvents()
