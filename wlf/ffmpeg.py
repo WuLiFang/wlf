@@ -12,10 +12,10 @@ from tempfile import mktemp
 
 import six
 
+from .codectools import get_encoded as e
+from .codectools import get_unicode as u
 from .decorators import run_with_semaphore
 from .path import Path
-from .path import get_encoded as e
-from .path import get_unicode as u
 
 try:
     from gevent.subprocess import Popen

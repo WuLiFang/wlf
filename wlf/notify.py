@@ -12,10 +12,9 @@ from datetime import timedelta
 
 from six import PY2, text_type
 
-from . import util
+from .codectools import get_encoded, get_unicode, u_print
 from .decorators import run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
-from .path import get_encoded, get_unicode
 from .pathtools import module_path
 
 HAS_NUKE = has_nuke()
@@ -65,7 +64,7 @@ class BaseProgressHandler(object):
     def set_message(self, message):
         """Set progress message.  """
 
-        util.u_print(message)
+        u_print(message)
 
     def message_factory(self, item):
         """Get message from item.  """

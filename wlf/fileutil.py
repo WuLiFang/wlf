@@ -14,10 +14,10 @@ from subprocess import call
 
 from six.moves import urllib
 
+from .codectools import get_encoded as e
+from .codectools import get_unicode as u
 from .notify import progress
 from .path import Path, PurePath
-from .path import get_encoded as e
-from .path import get_unicode as u
 
 LOGGER = logging.getLogger('com.wlf.fileutil')
 

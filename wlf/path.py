@@ -15,13 +15,13 @@ from functools import wraps
 
 import six
 
+from .codectools import get_encoded, get_unicode
 from .pathtools import module_path
 
 if six.PY2:
     import pathlib2 as pathlib  # pylint: disable=import-error
 else:
     import pathlib  # pylint: disable=import-error
-
 
 with pathlib.Path(module_path('data', 'files.tags.json')).open(encoding='utf-8') as _f:
     _TAGS = json.load(_f)
@@ -32,50 +32,6 @@ with pathlib.Path(module_path('data', 'files.tags.json')).open(encoding='utf-8')
 del _TAGS, _f
 
 LOGGER = logging.getLogger('com.wlf.path')
-
-
-def get_unicode(input_bytes, codecs=('UTF-8', 'GBK')):
-    """Return unicode string by try decode @input_bytes with @codecs.  """
-
-    if isinstance(input_bytes, six.text_type):
-        return input_bytes
-
-    try:
-        input_bytes = six.binary_type(input_bytes)
-    except TypeError:
-        return six.text_type(input_bytes)
-
-    try:
-        return input_bytes.decode()
-    except UnicodeDecodeError:
-        for i in tuple(codecs) + (sys.getfilesystemencoding(), locale.getdefaultlocale()[1]):
-            try:
-                return six.text_type(input_bytes, i)
-            except UnicodeDecodeError:
-                continue
-    raise UnicodeDecodeError(input_bytes)
-
-
-def get_encoded(input_str, encoding=None):
-    """Return unicode by try decode @string with @encodeing.  """
-
-    return get_unicode(input_str).encode(encoding or sys.getfilesystemencoding())
-
-
-def is_ascii(text):
-    """Return true if @text can be convert to ascii.
-
-    >>> is_ascii('a')
-    True
-    >>> is_ascii('测试')
-    False
-
-    """
-    try:
-        get_unicode(text).encode('ASCII')
-        return True
-    except UnicodeEncodeError:
-        return False
 
 
 def escape_batch(text):
