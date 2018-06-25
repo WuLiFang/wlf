@@ -7,9 +7,11 @@ import inspect
 import logging
 import time
 import warnings
-from functools import wraps, WRAPPER_ASSIGNMENTS, partial
+from functools import WRAPPER_ASSIGNMENTS, partial, wraps
 from multiprocessing.dummy import Queue
 from threading import Thread, current_thread
+
+import six
 
 from .env import HAS_QT, has_nuke
 
@@ -17,7 +19,6 @@ try:
     from gevent.lock import Semaphore
 except ImportError:
     from threading import Semaphore
-
 
 LOGGER = logging.getLogger('com.wlf.decorators')
 assert isinstance(LOGGER, logging.Logger)
@@ -37,7 +38,7 @@ def run_async(func):
 def run_with_clock(name=None):
     """Run func with a clock.  """
 
-    assert isinstance(name, (str, unicode)),\
+    assert isinstance(name, (six.text_type, six.binary_type)),\
         'Expected str type, got {}'.format(type(name))
 
     def _wrap(func):
@@ -66,7 +67,7 @@ if HAS_QT:
     import Qt
 
     class Event(QEvent):
-        if Qt.IsPySide:
+        if Qt.IsPySide or Qt.IsPySide2:
             event_type = QEvent.Type.User
         else:
             event_type = QEvent.registerEventType()
