@@ -1,11 +1,12 @@
 # -*- coding=UTF-8 -*-
 """Tray icon and menu.  """
-from __future__ import absolute_import, print_function, unicode_literals
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from Qt.QtGui import QCursor, QIcon
 from Qt.QtWidgets import QSystemTrayIcon
 
-from ..env import has_gui
 from ..filetools import module_path
 from .core import Menu
 
@@ -15,6 +16,7 @@ class Tray(QSystemTrayIcon):
 
     instance = None
     initiated = False
+    icon = module_path('assets', 'tray_icon.png')
 
     def __new__(cls):
         if not cls.instance:
@@ -22,23 +24,19 @@ class Tray(QSystemTrayIcon):
         return cls.instance
 
     def __init__(self):
-        if not self.initiated:
-            super(Tray, self).__init__(
-                QIcon(module_path('assets', 'tray_icon.png')))
+        if self.initiated:
+            return
 
-            # Menu.
-            self.menu = Menu()
-            self.setup_menu()
-            self.setContextMenu(self.menu)
+        super(Tray, self).__init__(QIcon(self.icon))
 
-            # Signals.
-            self.activated.connect(self.on_activated)
+        # Menu.
+        self.menu = Menu()
+        self.setContextMenu(self.menu)
+
+        # Signals.
+        self.activated.connect(self.on_activated)
 
         self.initiated = True
-
-    def setup_menu(self):
-        """Set menu context.  """
-        pass
 
     def on_activated(self, reason):
         if reason == self.Trigger:
@@ -75,7 +73,3 @@ class Tray(QSystemTrayIcon):
         """Show a traytip with critical icon.  """
 
         cls._message(title, text, seconds, QSystemTrayIcon.Critical)
-
-
-if has_gui():
-    Tray().show()
