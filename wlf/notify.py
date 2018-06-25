@@ -346,23 +346,3 @@ def message_box(message, detail=None):
         threading.Thread(target=_run, name='MessageBox').start()
     else:
         _message(message, detail)
-
-
-def traytip(title, text, seconds=3, icon='Information'):
-    """Show a traytip.
-
-    @icon enum:
-        NoIcon,
-        Information,
-        Warning,
-        Critical
-    """
-
-    from .tray import Tray
-
-    icon = getattr(QtWidgets.QSystemTrayIcon, icon)
-
-    tray = Tray()
-    tray.show()
-
-    tray.showMessage(title, text, icon=icon, msecs=seconds * 1000)

@@ -37,3 +37,13 @@ def main_show_dialog(dialog):
     frame = dialog()
     QtProgressBar.default_parent = frame
     sys.exit(frame.exec_())
+
+
+def application():
+    """Get QApplication instance, create one if needed.  """
+
+    app = QApplication.instance()
+
+    if not app:
+        app = QApplication(sys.argv)
+    return app
