@@ -13,16 +13,16 @@ from tempfile import mktemp
 import six
 
 from .decorators import run_with_semaphore
+from .path import Path
 from .path import get_encoded as e
 from .path import get_unicode as u
-from .path import Path
 
 try:
     from gevent.subprocess import Popen
 except ImportError:
     from subprocess import Popen  # pylint: disable=ungrouped-imports
 if six.PY3:
-    from functools import reduce
+    from functools import reduce  # pylint: disable=redefined-builtin
 
 LOGGER = getLogger('com.wlf.ffmpeg')
 

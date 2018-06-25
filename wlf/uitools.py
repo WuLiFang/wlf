@@ -13,8 +13,6 @@ from Qt.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QMenu
 
 from . import mp_logging
 from .config import Config
-from .decorators import deprecated
-from .env import has_gui as _has_gui
 from .path import Path
 
 
@@ -176,7 +174,7 @@ def translate_pyblish_plugin(plugins):
         plugins (list): Pyblish plugin list.
     """
 
-    with (Path(__file__).parent / 'pyblish_translate.json').open(encoding='utf-8') as f:
+    with Path(Path(__file__).parent / 'pyblish_translate.json').open(encoding='utf-8') as f:
         tr_dict = json.load(f)
 
     def _tr(obj, attr):
@@ -201,8 +199,3 @@ def patch_pyblish_discover():
         return ret
 
     pyblish.api.discover = _func
-
-# Deprecated functions.
-
-
-deprecated('has_gui', reason='moved to wlf.env')(_has_gui)

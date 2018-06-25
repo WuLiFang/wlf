@@ -8,24 +8,20 @@ import multiprocessing.dummy
 import os
 import shutil
 import sys
-import urllib
-import warnings
-from subprocess import Popen, call
+from subprocess import call
 
-from . import path as _path
-from .decorators import deprecated
-from .notify import traytip as _traytip
+from six.moves import urllib
+
 from .notify import progress
-from .path import get_encoded as e
 from .path import Path, PurePath
+from .path import get_encoded as e
+from .path import get_unicode as u
 
 LOGGER = logging.getLogger('com.wlf.files')
 
 
 def copy(src, dst, threading=False):
     """Copy src to dst."""
-
-    from .path import get_encoded, get_unicode
 
     def _mkdirs():
         dst_dir = os.path.dirname(dst_e)
@@ -36,15 +32,15 @@ def copy(src, dst, threading=False):
             raise ValueError(
                 'Can not use file as directory: {}'.format(dst_dir))
 
-    src_e, dst_e = get_encoded(src), get_encoded(dst)
-    src_u, dst_u = get_unicode(src), get_unicode(dst)
+    src_e, dst_e = e(src), e(dst)
+    src_u, dst_u = u(src), u(dst)
     # Handle exceptions.
     if src_e == dst_e:
         LOGGER.warning('不能原地复制: %s', src_e)
-        return
+        return dst_u
     elif not os.path.exists(src_e):
         LOGGER.warning('尝试复制不存在的文件: %s', src_u)
-        return
+        return None
 
     if threading:
         thread = multiprocessing.dummy.Process(
@@ -56,7 +52,7 @@ def copy(src, dst, threading=False):
         LOGGER.info('下载:\n\t\t%s\n\t->\t%s', src_u, dst_u)
         _mkdirs()
         try:
-            src_fd = urllib.urlopen(src_e)
+            src_fd = urllib.request.urlopen(src_e)
             with open(dst_e, 'wb') as dst_fd:
                 dst_fd.write(src_fd.read())
         finally:
@@ -68,17 +64,17 @@ def copy(src, dst, threading=False):
             shutil.copy2(src_e, dst_e)
         except OSError:
             if sys.platform == 'win32':
-                call(get_encoded(
+                call(e(
                     'XCOPY /V /Y "{}" "{}"'.format(src_e, dst_e)))
             else:
                 raise
 
-    if os.path.isdir(get_encoded(dst_e)):
+    if os.path.isdir(e(dst_e)):
         ret = os.path.join(dst_e, os.path.basename(src_e))
     else:
         ret = dst_e
 
-    ret = get_unicode(ret)
+    ret = u(ret)
     return ret
 
 
@@ -134,6 +130,7 @@ def checked_exists(checking_list):
     def _check(i):
         if os.path.exists(e(i)):
             return i
+        return None
 
     ret = set()
     pool = multiprocessing.dummy.Pool()
@@ -161,44 +158,3 @@ def is_same(src, dst):
 
     return (src_stat.st_size == dst_stat.st_size
             and abs(src_stat.st_mtime - dst_stat.st_mtime) < 1e-4)
-
-# Deprecated functions.
-
-
-@deprecated('url_open')
-def _url_open(url, isfile=False):
-    """Open url.  """
-    import webbrowser
-
-    dummy = isfile
-    LOGGER.warning('url_open decrypted, use webbrowser.open instead.')
-    LOGGER.debug('Open url:\n%s', url)
-    webbrowser.open(url)
-
-
-@deprecated('unicode_popen')
-def _unicode_popen(args, **kwargs):
-    """Return Popen object use encoded args.  """
-
-    from .path import get_encoded
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('always')
-        warnings.warn(
-            'Use Popen(wlf.path.get_encoded(arg) Instead.', DeprecationWarning)
-    if isinstance(args, unicode):
-        args = get_encoded(args)
-    return Popen(args, **kwargs)
-
-
-deprecated('traytip', reason='use wlf.notify instead')(_traytip)
-
-
-def _map_path_module():
-    for i in ('get_encoded', 'get_unicode', 'split_version', 'expand_frame',
-              'get_footage_name', 'get_layer', 'get_server',
-              'get_tag', 'remove_version', 'is_ascii', 'escape_batch'):
-        deprecated(i, reason='moved to wlf.path')(getattr(_path, i))
-
-
-_map_path_module()

@@ -1,6 +1,8 @@
 # -*- coding=UTF-8 -*-
 """Show notify to user.  """
-from __future__ import absolute_import, print_function, unicode_literals
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import logging
 import multiprocessing
@@ -10,10 +12,10 @@ import threading
 import time
 from datetime import timedelta
 
-from six import text_type, PY2
+from six import PY2, text_type
 
 from . import util
-from .decorators import deprecated, run_in_main_thread
+from .decorators import run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
 from .path import get_encoded, get_unicode
 
@@ -346,7 +348,7 @@ def message_box(message, detail=None):
         _message(message, detail)
 
 
-def traytip(title, text, seconds=3, icon='Information', **kwargs):
+def traytip(title, text, seconds=3, icon='Information'):
     """Show a traytip.
 
     @icon enum:
@@ -358,160 +360,9 @@ def traytip(title, text, seconds=3, icon='Information', **kwargs):
 
     from .tray import Tray
 
-    if kwargs:
-        LOGGER.warning('Unused kwargs: %s', kwargs)
     icon = getattr(QtWidgets.QSystemTrayIcon, icon)
 
     tray = Tray()
     tray.show()
 
     tray.showMessage(title, text, icon=icon, msecs=seconds * 1000)
-
-
-# TODO: deprecated api, remove at next major version.
-
-try:
-    from Qt import QtCompat, QtWidgets
-    from Qt.QtCore import Signal
-
-    class ProgressBar(QtWidgets.QDialog):
-        """Qt progressbar dialog."""
-
-        progress_changed = Signal(int)
-        message_changed = Signal(str)
-
-        @run_in_main_thread
-        def __init__(self, name, parent=None):
-            self._cancelled = False
-            self.name = name
-
-            app = QtWidgets.QApplication.instance()
-            if not app:
-                app = QtWidgets.QApplication(sys.argv)
-            super(ProgressBar, self).__init__(parent)
-            QtCompat.loadUi(os.path.join(__file__, '../progress.ui'), self)
-            if parent:
-                geo = self.geometry()
-                geo.moveCenter(parent.geometry().center())
-                self.setGeometry(geo)
-            self.show()
-
-            self.progress_changed.connect(self.set_progress)
-            self.message_changed.connect(self.set_message)
-
-            setattr(self, 'setProgress', self.progress_changed.emit)
-            setattr(self, 'setMessage', self.message_changed.emit)
-
-        def set_progress(self, value):
-            """Set progress value.  """
-
-            self.progressBar.setValue(value)
-            QtWidgets.QApplication.processEvents()
-
-        def set_message(self, message):
-            """Set progress message.  """
-
-            self.setWindowTitle(
-                u':'.join(i for i in [self.name, message] if i))
-            QtWidgets.QApplication.processEvents()
-
-        def isCancelled(self):
-            """Return if cancel button been pressed.  """
-            return self._cancelled
-
-        def reject(self):
-            """Override QDiloag.reject()"""
-            self._cancelled = True
-
-        def closeEvent(self, event):
-            """Override QWidget.closeEvent()"""
-            dummy = self
-            event.ignore()
-
-except ImportError:
-    def do_nothing(*args, **kwargs):
-        pass
-
-    class ProgressBar(object):
-        setProgress = setMessage = do_nothing
-
-
-@deprecated('Progress')
-class _Progress(object):
-    """A progressbar compatible with or without nuke imported."""
-
-    count = -1
-    total = 100
-
-    def __init__(self, name='', total=None, parent=None):
-        super(_Progress, self).__init__()
-
-        self.total = total or self.total
-
-        if HAS_NUKE:
-            self._task = __import__('nuke').ProgressTask(
-                get_encoded(name, 'utf-8'))
-        else:
-            self._task = ProgressBar(name, parent)
-
-    def __del__(self):
-        if not HAS_NUKE:
-            self._task.hide()
-        del self._task
-
-    @property
-    def progress(self):
-        """Progress caculated by count and total.  """
-
-        return self.count * 100 // self.total
-
-    def set(self, progress=None, message=None):
-        """Set progress number and message"""
-
-        if self.is_cancelled():
-            raise CancelledError
-
-        if progress is not None:
-            self.set_progress(progress)
-        if message is not None:
-            self.set_message(message)
-
-    def set_progress(self, value):
-        """Set progress value.  """
-
-        if self.progress != value:
-            self.count = self.total * value // 100
-        self._task.setProgress(value)
-        QtWidgets.QApplication.processEvents()
-
-    def set_message(self, message):
-        """Set progress message.  """
-
-        if HAS_NUKE:
-            message = get_encoded(message, 'utf-8')
-        self._task.setMessage(message)
-        QtWidgets.QApplication.processEvents()
-
-    def step(self, message=None):
-        """Signal wrapper.  """
-
-        self.on_step(message)
-        QtWidgets.QApplication.processEvents()
-
-    def on_step(self, message=None):
-        """One step forward.  """
-
-        self.count += 1
-        message = message or '剩余{}项'.format(int(self.total - self.count))
-        self.set(self.progress, message)
-
-    def is_cancelled(self):
-        """Return if task has been cancelled.  """
-
-        return self._task.isCancelled()
-
-    def check_cancelled(self):
-        """Raise a `CancelledError` if task has been cancelled.  """
-
-        if self.is_cancelled():
-            raise CancelledError

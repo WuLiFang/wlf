@@ -3,7 +3,6 @@
 
 from __future__ import absolute_import
 
-
 import os
 import sys
 
@@ -26,29 +25,6 @@ def _setup():
 
 
 def _init():
-
-    def _set_attr(name, value):
-        setattr(sys.modules[__name__], name, value)
-        sys.modules['{}.{}'.format(__name__, name)] = value
-
-    # Remap deprecated module.
-    # TODO: Remove at next major version.
-
-    try:
-        from . import notify
-        _set_attr('progress', notify)
-        _set_attr('message', notify)
-    except ImportError:
-        pass
-
-    try:
-        import Qt
-        _set_attr('Qt', Qt)
-        for i in Qt.__all__:
-            sys.modules['{}.Qt.{}'.format(__name__, i)] = getattr(Qt, i)
-    except ImportError:
-        pass
-
     # Add scandir
     try:
         import scandir

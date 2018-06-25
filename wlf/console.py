@@ -5,8 +5,6 @@ import sys
 import time
 from subprocess import call
 
-__version__ = '0.1.0'
-
 
 def pause(timeout=5):
     """Pause prompt with a countdown."""

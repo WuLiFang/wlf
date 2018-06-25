@@ -14,7 +14,6 @@ import sys
 from functools import wraps
 
 import six
-from .decorators import deprecated
 
 if six.PY2:
     import pathlib2 as pathlib  # pylint: disable=import-error
@@ -76,23 +75,6 @@ def is_ascii(text):
         return True
     except UnicodeEncodeError:
         return False
-
-
-@deprecated
-def get_server(path):
-    r"""Return only path head for unc path.
-
-    >>> get_server('\\\\192.168.1.7\\z\\b')
-    u'\\\\192.168.1.7'
-    >>> get_server('C:/steam')
-    u'C:/steam'
-    """
-    if path.startswith('\\\\'):
-        match = re.match(r'(\\\\[^\\]+)\\?', six.text_type(path))
-        if match:
-            return match.group(1)
-
-    return path
 
 
 def escape_batch(text):
@@ -318,13 +300,13 @@ class PurePath(pathlib.PurePath):
     def footage_name(self):
         """Return filename without frame number.
 
-        >>> get_footage_name('sc_001_BG.0034.exr')
+        >>> PurePath('sc_001_BG.0034.exr').footage_name
         u'sc_001_BG'
-        >>> get_footage_name('sc_001_BG.%04d.exr')
+        >>> PurePath('sc_001_BG.%04d.exr').footage_name
         u'sc_001_BG'
-        >>> get_footage_name('sc_001_BG.###.exr')
+        >>> PurePath('sc_001_BG.###.exr').footage_name
         u'sc_001_BG'
-        >>> get_footage_name('sc_001._BG.exr')
+        >>> PurePath('sc_001._BG.exr').footage_name
         u'sc_001._BG'
         """
 
@@ -437,47 +419,3 @@ class WindowsPath(Path, PureWindowsPath):
 
     def group(self):
         raise NotImplementedError("Path.group() is unsupported on this system")
-
-
-# Deprecated functions.
-
-@deprecated('expand_frame')
-def _expand_frame(filename, frame):
-    return get_unicode(PurePath(filename).with_frame(frame))
-
-
-@deprecated('split_version')
-def _split_version(f):
-    path = PurePath(f)
-    return path.shot, path.version
-
-
-@deprecated('remove_version')
-def _remove_version(path):
-    return get_unicode(PurePath(path).as_no_version())
-
-
-@deprecated('get_shot')
-def _get_shot(path):
-    return PurePath(path).shot
-
-
-@deprecated('get_tag')
-def _get_tag(filename, pat=None, default=DEFAULT_TAG):
-    path = PurePath(filename)
-    path.tag_pattern = pat
-    path.default_tag = default
-
-    return path.tag
-
-
-@deprecated('get_layer')
-def _get_layer(filename, layers=None):
-    path = PurePath(filename)
-    path.layers = layers
-    return path.layer
-
-
-@deprecated('get_footage_name')
-def _get_footage_name(path):
-    return PurePath(path).footage_name

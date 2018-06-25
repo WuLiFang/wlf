@@ -7,12 +7,12 @@ import logging
 import re
 
 from openpyxl import Workbook
-
-from .notify import Progress
 from six import text_type
 from six.moves import range
+
+from .notify import progress
+
 LOGGER = logging.getLogger('com.wlf.table')
-__version__ = '0.2.0'
 
 
 class RowTable(object):
@@ -49,7 +49,6 @@ class RowTable(object):
         sheet.page_setup.fitToWidth = 1
         header = NestedData(self.header)
         header_rows = header.to_rows()
-        task = Progress('导出表格 {}'.format(filename), total=len(self.rows))
 
         # Create header
         for row_index, row in enumerate(header_rows):
@@ -75,10 +74,9 @@ class RowTable(object):
 
         # Dump data
         LOGGER.debug('Header: %s', self.header)
-        for row in self.rows:
+        for row in progress(self.rows, '导出表格 {}'.format(filename)):
             sheet_row = [row.get(i) for i in self.header]
             sheet.append(self.l10n(sheet_row))
-            task.step()
         book.save(filename)
         LOGGER.info('导出表格: %s', filename)
 
