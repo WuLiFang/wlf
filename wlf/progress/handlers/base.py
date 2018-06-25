@@ -9,8 +9,8 @@ from datetime import timedelta
 
 import six
 
-from .. import core
 from ...codectools import u_print
+from ..exceptions import CancelledError
 
 
 class BaseProgressHandler(object):
@@ -41,7 +41,7 @@ class BaseProgressHandler(object):
         """Progress one step forward.  """
 
         if self.is_cancelled():
-            raise core.CancelledError
+            raise CancelledError
         if not self.is_busy():
             self.set_value(self.count * 100 / self.total)
             self.set_message(self.message_factory(item))

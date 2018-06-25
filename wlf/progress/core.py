@@ -4,14 +4,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import six
+from .handlers.base import BaseProgressHandler
 
-DEFAULT_HANDLER = None
-
-
-@six.python_2_unicode_compatible
-class CancelledError(Exception):
-    """Indicate user pressed CancelButton.  """
-
-    def __str__(self):
-        return 'Cancelled.'
+DefaultHandler = BaseProgressHandler

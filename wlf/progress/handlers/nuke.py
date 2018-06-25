@@ -38,4 +38,4 @@ class NukeProgressHandler(BaseProgressHandler):
         self.progress_bar.setProgress(value)
 
 
-core.DEFAULT_HANDLER = NukeProgressHandler
+core.DefaultHandler = NukeProgressHandler

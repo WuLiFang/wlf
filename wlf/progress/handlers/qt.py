@@ -101,4 +101,4 @@ class QtProgressHandler(BaseProgressHandler):
         self.progress_bar = None
 
 
-core.DEFAULT_HANDLER = QtProgressBar
+core.DefaultHandler = QtProgressHandler

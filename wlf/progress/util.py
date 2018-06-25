@@ -19,7 +19,7 @@ def progress(iterable, name=None, handler=None,
     """Progress with iterator. """
 
     if handler is None:
-        handler = core.DEFAULT_HANDLER
+        handler = core.DefaultHandler(**handler_kwargs)
     else:
         if handler_kwargs:
             LOGGER.warning(

@@ -45,4 +45,4 @@ class CLIProgressHandler(BaseProgressHandler):
         return '[{}/{}]{}%{}'.format(self.count, self.total, self.count * 100 / self.total, item)
 
 
-core.DEFAULT_HANDLER = CLIProgressHandler
+core.DefaultHandler = CLIProgressHandler
