@@ -15,6 +15,7 @@ import six
 from .codectools import get_encoded as e
 from .codectools import get_unicode as u
 from .decorators import run_with_semaphore
+from .fileutil import is_same
 from .path import Path
 
 try:
@@ -41,7 +42,7 @@ def generate_gif(filename, output=None, **kwargs):
     ret = Path(Path(output or path).with_suffix('.gif'))
 
     # Skip generated.
-    if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
+    if is_same(path, ret):
         return ret
 
     # Generate palette
@@ -106,7 +107,7 @@ def generate_mp4(filename, output=None, **kwargs):
                                if height is None else int(height) // 2 * 2)])
 
     # Skip generated.
-    if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
+    if is_same(path, ret):
         return ret
 
     # Generate.
@@ -143,7 +144,7 @@ def generate_jpg(filename, output=None, **kwargs):
         r'min(ih\, 1080)' if height is None else int(height))
 
     # Skip generated.
-    if ret.exists() and abs(path.stat().st_mtime - ret.stat().st_mtime) < 1e-06:
+    if is_same(path, ret):
         return ret
 
     input_options = [
