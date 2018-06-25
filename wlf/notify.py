@@ -5,8 +5,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import logging
-import multiprocessing
-import os
 import sys
 import threading
 import time
@@ -17,8 +15,8 @@ from six import PY2, text_type
 from . import util
 from .decorators import run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
-from .pathtools import module_path
 from .path import get_encoded, get_unicode
+from .pathtools import module_path
 
 HAS_NUKE = has_nuke()
 LOGGER = logging.getLogger('com.wlf.notify')
@@ -293,56 +291,3 @@ class CancelledError(Exception):
 
     def __unicode__(self):
         return '用户取消.'
-
-
-def _error_process(message, error_type=''):
-    app = QtWidgets.QApplication(sys.argv)
-    dummy_var = _error_message(message, error_type)
-    sys.exit(app.exec_())
-
-
-def _error_message(message, error_type=''):
-    frame = QtWidgets.QErrorMessage()
-    frame.showMessage(message, error_type)
-    frame.show()
-    return frame
-
-
-def error(message, error_type=''):
-    """Show error message. """
-
-    def _run():
-        proc = multiprocessing.Process(
-            target=_error_process, args=(message, error_type))
-        proc.start()
-        proc.join()
-    if not QtWidgets.QApplication.instance():
-        threading.Thread(target=_run, name='ErrorDialog').start()
-    else:
-        _error_message(message, error_type)
-
-
-def _message_process(message, detail):
-    QtWidgets.QApplication(sys.argv)
-    dummy_var = _message(message, detail)
-
-
-def _message(message, detail):
-    msgbox = QtWidgets.QMessageBox()
-    msgbox.setText(message)
-    if detail:
-        msgbox.setDetailedText(detail)
-    return msgbox.exec_()
-
-
-def message_box(message, detail=None):
-    """Show a message.  """
-    def _run():
-        proc = multiprocessing.Process(
-            target=_message_process, args=(message, detail))
-        proc.start()
-        proc.join()
-    if not QtWidgets.QApplication.instance():
-        threading.Thread(target=_run, name='MessageBox').start()
-    else:
-        _message(message, detail)
