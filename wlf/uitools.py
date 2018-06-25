@@ -6,13 +6,12 @@ import json
 import sys
 from functools import wraps
 
-import pyblish.api
-from pyblish.plugin import discover
 from Qt import QtCompat, QtCore, QtWidgets
 from Qt.QtWidgets import QAction, QApplication, QDialog, QFileDialog, QMenu
 
 from . import mp_logging
 from .config import Config
+from .notify import QtProgressBar
 from .path import Path
 
 
@@ -158,8 +157,6 @@ class Menu(QMenu):
 def main_show_dialog(dialog):
     """Show dialog, standalone.  """
 
-    from .notify import QtProgressBar
-
     mp_logging.basic_config()
     QApplication(sys.argv)
     frame = dialog()
@@ -191,6 +188,11 @@ def translate_pyblish_plugin(plugins):
 
 def patch_pyblish_discover():
     """Add translate after discover.   """
+
+    # pylint: disable=import-error
+
+    import pyblish.api
+    from pyblish.plugin import discover
 
     @wraps(discover)
     def _func(*args, **kwargs):
