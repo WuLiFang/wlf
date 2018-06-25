@@ -194,6 +194,7 @@ class PurePath(pathlib.PurePath):
                     ret = match.group(1).strip('_').upper()
                     if not is_regular_tag(ret):
                         LOGGER.warning('不规范标签: %s: %s', ret, self)
+                    break
             if ret:
                 break
         else:
