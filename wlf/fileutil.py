@@ -1,6 +1,8 @@
 # -*- coding=UTF-8 -*-
-"""Files operation. """
-from __future__ import absolute_import, print_function, unicode_literals
+"""File operation utility. """
+
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import errno
 import logging
@@ -17,7 +19,7 @@ from .path import Path, PurePath
 from .path import get_encoded as e
 from .path import get_unicode as u
 
-LOGGER = logging.getLogger('com.wlf.files')
+LOGGER = logging.getLogger('com.wlf.fileutil')
 
 
 def copy(src, dst, threading=False):

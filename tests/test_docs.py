@@ -1,7 +1,9 @@
 """Docstring test.  """
 from __future__ import absolute_import
-from unittest import TestCase, skipIf
+
 import doctest
+from unittest import TestCase, skipIf
+
 import six
 
 
@@ -15,9 +17,9 @@ class DocstringTestCase(TestCase):
         from wlf import path
         self._test_mod(path)
 
-    def test_file(self):
-        from wlf import files
-        self._test_mod(files)
+    def test_fileutil(self):
+        from wlf import fileutil
+        self._test_mod(fileutil)
 
     def test_timedelta(self):
         from wlf import timedelta

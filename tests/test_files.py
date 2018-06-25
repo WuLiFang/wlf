@@ -1,9 +1,9 @@
 # -*- coding=UTF-8 -*-
-"""Test `files` module.  """
+"""Test `fileutil` module.  """
 
 import time
 
-from wlf import files
+from wlf import fileutil
 
 
 def test_is_same(tmpdir):
@@ -13,10 +13,10 @@ def test_is_same(tmpdir):
     file2.write('aaa')
     file2.setmtime(0)
 
-    assert not files.is_same(file1, file2)
+    assert not fileutil.is_same(file1, file2)
     current_time = time.time()
     file1.setmtime(current_time)
     file2.setmtime(current_time)
-    assert files.is_same(file1, file2)
+    assert fileutil.is_same(file1, file2)
     file2.write('bbbb')
-    assert not files.is_same(file1, file2)
+    assert not fileutil.is_same(file1, file2)
