@@ -10,7 +10,7 @@ from openpyxl import Workbook
 from six import text_type
 from six.moves import range
 
-from .notify import progress
+from .progress import progress
 
 LOGGER = logging.getLogger('com.wlf.table')
 

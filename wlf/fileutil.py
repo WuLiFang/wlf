@@ -16,8 +16,8 @@ from six.moves import urllib
 
 from .codectools import get_encoded as e
 from .codectools import get_unicode as u
-from .notify import progress
 from .path import Path, PurePath
+from .progress import progress
 
 LOGGER = logging.getLogger('com.wlf.fileutil')
 
