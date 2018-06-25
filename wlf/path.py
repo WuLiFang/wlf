@@ -5,7 +5,6 @@ from __future__ import print_function, unicode_literals
 
 import io
 import json
-import locale
 import logging
 import os
 import re
