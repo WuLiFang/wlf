@@ -6,7 +6,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import json
 import os
 
-from .path import Path, get_unicode as u
+from .codectools import get_unicode as u
+from .path import Path
 
 
 class Config(dict):
