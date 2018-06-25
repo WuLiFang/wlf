@@ -32,9 +32,10 @@ class ProgressTestCase(TestCase):
     def test_qt_handler(self):
         from wlf.progress.handlers import QtProgressHandler
         from wlf.uitools import application
-        application()
+        app = application()
         for _ in progress(range(200), 'qt测试', handler=QtProgressHandler()):
             time.sleep(0.01)
+        app.quit()
 
     def test_async(self):
         threads = []
