@@ -4,6 +4,8 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import time
+
 import pytest
 
 from wlf import uitools
@@ -19,6 +21,10 @@ def _app():
 
 def test_tray(app):  # pylint: disable=unused-argument
     uitools.Tray.message('test', 'a')
+    time.sleep(1)
     uitools.Tray.information('test', 'b')
+    time.sleep(1)
     uitools.Tray.warning('test', 'c')
+    time.sleep(1)
     uitools.Tray.critical('test', 'd')
+    time.sleep(1)
