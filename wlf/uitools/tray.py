@@ -19,9 +19,9 @@ class Tray(QSystemTrayIcon):
     icon = module_path('assets', 'tray_icon.png')
 
     def __new__(cls):
-        if not cls.instance:
-            cls.instance = super(Tray, cls).__new__(cls)
-        return cls.instance
+        if cls.instance:
+            return cls.instance
+        return super(Tray, cls).__new__(cls)
 
     def __init__(self):
         if self.initiated:
@@ -37,6 +37,7 @@ class Tray(QSystemTrayIcon):
         self.activated.connect(self.on_activated)
 
         self.initiated = True
+        Tray.instance = self
 
     def on_activated(self, reason):
         if reason == self.Trigger:
