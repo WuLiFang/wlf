@@ -1,5 +1,5 @@
 # -*- coding=UTF-8 -*-
-"""Tools for file operations.   """
+"""Tools for path operations.   """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 

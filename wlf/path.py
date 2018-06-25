@@ -15,7 +15,7 @@ from functools import wraps
 
 import six
 
-from .filetools import module_path
+from .pathtools import module_path
 
 if six.PY2:
     import pathlib2 as pathlib  # pylint: disable=import-error

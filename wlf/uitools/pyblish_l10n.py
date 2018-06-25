@@ -10,7 +10,7 @@ from functools import wraps
 import pyblish.api  # pylint: disable=import-error
 from pyblish.plugin import discover  # pylint: disable=import-error
 
-from ..filetools import module_path
+from ..pathtools import module_path
 from ..path import Path
 
 

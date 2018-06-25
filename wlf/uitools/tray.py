@@ -7,7 +7,7 @@ from __future__ import (absolute_import, division, print_function,
 from Qt.QtGui import QCursor, QIcon
 from Qt.QtWidgets import QSystemTrayIcon
 
-from ..filetools import module_path
+from ..pathtools import module_path
 from .core import Menu
 
 

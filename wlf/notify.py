@@ -17,7 +17,7 @@ from six import PY2, text_type
 from . import util
 from .decorators import run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
-from .filetools import module_path
+from .pathtools import module_path
 from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
