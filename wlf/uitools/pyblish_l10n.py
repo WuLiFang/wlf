@@ -10,6 +10,7 @@ from functools import wraps
 import pyblish.api  # pylint: disable=import-error
 from pyblish.plugin import discover  # pylint: disable=import-error
 
+from ..filetools import module_path
 from ..path import Path
 
 
@@ -20,7 +21,7 @@ def translate_pyblish_plugin(plugins):
         plugins (list): Pyblish plugin list.
     """
 
-    with Path(Path(__file__).parent / 'pyblish_translate.json').open(encoding='utf-8') as f:
+    with Path(module_path('data', 'pyblish_translate.json')).open(encoding='utf-8') as f:
         tr_dict = json.load(f)
 
     def _tr(obj, attr):

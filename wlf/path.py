@@ -15,14 +15,15 @@ from functools import wraps
 
 import six
 
+from .filetools import module_path
+
 if six.PY2:
     import pathlib2 as pathlib  # pylint: disable=import-error
 else:
     import pathlib  # pylint: disable=import-error
 
 
-with pathlib.Path(os.path.abspath(
-        os.path.join(__file__, '../files.tags.json'))).open(encoding='utf-8') as _f:
+with pathlib.Path(module_path('data', 'files.tags.json')).open(encoding='utf-8') as _f:
     _TAGS = json.load(_f)
     REGULAR_TAGS = _TAGS['regular_tags']
     TAG_CONVERT_DICT = _TAGS['tag_convert_dict']
@@ -121,8 +122,7 @@ class PurePath(pathlib.PurePath):
     tag_pattern = None
     version_pattern = r'(.+)v(\d+)'
     default_tag = DEFAULT_TAG
-    with pathlib.Path(os.path.abspath(
-            os.path.join(__file__, '../precomp.redshift.json'))).open(encoding='utf-8') as f:
+    with pathlib.Path(module_path('data', 'precomp.redshift.json')).open(encoding='utf-8') as f:
         layers = json.load(f).get('layers')
     _unicode = None
 

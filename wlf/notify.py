@@ -17,6 +17,7 @@ from six import PY2, text_type
 from . import util
 from .decorators import run_in_main_thread
 from .env import HAS_QT, has_gui, has_nuke
+from .filetools import module_path
 from .path import get_encoded, get_unicode
 
 HAS_NUKE = has_nuke()
@@ -131,8 +132,7 @@ if HAS_QT:
             self._cancelled = False
 
             super(QtProgressBar, self).__init__(parent)
-            QtCompat.loadUi(os.path.abspath(
-                os.path.join(__file__, '../progress.ui')), self)
+            QtCompat.loadUi(module_path('assets', 'progress.ui'), self)
             if parent:
                 geo = self.geometry()
                 geo.moveCenter(parent.geometry().center())
