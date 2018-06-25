@@ -33,6 +33,12 @@ del _TAGS, _f
 LOGGER = logging.getLogger('com.wlf.path')
 
 
+def is_regular_tag(tag):
+    """Check if @tag is a regular tag.  """
+
+    return any(tag.startswith(i) for i in REGULAR_TAGS)
+
+
 def escape_batch(text):
     r"""Return escaped text for windows shell.
 
@@ -178,6 +184,7 @@ class PurePath(pathlib.PurePath):
         pat = self.tag_pattern or TAG_PATTERN
         ret = None
         path = self
+
         for testing_pat in (pat, TAG_PATTERN):
             tag_pat = re.compile(testing_pat, flags=re.I)
             for test_string in\
@@ -185,12 +192,8 @@ class PurePath(pathlib.PurePath):
                 match = re.match(tag_pat, test_string)
                 if match and match.group(1):
                     ret = match.group(1).strip('_').upper()
-                    for tag in REGULAR_TAGS:
-                        if ret.startswith(tag):
-                            break
-                    else:
+                    if not is_regular_tag(ret):
                         LOGGER.warning('不规范标签: %s: %s', ret, self)
-                    break
             if ret:
                 break
         else:
