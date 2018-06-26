@@ -35,7 +35,7 @@ class NukeProgressHandler(BaseProgressHandler):
         self.progress_bar.setMessage(e(message, 'utf-8'))
 
     def set_value(self, value):
-        self.progress_bar.setProgress(value)
+        self.progress_bar.setProgress(int(value))
 
 
 core.DefaultHandler = NukeProgressHandler
