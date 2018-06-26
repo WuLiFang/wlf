@@ -8,11 +8,11 @@ from .base import BaseProgressHandler
 from .cli import CLIProgressHandler
 
 try:
-    from .nuke import NukeProgressHandler
+    from .qt import QtProgressHandler
 except ImportError:
     pass
 
 try:
-    from .qt import QtProgressHandler
+    from .nuke import NukeProgressHandler
 except ImportError:
     pass
