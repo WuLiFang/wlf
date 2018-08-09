@@ -7,11 +7,12 @@ import json
 import os
 
 from .codectools import get_unicode as u
+from .mixin import SingletonMixin
 from .path import Path
 
 
-class Config(dict):
-    """Comp config.  """
+class Config(dict, SingletonMixin):
+    """Comp config, inherit this class to create new config.  """
 
     default = {}
     path = os.path.expanduser(u'~/wlf.config.json')
