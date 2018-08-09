@@ -13,9 +13,7 @@ pytest = "*"
 
 [packages]
 psutil = "*"
-openpyxl = "*"
 "pathlib2" = {version = "*", python_version = "== '2.*'"}
-"beautifulsoup4" = "*"
 "Qt.py" = "*"
 
 [requires]

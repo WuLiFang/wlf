@@ -20,7 +20,3 @@ class DocstringTestCase(TestCase):
     def test_fileutil(self):
         from wlf import fileutil
         self._test_mod(fileutil)
-
-    def test_timedelta(self):
-        from wlf import timedelta
-        self._test_mod(timedelta)

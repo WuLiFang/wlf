@@ -10,9 +10,7 @@ with open(os.path.join(os.path.dirname(__file__),
     exec(f.read(), __about__)  # pylint: disable=exec-used
 
 REQUIRES = [
-    'openpyxl>=2.5.1',
     'psutil>=5.4.3',
-    'beautifulsoup4>=4.6.0',
     'qt.py>=1.1.0',
 ]
 if sys.version.startswith('2.'):
