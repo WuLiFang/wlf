@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import six
+
 import util
 from wlf import ffmpeg
 
@@ -41,3 +42,8 @@ def test_parse_div():
     }
     for k, v in test_case.items():
         assert method(k) == v
+
+
+def test_probe():
+    for i in TEST_FILES:
+        ffmpeg.probe(i)

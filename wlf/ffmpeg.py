@@ -232,6 +232,10 @@ class ProbeResult(dict):
         return reduce(lambda a, b: float(a) / float(b), exp.split('/'))
 
 
+def _encode_cmd(cmd):
+    return [e(i) if six.PY2 else u(i) for i in cmd]
+
+
 @run_with_semaphore(2)
 def probe(filename):
     """Probe for media file info.
@@ -243,10 +247,10 @@ def probe(filename):
         ProbeResult: Optimized dict to save result.
     """
 
-    cmd = ['ffprobe', '-show_entries', 'format:streams',
-           '-of', 'json', '-hide_banner',
-           '-loglevel', 'error', filename]
-    proc = Popen([e(i) for i in cmd], stdout=PIPE, stderr=PIPE, env=os.environ)
+    cmd = _encode_cmd(['ffprobe', '-show_entries', 'format:streams',
+                       '-of', 'json', '-hide_banner',
+                       '-loglevel', 'error', filename])
+    proc = Popen(cmd, stdout=PIPE, stderr=PIPE, env=os.environ)
     stdout, stderr = proc.communicate()
     ret = json.loads(stdout)
     ret = ProbeResult(ret)
@@ -262,7 +266,7 @@ def _try_run_cmd(cmd, error_msg, **popen_kwargs):
     }
     kwargs.update(popen_kwargs)
 
-    cmd = [e(i) if six.PY2 else u(i) for i in cmd]
+    cmd = _encode_cmd(cmd)
 
     proc = Popen(cmd, **kwargs)
     _, stderr = proc.communicate()
