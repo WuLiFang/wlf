@@ -51,11 +51,14 @@ def escape_batch(text):
     return text.replace(u'^', u'^^').replace(u'"', u'\\"').replace(u'|', u'^|')
 
 
-def _py2_encode(parts):
-    return [get_encoded(part) for part in parts]
+def _py2_fsencode(parts):
+    assert six.PY2
+    return [part.encode(sys.getfilesystemencoding())
+            if isinstance(part, six.text_type) else part
+            for part in parts]
 
 
-setattr(pathlib, '_py2_fsencode', _py2_encode)
+setattr(pathlib, '_py2_fsencode', _py2_fsencode)
 
 
 def _patch_accessor():
