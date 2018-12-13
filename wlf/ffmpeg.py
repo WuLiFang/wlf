@@ -56,13 +56,13 @@ def generate_gif(filename, output=None, **kwargs):
            '-i', _palette, '-lavfi', '{} [x]; [x][1:v] paletteuse'.format(
                _filters),
            '-y', ret]
-    start_time = time.clock()
+    start_time = time.time()
     _try_run_cmd(cmd, 'Error during generate gif', cwd=str(ret.parent))
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))
 
-    LOGGER.info('生成GIF: %s, 耗时 %s 秒', ret, time.clock() - start_time)
+    LOGGER.info('生成GIF: %s, 耗时 %s 秒', ret, time.time() - start_time)
     return ret
 
 
@@ -113,9 +113,9 @@ def generate_mp4(filename, output=None, **kwargs):
     # Generate.
     cmd = (['ffmpeg', '-y', '-hide_banner', '-i', filename]
            + output_options+[ret])
-    start_time = time.clock()
+    start_time = time.time()
     _try_run_cmd(cmd, 'Error during generate mp4', cwd=str(ret.parent))
-    LOGGER.info('生成mp4: %s, 耗时 %s 秒', ret, time.clock() - start_time)
+    LOGGER.info('生成mp4: %s, 耗时 %s 秒', ret, time.time() - start_time)
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))
@@ -165,9 +165,9 @@ def generate_jpg(filename, output=None, **kwargs):
            + input_options
            + ['-i', filename, '-q:v', '1',
               '-vframes', '1', '-vf', _filters, ret])
-    start_time = time.clock()
+    start_time = time.time()
     _try_run_cmd(cmd, 'Error during generate jpg', cwd=str(ret.parent))
-    LOGGER.info('生成jpg: %s, 耗时 %s 秒', ret, time.clock() - start_time)
+    LOGGER.info('生成jpg: %s, 耗时 %s 秒', ret, time.time() - start_time)
 
     # Copy mtime for skip generated.
     os.utime(e(ret), (time.time(), path.stat().st_mtime))

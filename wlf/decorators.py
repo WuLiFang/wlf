@@ -49,11 +49,11 @@ def run_with_clock(name=None):
 
         @wraps(func)
         def _func(*args, **kwargs):
-            start_time = time.clock()
+            start_time = time.time()
             try:
                 return func(*args, **kwargs)
             finally:
-                cost_time = time.clock() - start_time
+                cost_time = time.time() - start_time
                 LOGGER.debug('%s: cost %.2f seconds',
                              func_desc, cost_time)
                 if name is not None:
