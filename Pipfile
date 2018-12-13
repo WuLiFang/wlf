@@ -8,7 +8,7 @@ pylint = "~=1.9.3"
 rope = "*"
 "autopep8" = "*"
 mock = "*"
-PySide = "*"
+PySide2 = "*"
 pytest = "*"
 
 [packages]
@@ -17,4 +17,4 @@ psutil = "*"
 "Qt.py" = "*"
 
 [requires]
-python_version = "2.7"
+python_version = "3.7"

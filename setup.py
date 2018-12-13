@@ -1,6 +1,5 @@
 """Python setup script.  """
 import os
-import sys
 
 from setuptools import find_packages, setup
 
@@ -10,11 +9,10 @@ with open(os.path.join(os.path.dirname(__file__),
     exec(f.read(), __about__)  # pylint: disable=exec-used
 
 REQUIRES = [
-    'psutil>=5.4.3',
-    'qt.py>=1.1.0',
+    'psutil~=5.4.3',
+    'qt.py~=1.1.0',
+    "pathlib2~=2.3.0;python_version<'3'",
 ]
-if sys.version.startswith('2.'):
-    REQUIRES.append('pathlib2>=2.3.0')
 
 setup(
     name='wlf',
