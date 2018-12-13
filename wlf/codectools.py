@@ -47,13 +47,13 @@ def get_unicode(input_bytes, codecs=('UTF-8', 'GBK')):
 
     try:
         return input_bytes.decode()
-    except UnicodeDecodeError:
+    except UnicodeDecodeError as ex:
         for i in tuple(codecs) + (sys.getfilesystemencoding(), locale.getdefaultlocale()[1]):
             try:
                 return six.text_type(input_bytes, i)
             except UnicodeDecodeError:
                 continue
-    raise UnicodeDecodeError(input_bytes)
+        raise ex
 
 
 def get_encoded(input_str, encoding=None):
