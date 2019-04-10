@@ -10,10 +10,11 @@ rope = "*"
 mock = "*"
 PySide2 = "*"
 pytest = "*"
+tox = "*"
 
 [packages]
 psutil = "*"
-"pathlib2" = {version = "*", python_version = "== '2.*'"}
+pathlib2 = {version = "*",python_version = "== '2.*'"}
 "Qt.py" = "*"
 
 [requires]

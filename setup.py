@@ -12,6 +12,7 @@ REQUIRES = [
     'psutil~=5.4.3',
     'qt.py~=1.1.0',
     "pathlib2~=2.3.0;python_version<'3'",
+    "six~=1.12.0"
 ]
 
 setup(

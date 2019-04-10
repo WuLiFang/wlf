@@ -1,13 +1,22 @@
 language: python
-python:
-  - "2.7"
-  - "3.6"
 git:
-    submodules: false
+  submodules: false
+matrix:
+  include:
+    - python: '2.7'
+      env: TOXENV=py27-PySide
+    - python: '2.7'
+      env: TOXENV=py27-PyQt4
+    - python: '3.6'
+      env: TOXENV=py36-PySide2
+    - python: '3.6'
+      env: TOXENV=py36-PyQt5
+    - python: '3.7'
+      env: TOXENV=py37-PySide2
+    - python: '3.7'
+      env: TOXENV=py37-PyQt5
 install:
-  - easy_install .
-  - pip install PySide || pip install PyQt5
-  - pip install coverage pytest
+  - pip install coverage tox
   - yes "" | sudo add-apt-repository ppa:mc3man/trusty-media
   - sudo apt-get update
   - sudo apt-get install ffmpeg && ffmpeg -version
@@ -15,12 +24,12 @@ cache:
   - pip
 before_script:
   - sudo -H pip2.7 install coscmd
-  - coscmd config -a $COS_ID -s $COS_KEY -b codeclimate-report-1253052102 -r eu-frankfurt 
+  - coscmd config -a $COS_ID -s $COS_KEY -b codeclimate-report-1253052102 -r eu-frankfurt
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 script:
-  - xvfb-run coverage run -m pytest ./tests
+  - xvfb-run coverage run -m tox
 after_script:
   - coverage xml
   - coverage report
