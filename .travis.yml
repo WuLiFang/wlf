@@ -1,12 +1,10 @@
 language: python
-git:
-  submodules: false
+dist: xenial
 matrix:
   include:
-    - python: '2.7'
-      env: TOXENV=py27-PySide
-    - python: '2.7'
-      env: TOXENV=py27-PyQt4
+    # FIXME: `pip install PySide` fail
+    # - python: '2.7'
+    #   env: TOXENV=py27-PySide
     - python: '3.6'
       env: TOXENV=py36-PySide2
     - python: '3.6'
@@ -16,10 +14,8 @@ matrix:
     - python: '3.7'
       env: TOXENV=py37-PyQt5
 install:
-  - pip install coverage tox
-  - yes "" | sudo add-apt-repository ppa:mc3man/trusty-media
-  - sudo apt-get update
-  - sudo apt-get install ffmpeg && ffmpeg -version
+  - pip install tox
+  - sudo apt-get update && sudo apt-get install ffmpeg
 cache:
   - pip
 before_script:
@@ -29,11 +25,9 @@ before_script:
   - chmod +x ./cc-test-reporter
   - ./cc-test-reporter before-build
 script:
-  - xvfb-run coverage run -m tox
+  - xvfb-run tox
 after_script:
-  - coverage xml
-  - coverage report
   - ./cc-test-reporter format-coverage --output "coverage/codeclimate.$TRAVIS_JOB_NUMBER.json"
   - coscmd upload -r coverage /build-$TRAVIS_BUILD_NUMBER
   - coscmd download -r /build-$TRAVIS_BUILD_NUMBER coverage
-  - ./cc-test-reporter sum-coverage --output - --parts 2 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+  - ./cc-test-reporter sum-coverage --output - --parts 5 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -

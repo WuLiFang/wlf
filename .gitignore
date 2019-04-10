@@ -24,3 +24,6 @@ classes.png
 
 # coverage.py
 .coverage
+/cov.xml
+/coverage.xml
+/htmlcov/

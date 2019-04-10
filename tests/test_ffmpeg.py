@@ -4,6 +4,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import distutils
+
+import pytest
 import six
 
 import util
@@ -11,6 +14,9 @@ from wlf import ffmpeg
 
 TEST_FILES = [util.path('resource', 'gray.jpg'),
               util.path('resource', 'gray.png')]
+
+pytestmark = [pytest.mark.skipif(not distutils.spawn.find_executable(
+    'ffmpeg'), reason='ffmpeg not installed')]
 
 
 def _test_method(method, tmpdir):

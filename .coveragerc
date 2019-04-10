@@ -1,5 +1,6 @@
 [run]
-include = ./*
+include = ./wlf/*
 omit = 
     */tests/*
     */site-packages/*
+    */.tox/*
