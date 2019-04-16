@@ -8,6 +8,7 @@ import sys
 from Qt.QtWidgets import QAction, QApplication, QMenu
 
 from .. import mp_logging
+from ..progress.handlers.qt import QtProgressBar
 
 
 class Menu(QMenu):
@@ -34,6 +35,7 @@ def main_show_dialog(dialog):
     mp_logging.basic_config()
     QApplication(sys.argv)
     frame = dialog()
+    QtProgressBar.default_parent = frame
     sys.exit(frame.exec_())
 
 
