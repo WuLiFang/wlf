@@ -2,8 +2,9 @@ language: python
 dist: xenial
 matrix:
   include:
-    - python: '2.7'
-      env: TOXENV=py27-PySide
+    # FIXME: can not install PySide on travis
+    # - python: '2.7'
+    #   env: TOXENV=py27-PySide
     - python: '3.6'
       env: TOXENV=py36-PySide2
     - python: '3.6'
@@ -28,4 +29,4 @@ after_script:
   - ./cc-test-reporter format-coverage --output "coverage/codeclimate.$TRAVIS_JOB_NUMBER.json"
   - coscmd upload -r coverage /build-$TRAVIS_BUILD_NUMBER
   - coscmd download -r /build-$TRAVIS_BUILD_NUMBER coverage
-  - ./cc-test-reporter sum-coverage --output - --parts 5 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
+  - ./cc-test-reporter sum-coverage --output - --parts 4 coverage/codeclimate.*.json | ./cc-test-reporter upload-coverage --input -
