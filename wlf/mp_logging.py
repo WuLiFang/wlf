@@ -9,7 +9,7 @@ import traceback
 import warnings
 from multiprocessing.dummy import Lock, Process, Queue
 
-from six import text_type, binary_type
+from six import binary_type, text_type
 
 from .decorators import renamed
 from .path import get_unicode as u
@@ -107,14 +107,7 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
     # Set warnings.
     warnings.simplefilter('module', DeprecationWarning)
     logging.captureWarnings(True)
-
-    if 'level' in kwargs:
-        loglevel = kwargs['level']
-    else:
-        try:
-            loglevel = int(logging.getLevelName(os.getenv('WLF_LOGLEVEL')))
-        except (TypeError, ValueError):
-            loglevel = logging.WARNING
+    loglevel = kwargs.get("level", logging.WARNING)
     _kwargs = {
         'level': loglevel,
         'format': (b'%(levelname)-6s[%(asctime)s]:%(filename)s:%(lineno)d:%(funcName)s: %(message)s'
@@ -144,3 +137,6 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
                 logging.root.setLevel(level)
 
             logging.debug('Set basic logging config.')
+        for i in [os.getenv("DEBUG"), os.getenv("PYTHON_LOGGING_DEBUG"), os.getenv("WLF_DEBUG")]:
+            if i and i not in ["0", "1", "True", "true", "False", "false"]:
+                logging.getLogger(i).setLevel(logging.DEBUG)
