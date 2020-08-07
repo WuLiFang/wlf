@@ -11,7 +11,7 @@ endif
 .venv/.make_success: requirements.txt dev-requirements.txt .venv
 	. $(activate) &&\
 		python -m pip install -U pip &&\
-		pip install -r requirements.txt -r dev-requirements.txt
+		python -m pip install -r requirements.txt -r dev-requirements.txt
 	echo > .venv/.make_success
 
 .venv:
