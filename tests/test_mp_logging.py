@@ -34,18 +34,12 @@ class BasicConfigTestCase(TestCase):
         self.assertEqual(len(logging.root.handlers), 1)
 
     def test_with_env(self):
-        self.getenv.return_value = 'DEBUG'
+        self.getenv.return_value = 'foo'
         basic_config()
-        self.getenv.assert_called_once_with('WLF_LOGLEVEL')
         result = logging.root.getEffectiveLevel()
-        assert result == 10
-
-    def test_with_wrong_env(self):
-        self.getenv.return_value = 'HAHAHA'
-        basic_config()
-        self.getenv.assert_called_once_with('WLF_LOGLEVEL')
-        result = logging.root.getEffectiveLevel()
-        assert result == 30
+        assert result == logging.WARNING
+        result = logging.getLogger("foo").getEffectiveLevel()
+        assert result == logging.DEBUG
 
 
 if __name__ == '__main__':

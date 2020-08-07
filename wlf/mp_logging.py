@@ -138,5 +138,6 @@ def basic_config(*args, **kwargs):  # pylint: disable=unused-argument
 
             logging.debug('Set basic logging config.')
         for i in [os.getenv("DEBUG"), os.getenv("PYTHON_LOGGING_DEBUG"), os.getenv("WLF_DEBUG")]:
+            i = text_type(i) # mock will change this to MagicMock
             if i and i not in ["0", "1", "True", "true", "False", "false"]:
                 logging.getLogger(i).setLevel(logging.DEBUG)

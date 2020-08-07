@@ -4,7 +4,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import distutils
+import distutils.spawn
 
 import pytest
 import six
